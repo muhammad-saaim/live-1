@@ -1,0 +1,1 @@
+<button {{ $attributes->merge(['class' => "border rounded-2xl p-3 shadow-l font-bold"])}}> {{ $slot }} </button>
