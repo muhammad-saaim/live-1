@@ -44,10 +44,14 @@ class GroupController extends Controller
             'subgroup_types.*' => 'exists:group_types,id',
         ]);
 
+        $color = sprintf('#%06X', mt_rand(0, 0xFFFFFF));
+
         // Create the new group
         $group = Group::create([
             'name' => $validatedData['name'],
+            'group_admin' => auth()->id(),
             'description' => $validatedData['description'],
+            'color' => $color
         ]);
         $group->users()->attach(auth()->id());
 
@@ -96,10 +100,17 @@ class GroupController extends Controller
             'subgroup_types.*' => 'exists:group_types,id',
         ]);
 
+        if (empty($group->color)) {
+            $color = sprintf('#%06X', mt_rand(0, 0xFFFFFF)); 
+        } else {
+            $color = $group->color; 
+        }
+
         // Update the group's basic information
         $group->update([
             'name' => $validatedData['name'],
             'description' => $validatedData['description'],
+            'color' => $color
         ]);
 
         // Sync the selected group types and subgroups

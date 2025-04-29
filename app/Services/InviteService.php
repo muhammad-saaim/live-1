@@ -14,6 +14,7 @@ class InviteService
     {
         // Generate an invitation token
         $token = Str::random(32);
+        $user = User::where('email', $email)->first();
 
         // Create the invitation record in the database
         $invitation = Invitation::create([
@@ -23,14 +24,19 @@ class InviteService
             'token' => $token,
         ]);
 
-        // Create the invitation link
-        $link = url("/register?token={$token}");
-
-        // Send the invitation email
-        Mail::raw("Click the invitation link to register: $link", function ($message) use ($email) {
-            $message->to($email)
-                ->subject("Group Invitation");
-        });
+        if ($user) {
+            $link = url("/groups/accept-invite?token={$token}");
+            Mail::raw("Click the invitation link to Join the group: $link", function ($message) use ($email) {
+                $message->to($email)
+                    ->subject("Group Invitation");
+            });
+        } else {
+            $link = url("/register?token={$token}");
+            Mail::raw("Click the invitation link to register: $link", function ($message) use ($email) {
+                $message->to($email)
+                    ->subject("Group Invitation");
+            });
+        }
 
         return $invitation;
     }

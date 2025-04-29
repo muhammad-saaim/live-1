@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
             'name'              => 'Max',
             'email'             => 'makhsatsaniyaz@gmail.com',
             'username'          => 'developer',
-            'password'          => Hash::make('W7VDCG*2Cp9L'),
+            'password'          => Hash::make('123123'),
             'email_verified_at' => now(),
             'remember_token'    => Hash::make(Str::random(10)),
             'country'           => 'Mongolia',

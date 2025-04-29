@@ -21,6 +21,14 @@ class Group extends Model
         return $this->belongsToMany(GroupType::class, 'group_group_type')->withTimestamps();
     }
 
-
+    public function defaultSurveys()
+    {
+        $groupType = $this->groupTypes->first()?->name ?? null;
+    // dd($groupType);
+        return Survey::where('is_default', true)
+            ->where('is_active', true)
+            ->whereJsonContains('applies_to', 'Group')
+            ->get();
+    }
 
 }

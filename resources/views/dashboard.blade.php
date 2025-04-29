@@ -88,7 +88,7 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     @foreach(auth()->user()->groups as $group)
-                        <div class="bg-ml-color-lime rounded-xl border border-gray-300 px-3 pt-2 pb-3">
+                        <div style="background-color: {{ $group->color }};" class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
                             <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}</h1>
                             <p class="text-gray-700 ml-2">{{ __('User') }}: {{ $group->users()->count() }}</p>
                             <p class="text-gray-500 ml-2 text-sm">{{ __('Created') }}
