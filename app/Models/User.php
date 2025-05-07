@@ -75,7 +75,22 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(UsersSurveysRate::class, 'users_id');
     }
-
+    
+    public function relatives()
+    {
+        return $this->belongsToMany(User::class, 'user_relatives', 'user_id', 'relative_id')
+                    ->using(UserRelative::class)
+                    ->withPivot('relation_id')
+                    // ->as('pivotRelation') // Optional: name the custom pivot accessor
+                    ->withTimestamps();
+    }
+    
+    public function relatedTo()
+    {
+        return $this->belongsToMany(User::class, 'user_relatives', 'relative_id', 'user_id')
+                    ->withPivot('relation_id')
+                    ->withTimestamps();
+    }
 
 
 }

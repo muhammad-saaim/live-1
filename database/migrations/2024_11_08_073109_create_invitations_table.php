@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('group_id')->constrained()->onDelete('cascade');
             $table->foreignId('invited_by')->constrained('users')->onDelete('cascade');
             $table->string('email');
+            $table->foreignId('relation_id')->nullable()->constrained('relations')->onDelete('set null');
             $table->string('token')->unique();
             $table->timestamps();
         });

@@ -6,6 +6,7 @@ use App\Models\Group;
 use App\Models\GroupType;
 use App\Models\InvitedMember;
 use Illuminate\Http\Request;
+use App\Models\Relation;
 
 class GroupController extends Controller
 {
@@ -74,8 +75,8 @@ class GroupController extends Controller
      */
     public function show(Group $group)
     {
-        $InvitedMembers = InvitedMember::all();
-        return view('group.show', compact('group','InvitedMembers'));
+        $relations = Relation::all(); // Fetch all relations
+        return view('group.show', compact('group', 'relations'));
     }
 
     /**

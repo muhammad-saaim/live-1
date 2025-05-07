@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Mail;
 
 class InviteService
 {
-    public function invite(User $inviter, string $email, Group $group): Invitation
+    public function invite(User $inviter, string $email, Group $group, int $relationId): Invitation
     {
         // Generate an invitation token
         $token = Str::random(32);
@@ -22,6 +22,7 @@ class InviteService
             'group_id' => $group->id,
             'invited_by' => $inviter->id,
             'token' => $token,
+            'relation_id' => $relationId,
         ]);
 
         if ($user) {

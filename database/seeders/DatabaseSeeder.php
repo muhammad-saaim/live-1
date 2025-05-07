@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
                 TypeSeeder::class,
                 GroupTypesTableSeeder::class,
                 SurveyModelSeeder::class,
+                RelationSeeder::class,
             ]);
         }else{
             $this->call([
@@ -32,6 +33,7 @@ class DatabaseSeeder extends Seeder
                 TypeSeeder::class,
                 GroupTypesTableSeeder::class,
                 SurveyModelSeeder::class,
+                RelationSeeder::class,
             ]);
         }
     }

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Models\UserRelative;
 
 class RegisteredUserController extends Controller
 {
@@ -53,8 +54,16 @@ class RegisteredUserController extends Controller
             // Automatically add the user to the invited group(s)
             $group = Group::find($invitation->group_id);
             if ($group) {
-                $user->groups()->attach($group);
+                $user->groups()->attach($group->id, [
+                    'invited_by' => $invitation->invited_by,
+                ]);
             }
+
+            UserRelative::create([
+                'user_id' => $invitation->invited_by,
+                'relative_id' => $user->id,
+                'relation_id' => $invitation->relation_id,
+            ]);
 
             // Delete the invitation after accepting it
             $invitation->delete();

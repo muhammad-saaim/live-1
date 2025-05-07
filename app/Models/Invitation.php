@@ -13,6 +13,7 @@ class Invitation extends Model
         'invited_by',
         'email',
         'token',
+        'relation_id',
     ];
 
     /**

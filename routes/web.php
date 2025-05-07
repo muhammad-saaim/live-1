@@ -53,9 +53,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('group',GroupController::class);
 
-    Route::post('/add/member', [InviteController::class, 'addtoinvite'])->name('add-members.store');
+    // Route::post('/add/member', [InviteController::class, 'addtoinvite'])->name('add-members.store');
     Route::post('/group/invite', [InviteController::class, 'sendInvite'])->name('group.invite');
-    Route::post('/groups/accept-invite', [InviteController::class, 'acceptInvite'])->name('groups.accept-invite');
+    Route::get('/groups/accept-invite', [InviteController::class, 'acceptInvite'])->name('groups.accept-invite');
 
     Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');
 
