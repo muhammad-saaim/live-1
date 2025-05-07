@@ -5,6 +5,7 @@ use App\Services\InviteService;
 use App\Models\Group;
 use Illuminate\Http\Request;
 use App\Models\Invitation;
+use App\Models\InvitedMember;
 use Illuminate\Support\Facades\Auth;
 
 class InviteController extends Controller
@@ -66,5 +67,26 @@ class InviteController extends Controller
         $invitation->delete();
     
         return redirect()->route('groups.show', $invitation->group_id)->with('success', 'You’ve successfully joined the group!');
+    }
+
+    public function addtoinvite(Request $request){
+      
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'nullable|email|max:255',
+        'relation' => 'nullable|string|max:100',
+        // 'inviter_id' => 'required|exists:users,id',
+    ]);
+
+    InvitedMember::create([
+        'inviter_id' => 1,
+        'name' => $request->name,
+        'email' => $request->email,
+        'relation' => $request->relation,
+        'status' => 'pending',
+    ]);
+
+    return redirect()->back()->with('success', 'Member Added successfully.');
+
     }
 }

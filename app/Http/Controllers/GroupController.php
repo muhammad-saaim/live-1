@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use App\Models\GroupType;
+use App\Models\InvitedMember;
 use Illuminate\Http\Request;
 
 class GroupController extends Controller
@@ -73,7 +74,8 @@ class GroupController extends Controller
      */
     public function show(Group $group)
     {
-        return view('group.show', compact('group'));
+        $InvitedMembers = InvitedMember::all();
+        return view('group.show', compact('group','InvitedMembers'));
     }
 
     /**

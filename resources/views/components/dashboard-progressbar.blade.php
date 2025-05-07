@@ -16,9 +16,13 @@
 
         <!-- Status Button with Fixed Size -->
         @if($completedQuestion == $totalQuestion)
+        <form action="{{ route('survey.ShowSurvey',$survey_id) }}" method="POST">
+            @csrf
+            <input type="hidden" name="survey_id" value="{{ $survey_id }}">
             <x-outline-button class="min-w-[120px] w-24 flex justify-center items-center">
                 Completed
             </x-outline-button>
+        </form>
         @else
             <form action="{{ route('rate.survey') }}" method="POST">
                 @csrf

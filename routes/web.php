@@ -10,6 +10,7 @@ use App\Http\Controllers\InviteController;
 use App\Http\Controllers\MatchingController;
 use App\Http\Controllers\PersonalInfoController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SolutionsController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyModelController;
@@ -47,12 +48,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/survey/save-answer', [SurveyRateController::class, 'saveAnswer'])->name('survey.saveAnswer');
     Route::get('/survey/previous-question', [SurveyRateController::class, 'getPreviousQuestion'])->name('survey.previousQuestion');
     Route::post('/survey/submit-answer', [SurveyRateController::class, 'submitAnswer'])->name('survey.submitAnswer');
+    Route::post('survey/ShowSurvey', [SurveyRateController::class, 'ShowSurvey'])->name('survey.ShowSurvey');
 
 
     Route::resource('group',GroupController::class);
 
+    Route::post('/add/member', [InviteController::class, 'addtoinvite'])->name('add-members.store');
     Route::post('/group/invite', [InviteController::class, 'sendInvite'])->name('group.invite');
     Route::post('/groups/accept-invite', [InviteController::class, 'acceptInvite'])->name('groups.accept-invite');
+
+    Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');
 
     Route::group(['middleware' => ['role:admin']], function () {
 

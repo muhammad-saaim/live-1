@@ -31,32 +31,37 @@ class SurveyRateController extends Controller
 
         // Get unanswered question IDs
         $answeredQuestionIds = $user->usersSurveysRates()->where('survey_id', $survey->id)->pluck('question_id')->toArray();
-
+        
         // Get unanswered questions
         $unansweredQuestions = $questions->whereNotIn('id', $answeredQuestionIds);
-
+        // dd($unansweredQuestions);
+        $usersurvey = UsersSurveysRate::with('user','survey','question','option')->where('survey_id',$request->survey_id)->where('question_id',$unansweredQuestions->first()->id)->get();
+        // dd($usersurvey);
         if ($unansweredQuestions->isEmpty()) {
             return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
         }
         //dd($unansweredQuestions);
 
-        return view('survey.rate', compact('survey', 'unansweredQuestions'));
+        return view('survey.rate', compact('survey', 'unansweredQuestions','usersurvey'));
     }
 
 
     public function getNextQuestion(Request $request)
     {
+        
         $survey = Survey::find($request->survey_id);
         $questions = $survey->questions;
 
         // Find the next unanswered question
         $unansweredQuestion = $questions->whereNotIn('id', auth()->user()->questions()
             ->wherePivot('is_completed', 1)
-            ->pluck('question_id'))->first();
+            ->pluck('question_id'))
+            ->first();
 
         if (!$unansweredQuestion) {
             return response()->json(['message' => 'All questions are completed.'], 404);
         }
+
 
         return response()->json([
             'question' => $unansweredQuestion->question,
@@ -135,6 +140,10 @@ class SurveyRateController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Answer saved. Loading next question...']);
     }
 
+
+    public function ShowSurvey($survey_id){
+
+    }
 
 
 }
