@@ -21,4 +21,9 @@ class UserRelative extends Pivot
     {
         return $this->belongsTo(Relation::class);
     }
+
+    public function relative()
+    {
+        return $this->belongsTo(User::class, 'relative_id');
+    }
 }

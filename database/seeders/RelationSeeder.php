@@ -19,7 +19,7 @@ class RelationSeeder extends Seeder
         $relations = [
             'Father', 'Mother', 'Son', 'Daughter', 'Brother', 'Sister',
             'Uncle', 'Aunt', 'Cousin', 'Grandfather', 'Grandmother',
-            'Nephew', 'Niece', 'Spouse', 'Partner', 'Friend',
+            'Nephew', 'Niece', 'Spouse','Grandson', 'Granddaughter'
         ];
 
         foreach ($relations as $name) {

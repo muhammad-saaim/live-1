@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('password');
             $table->boolean('status')->default(true);
             $table->string('phone')->unique()->nullable();
+            $table->enum('gender', ['male', 'female'])->nullable();
             $table->string('provider')->nullable();
             $table->string('provider_id')->nullable();
             $table->string('provider_token')->nullable();

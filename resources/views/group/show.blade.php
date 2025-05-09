@@ -175,15 +175,19 @@
                                             {{ $user->name }}</td>
                                         <td class="px-4 py-2 border border-gray-300 text-gray-700">
                                             {{ $user->email }}</td>
-                                        <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                            @php
-                                                $relation = \App\Models\UserRelative::where('relative_id', $user->id)
-                                                    ->where('user_id', $group->owner_id ?? auth()->id()) // adjust depending on who invited
-                                                    ->with('relation')
-                                                    ->first();
-                                            @endphp
-                                            {{ $relation?->relation?->name ?? 'N/A' }}
-                                        </td>
+                                            <td class="px-4 py-2 border border-gray-300 text-gray-700">
+                                                @if ($user->id === auth()->id())
+                                                    Me
+                                                @else
+                                                    @php
+                                                        $relation = \App\Models\UserRelative::where('relative_id', $user->id)
+                                                            ->where('user_id', $group->owner_id ?? auth()->id())
+                                                            ->with('relation')
+                                                            ->first();
+                                                    @endphp
+                                                    {{ $relation?->relation?->name ?? 'N/A' }}
+                                                @endif
+                                            </td>
                                         <td class="px-4 py-2 border border-gray-300">
                                             <button
                                                 class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Send</button>
