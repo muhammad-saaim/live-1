@@ -101,22 +101,22 @@ class RegisteredUserController extends Controller
     
         // Gender-sensitive inverse map
         $inverseMap = [
-            'Father'    => ['male' => 'Son',     'female' => 'Daughter'],
-            'Mother'    => ['male' => 'Son',     'female' => 'Daughter'],
-            'Son'       => ['male' => 'Father',  'female' => 'Mother'],
-            'Daughter'  => ['male' => 'Father',  'female' => 'Mother'],
-            'Brother'   => ['male' => 'Brother', 'female' => 'Sister'],
-            'Sister'    => ['male' => 'Brother', 'female' => 'Sister'],
-            'Uncle'     => ['male' => 'Nephew',  'female' => 'Niece'],
-            'Aunt'      => ['male' => 'Nephew',  'female' => 'Niece'],
-            'Nephew'    => ['male' => 'Uncle',   'female' => 'Aunt'],
-            'Niece'     => ['male' => 'Uncle',   'female' => 'Aunt'],
-            'Grandfather' => ['male' => 'Grandson', 'female' => 'Granddaughter'],
-            'Grandmother' => ['male' => 'Grandson', 'female' => 'Granddaughter'],
-            'Grandson'    => ['male' => 'Grandfather', 'female' => 'Grandmother'],
-            'Granddaughter' => ['male' => 'Grandfather', 'female' => 'Grandmother'],
-            'Spouse'    => ['male' => 'Spouse',  'female' => 'Spouse'],
-            'Cousin'    => ['male' => 'Cousin',  'female' => 'Cousin'], 
+            'Father'        => ['male' => 'Son',        'female' => 'Daughter'],
+            'Mother'        => ['male' => 'Son',        'female' => 'Daughter'],
+            'Son'           => ['male' => 'Father',     'female' => 'Mother'],
+            'Daughter'      => ['male' => 'Father',     'female' => 'Mother'],
+            'Brother'       => ['male' => 'Brother',    'female' => 'Sister'],
+            'Sister'        => ['male' => 'Brother',    'female' => 'Sister'],
+            'Uncle'         => ['male' => 'Nephew',     'female' => 'Niece'],
+            'Aunt'          => ['male' => 'Nephew',     'female' => 'Niece'],
+            'Nephew'        => ['male' => 'Uncle',      'female' => 'Aunt'],
+            'Niece'         => ['male' => 'Uncle',      'female' => 'Aunt'],
+            'Grandfather'   => ['male' => 'Grandson',   'female' => 'Granddaughter'],
+            'Grandmother'   => ['male' => 'Grandson',   'female' => 'Granddaughter'],
+            'Grandson'      => ['male' => 'Grandfather','female' => 'Grandmother'],
+            'Granddaughter' => ['male' => 'Grandfather','female' => 'Grandmother'],
+            'Spouse'        => ['male' => 'Spouse',     'female' => 'Spouse'],
+            'Cousin'        => ['male' => 'Cousin',     'female' => 'Cousin'], 
         ];
     
         // Determine inverse relation name based on inviter's gender
@@ -181,12 +181,12 @@ class RegisteredUserController extends Controller
                 'Sister' => 'Sister',
             ],
             'Son' => [
-                'Brother' => 'Son',
-                'Sister' => 'Son',
+                'Brother' => 'Nephew',
+                'Sister' => 'Nephew',
             ],
             'Daughter' => [
-                'Brother' => 'Daughter',
-                'Sister' => 'Daughter',
+                'Brother' => 'Niece',
+                'Sister' => 'Niece',
             ],
             'Cousin' => [
                 'Brother' => 'Cousin',
@@ -207,6 +207,8 @@ class RegisteredUserController extends Controller
             'Mother' => $invitedGender === 'male' ? 'Son' : 'Daughter',
             'Brother' => 'Brother',
             'Sister' => 'Sister',
+            'Nephew' => $invitedGender === 'male' ? 'Uncle' : 'Aunt',
+            'Niece' => $invitedGender === 'male' ? 'Uncle' : 'Aunt',
             'Son' => $invitedGender === 'male' ? 'Brother' : 'Sister',
             'Daughter' => $invitedGender === 'male' ? 'Brother' : 'Sister',
             'Cousin' => 'Cousin',
@@ -221,7 +223,11 @@ class RegisteredUserController extends Controller
             if (!isset($relationMap[$existingRelationName][$relationToInviter])) {
                 continue;
             }
-            // if($existingRelativeId ===  $invitedId)
+            
+            if ($existingRelativeId === $invitedId) {
+                continue;
+            }
+
             $newRelationName = $relationMap[$existingRelationName][$relationToInviter];
             $inverseRelationName = $inverseMap[$newRelationName] ?? null;
 
