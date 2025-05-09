@@ -139,33 +139,31 @@
                 <div class="p-3 max-w-7xl mx-auto space-y-6 mt-5">
                     @foreach ($usersurvey as $survey)
                     {{-- {{dd($survey)}} --}}
-                    <div class="flex justify-center items-center gap-4 px-4">
+                    <div class="flex justify-center items-center gap-5"  style="transform: translateX(-50px);">
                         <!-- Username label -->
-                        <div class="flex items-center text-sm text-red-500 min-w-[100px] me-5">
-                            <p>{{ $survey->user->name }}</p>
+                        <div class="col-1 flex text-sm text-red-500">
+                            <p>{{ \Illuminate\Support\Str::limit($survey?->user?->name, 15) }}</p>
+
                         </div>
-                
+                    
                         <!-- Options container -->
-                        <div class="flex items-center relative max-w-xl">
+                        <div class=" flex items-center relative max-w-xl">
                             <!-- Radio buttons container -->
-                            <div class="flex justify-center items-center" style="gap: 35px">
+                            <div id="options-container" class="flex justify-center items-center px-4" style="gap:35px">
                                 @foreach ($unansweredQuestions->first()->options as $option)
                                     <div class="flex flex-col items-center">
-                                        {{-- Debug --}}
-
-
-                                        <!-- Circle display - shows green if this was the selected answer -->
                                         <div style="width: 60px; height: 60px;"
-                                        class="rounded-full border-2 flex items-center justify-center fw-bold fs-5 
+                                            class="rounded-full border-2 flex items-center justify-center fw-bold fs-5 
                                             {{ $survey->options_id == $option->id ? 'checkedoption' : 'border-gray-300 bg-white' }}">
-                                        {{ $option->name }}
-                                    </div>
-                                    
+                                            {{ $option->name }}
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
                         </div>
                     </div>
+                    
+                    
                     @endforeach
                 </div>
             </div>
