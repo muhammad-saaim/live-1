@@ -67,7 +67,7 @@
                                 <a href="{{ route('group.edit', $group->id) }}"
                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 transition duration-150 {{ Auth::id() !== $group->group_admin ? 'opacity-50 cursor-not-allowed' : '' }}" 
                                 {{ Auth::id() !== $group->group_admin ? 'disabled' : '' }}>
-                                    <i class="fas fa-edit mr-2"></i> Edit Group
+                                    <i class="fas fa-edit mr-2"></i> Edit 
                                 </a>
                             
                                 <!-- Delete Group Form -->
@@ -79,7 +79,7 @@
                                     <button type="submit"
                                             class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 transition duration-150 {{ Auth::id() !== $group->group_admin ? 'opacity-50 cursor-not-allowed' : '' }}" 
                                 {{ Auth::id() !== $group->group_admin ? 'disabled' : '' }}>
-                                        <i class="fas fa-trash mr-2"></i> Delete Group
+                                        <i class="fas fa-trash mr-2"></i> Delete 
                                     </button>
                                 </form>
                             </div>
