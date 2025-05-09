@@ -24,7 +24,7 @@ class UsersSurveysRate extends Model
 
     public function survey()
     {
-        return $this->belongsTo(Survey::class, 'surveys_id');
+        return $this->belongsTo(Survey::class, 'survey_id');
     }
 
     public function question()

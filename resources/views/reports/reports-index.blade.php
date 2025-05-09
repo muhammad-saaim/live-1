@@ -120,49 +120,30 @@
     </div>
 
 
+
+
+
     <div id="barshaped" style="display: none;">
-    <div class="progress-item">
-        <div class="progress-label">Skill 1</div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 20%;"></div>
+      @foreach ($UserSurveys as $survey)
+        @php
+            $overallAverage = $surveyAverages[$survey->id] ?? 0;
+        @endphp
+ 
+        <div class="progress-item">
+          <div class="progress-label">
+            {{ $survey->title . ' (' . implode(', ', (array) $survey->applies_to) . ')' }}
+        </div>        
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ $overallAverage * 20 }}%;"></div>
+            </div>
         </div>
-      </div>
+      @endforeach
+    </div>
     
-      <div class="progress-item">
-        <div class="progress-label">Skill 2</div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 25%;"></div>
-        </div>
-      </div>
-    
-      <div class="progress-item">
-        <div class="progress-label">Skill 3</div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 30%;"></div>
-        </div>
-      </div>
-    
-      <div class="progress-item">
-        <div class="progress-label">Skill 4</div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 18%;"></div>
-        </div>
-      </div>
-    
-      <div class="progress-item">
-        <div class="progress-label">Skill 5</div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 22%;"></div>
-        </div>
-      </div>
-    
-      <div class="progress-item">
-        <div class="progress-label">Skill 6</div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 28%;"></div>
-        </div>
-      </div>
-   </div>
+
+
+
+
    <div id="textshaped" style="display: block;">
     <h1>Title</h1>
 
@@ -186,39 +167,58 @@
     <p><strong>Sonuç:</strong> Bay/Ms. Smith, kusursuz mentorluk becerileri ve geniş iş deneyimiyle öne çıkan biridir. Empati, iletişim ve motivasyon konularında son derece başarılı olan Smith, danışanlarının başarılarını artırmak için etkili bir rehberdir. Devam eden destek ve gelişimle, Smith’in mentorluk hizmetlerinin daha da etkili hale geleceğine inanıyoruz.</p>
    </div>
 
-   <div class="action float-end m-2">
-    <button class="btn  " style=" background-color: #8CB368;
-    color: white; ">Download pdf</button>
-    <button class="btn " style=" background-color: #8CB368;
-    color: white; ">Mentor to share</button>
-   </div>
+   <div class="action float-end m-2 d-flex gap-2">
+    <!-- Excel download (only for bar view) -->
+    <form action="{{ route('survey.export') }}" method="GET" id="excelForm" style="display: none;">
+        <input type="hidden" name="type" value="bar">
+        <button type="submit" class="btn" style="background-color: #8CB368; color: white;">
+            Download Excel
+        </button>
+    </form>
+
+    <!-- PDF download (only for text view) -->
+    <form action="{{ route('report.download') }}" method="GET" id="pdfForm">
+        <input type="hidden" name="type" value="text">
+        <button type="submit" class="btn" style="background-color: #8CB368; color: white;">
+            Download PDF
+        </button>
+    </form>
+
+    <button class="btn" style="background-color: #8CB368; color: white;">
+        Mentor to Share
+    </button>
+</div>
+
+
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+      document.addEventListener('DOMContentLoaded', function () {
           const barRadio = document.getElementById('barshapped');
-          const textRadio = document.getElementById('textshaped-radio'); // new ID here
+          const textRadio = document.getElementById('textshaped-radio');
           const barDiv = document.getElementById('barshaped');
           const textDiv = document.getElementById('textshaped');
-      
+          const excelForm = document.getElementById('excelForm');
+          const pdfForm = document.getElementById('pdfForm');
+  
           function toggleView() {
-            if (barRadio.checked) {
-              barDiv.style.display = 'block';
-              textDiv.style.display = 'none';
-            } else {
-              barDiv.style.display = 'none';
-              textDiv.style.display = 'block';
-            }
+              const isBar = barRadio.checked;
+  
+              barDiv.style.display = isBar ? 'block' : 'none';
+              textDiv.style.display = isBar ? 'none' : 'block';
+  
+              excelForm.style.display = isBar ? 'inline-block' : 'none';
+              pdfForm.style.display = isBar ? 'none' : 'inline-block';
           }
-      
-          // Initial state
+  
           toggleView();
-      
-          // Watch for changes
           barRadio.addEventListener('change', toggleView);
           textRadio.addEventListener('change', toggleView);
-        });
-      </script>
+      });
+  </script>
+  
+  
+  
       
       
 </x-app-layout>

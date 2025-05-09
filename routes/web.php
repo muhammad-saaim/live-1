@@ -54,10 +54,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('group',GroupController::class);
 
     // Route::post('/add/member', [InviteController::class, 'addtoinvite'])->name('add-members.store');
+
+
     Route::post('/group/invite', [InviteController::class, 'sendInvite'])->name('group.invite');
     Route::get('/groups/accept-invite', [InviteController::class, 'acceptInvite'])->name('groups.accept-invite');
+    Route::delete('/groups/{group}/members/{user}', [GroupController::class, 'removeMember'])->name('groups.removeMember');
+
 
     Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('/download-report', [ReportsController::class, 'downloadPdf'])->name('report.download');
+    Route::get('/export-survey', [ReportsController::class, 'exportSurveyExcel'])->name('survey.export');
+
 
     Route::group(['middleware' => ['role:admin']], function () {
 

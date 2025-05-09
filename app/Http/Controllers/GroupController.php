@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use App\Models\User;
 use App\Models\GroupType;
 use App\Models\InvitedMember;
 use Illuminate\Http\Request;
@@ -138,6 +139,20 @@ class GroupController extends Controller
         $group->delete();
         return redirect()->route('dashboard.index')->with('success', 'Group deleted successfully.');
     }
+
+    public function removeMember(Group $group, User $user)
+{
+    // dd($group);
+    // Check if the current user can modify the group
+    if (!auth()->user()->groups->contains($group->id)) {
+        return redirect()->back()->with('error', 'Unauthorized action.');
+    }
+
+    // Detach the user from the group
+    $group->users()->detach($user->id);
+
+    return redirect()->back()->with('success', 'Member removed successfully.');
+}
 
 
 

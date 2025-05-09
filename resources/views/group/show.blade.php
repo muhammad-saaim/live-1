@@ -62,15 +62,25 @@
                                 </div>
                             </div>
 
-                            <div class="pt-3">
+                            <div class="pt-3 flex space-x-2">
+                                <!-- Edit Group Button -->
+                                <a href="{{ route('group.edit', $group->id) }}"
+                                   class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 transition duration-150 {{ Auth::id() !== $group->group_admin ? 'opacity-50 cursor-not-allowed' : '' }}" 
+                                {{ Auth::id() !== $group->group_admin ? 'disabled' : '' }}>
+                                    <i class="fas fa-edit mr-2"></i> Edit Group
+                                </a>
+                            
+                                <!-- Delete Group Form -->
                                 <form action="{{ route('group.destroy', $group->id) }}" method="POST"
-                                    onsubmit="return confirm('Are you sure you want to delete this group?');">
+                                      class="w-full"
+                                      onsubmit="return confirm('Are you sure you want to delete this group?');">
                                     @csrf
                                     @method('DELETE')
-                                    <x-danger-button class="flex justify-center items-center w-full space-x-2">
-                                        <i class="fas fa-trash"></i>
-                                        <span>Group Delete</span>
-                                    </x-danger-button>
+                                    <button type="submit"
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 transition duration-150 {{ Auth::id() !== $group->group_admin ? 'opacity-50 cursor-not-allowed' : '' }}" 
+                                {{ Auth::id() !== $group->group_admin ? 'disabled' : '' }}>
+                                        <i class="fas fa-trash mr-2"></i> Delete Group
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -158,8 +168,8 @@
                                         <th class="px-4 py-2 border border-gray-300">Name</th>
                                         <th class="px-4 py-2 border border-gray-300">Email</th>
                                         <th class="px-4 py-2 border border-gray-300">Member</th>
-                                        <th class="px-4 py-2 border border-gray-300">Send</th>
                                         <th class="px-4 py-2 border border-gray-300">Status</th>
+                                        <th class="px-4 py-2 border border-gray-300">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
@@ -175,6 +185,7 @@
                                             {{ $user->name }}</td>
                                         <td class="px-4 py-2 border border-gray-300 text-gray-700">
                                             {{ $user->email }}</td>
+                                            @if($group->groupTypes?->first()?->name == 'Family')
                                             <td class="px-4 py-2 border border-gray-300 text-gray-700">
                                                 @if ($user->id === auth()->id())
                                                     Me
@@ -188,12 +199,44 @@
                                                     {{ $relation?->relation?->name ?? 'N/A' }}
                                                 @endif
                                             </td>
+                                            @else
+                                            <td class="px-4 py-2 border border-gray-300 text-gray-700">
+                                                {{$group?->groupTypes?->first()?->name ?? 'N/A'}}
+                                                </td>
+                                                @endif
                                         <td class="px-4 py-2 border border-gray-300">
-                                            <button
-                                                class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Send</button>
+                                            <p
+                                                class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Invite Accept</p>
                                         </td>
-                                        <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                            Invite Accept</td>
+                                        
+                                        <td class="px-4 py-2 border border-gray-300 text-gray-700 text-center">
+                                            @if (Auth::id() === $user->id)
+                                                {{-- Leave Button for Logged-in User --}}
+                                                <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to leave this group?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                                        Leave
+                                                    </button>
+                                                </form>
+                                            @elseif (Auth::id() === $group->group_admin)
+                                                {{-- Admin can remove other members --}}
+                                                <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this member?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                                        Remove
+                                                    </button>
+                                                </form>
+                                            @else
+                                                {{-- Disabled Remove Button for Others --}}
+                                                <button class="bg-gray-300 text-gray-600 px-3 py-1 rounded text-sm cursor-not-allowed" disabled>
+                                                    Remove
+                                                </button>
+                                            @endif
+                                        </td>
+                                        
+                                        
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -202,14 +245,16 @@
 
                         <!-- Buttons below the table -->
                         <div class="flex gap-4 mt-4">
-                            <button class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
+                            <button 
+                                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
                                 Delete
                             </button>
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                data-bs-target="#inviteModal">
+                        
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteModal">
                                 Add
                             </button>
                         </div>
+                        
                     </div>
 
                     <!-- Modal -->
