@@ -1,5 +1,4 @@
-@props(['num' => 0, 'max' => 0, 'completedQuestion' => 0, 'totalQuestion' => 0, 'survey_id' => null])
-
+@props(['num' => 0, 'max' => 0, 'completedQuestion' => 0, 'totalQuestion' => 0, 'survey_id' => null, 'group'=> null])
 <div class="flex items-center justify-between w-full space-x-4">
     <!-- Survey Title -->
     <label for="file-$slot" class="w-1/6 text-left ml-2 flex-shrink-0"> {{ $slot }} </label>
@@ -27,6 +26,9 @@
             <form action="{{ route('rate.survey') }}" method="POST">
                 @csrf
                 <input type="hidden" name="survey_id" value="{{ $survey_id }}">
+                @if ($group)
+                    <input type="hidden" name="group_id" value="{{ $group->id }}">
+                @endif
                 <x-primary-button class="min-w-[120px] w-24 flex justify-center items-center" type="submit">
                     Rate
                 </x-primary-button>

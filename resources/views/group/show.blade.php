@@ -341,8 +341,10 @@
 
                         @foreach ($defaultSurveys as $survey)
                         <x-dashboard-progressbar
-                            completedQuestion="{{ auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->count() }}"
-                            survey_id="{{ $survey->id }}" totalQuestion="{{ $survey->questions->count() }}">
+                            :completedQuestion="auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->count()"
+                            :survey_id="$survey->id"
+                            :totalQuestion="$survey->questions->count()"
+                            :group="$group">
                             {{ $survey->title }}
                         </x-dashboard-progressbar>
                         @endforeach

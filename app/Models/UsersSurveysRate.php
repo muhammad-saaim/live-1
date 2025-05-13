@@ -15,6 +15,7 @@ class UsersSurveysRate extends Model
         'survey_id',
         'question_id',
         'options_id',
+        'evaluatee_id',
     ];
 
     public function user()

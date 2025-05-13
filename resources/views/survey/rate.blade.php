@@ -1,13 +1,11 @@
 <x-app-layout>
-<style>
-.checkedoption {
-    background-color: #8EEB64 !important;
-    border: 2px solid #5cb031 !important;
-    color: white !important;
-}
-
-
-</style>
+    <style>
+        .checkedoption {
+            background-color: #8EEB64 !important;
+            border: 2px solid #5cb031 !important;
+            color: white !important;
+        }
+    </style>
     <div class="p-3 max-w-7xl mx-auto space-y-4">
         <div class="col-md-8">
             <div class="d-flex justify-content-between w-100 p-2">
@@ -18,8 +16,7 @@
                     <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off">
                     <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
 
-                    <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off"
-                        checked>
+                    <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off" checked>
                     <label class="btn btn-outline-primary rounded-end-pill" for="defaultView">Default View</label>
                 </div>
             </div>
@@ -34,66 +31,69 @@
 
             <div id="question-container" class="text-center">
                 @if ($unansweredQuestions->isNotEmpty())
-                    <p id="question-text" class="text-lg font-semibold">{{ $unansweredQuestions->first()->question }}
-                    </p>
+                <p id="question-text" class="text-lg font-semibold">{{ $unansweredQuestions->first()->question }}
+                </p>
 
-                    <p id="question-text" class="text-base mb-2">{{ $unansweredQuestions->first()->description }}</p>
-                    <hr class="border-t-2 border-black my-4">
-                    <form id="question-form">
-                        <div id="options-container" class="flex justify-center items-center mt-5 gap-4 px-4">
-                            <!-- Disagree label -->
-                            <div class="flex items-center text-sm text-red-500">
-                                <p>Disagree</p>
-                            </div>
+                <p id="question-text" class="text-base mb-2">{{ $unansweredQuestions->first()->description }}</p>
+                <hr class="border-t-2 border-black my-4">
+                
+                <!-- Self Evaluation Form -->
+                <form id="question-form">
+                    <div id="options-container" class="flex justify-center items-center mt-5 gap-4 px-4">
+                        <!-- Disagree label -->
+                        <div class="flex items-center text-sm text-red-500">
+                            <p>Disagree</p>
+                        </div>
 
-                            <!-- Options container with line -->
-                            <div class=" flex items-center relative max-w-xl">
-                                <!-- Grey connecting line -->
-                                {{-- <div class="absolute h-[2px] w-full bg-gray-300 top-1/2 left-0 -translate-y-1/2 z-0"></div> --}}
+                        <!-- Options container with line -->
+                        <div class=" flex items-center relative max-w-xl">
+                            <!-- Grey connecting line -->
+                            {{-- <div class="absolute h-[2px] w-full bg-gray-300 top-1/2 left-0 -translate-y-1/2 z-0">
+                            </div> --}}
 
-                                <!-- Radio buttons container -->
-                                <div id="options-container" class="flex justify-center items-center  px-4 "
-                                    style="gap:35px">
-                                    @foreach ($unansweredQuestions->first()->options as $option)
-                                        <label for="option-{{ $option->id }}"
-                                            class="cursor-pointer flex justify-center">
-                                            <input type="radio" name="answer" value="{{ $option->id }}"
-                                                id="option-{{ $option->id }}" class="hidden peer"
-                                                onchange="updateSelectedOption(this)">
-                                            <div style="width: 60px; height: 60px;"
-                                                class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
-                                                {{ $option->name }}
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <!-- Agree label -->
-                            <div class="flex items-center text-sm text-green-500">
-                                <p>Agree</p>
+                            <!-- Radio buttons container -->
+                            <div id="options-container" class="flex justify-center items-center  px-4 "
+                                style="gap:35px">
+                                @foreach ($unansweredQuestions->first()->options as $option)
+                                <label for="option-{{ $option->id }}" class="cursor-pointer flex justify-center">
+                                    <input type="radio" name="answer" value="{{ $option->id }}"
+                                        id="option-{{ $option->id }}" class="hidden peer"
+                                        onchange="updateSelectedOption(this)">
+                                    <div style="width: 60px; height: 60px;"
+                                        class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
+                                        {{ $option->name }}
+                                    </div>
+                                </label>
+                                @endforeach
                             </div>
                         </div>
 
-
-                        <input type="hidden" name="question_id" id="question-id"
-                            value="{{ $unansweredQuestions->first()->id }}">
-                        <input type="hidden" name="survey_id" id="survey-id" value="{{ $survey->id }}">
-
-                        <div class="flex justify-center space-x-4 mt-4">
-                            <button type="button" id="next-button"
-                                class="bg-blue-500 text-white py-2 px-4 rounded">Next</button>
+                        <!-- Agree label -->
+                        <div class="flex items-center text-sm text-green-500">
+                            <p>Agree</p>
                         </div>
-                    </form>
-                    {{-- Question Status Tracker --}}
-                    <div id="status-container" class="mt-4">
-                        <p class="text-sm text-gray-500">
-                            Question {{ $unansweredQuestions->keys()->first() + 1 }} of
-                            {{ $unansweredQuestions->count() }}
-                        </p>
                     </div>
+
+
+                    <input type="hidden" name="question_id" id="question-id"
+                        value="{{ $unansweredQuestions->first()->id }}">
+                    <input type="hidden" name="survey_id" id="survey-id" value="{{ $survey->id }}">
+                    <input type="hidden" name="evaluatee_id" id="evaluatee-id" value="{{ Auth::id() }}">
+
+                    <div class="flex justify-center space-x-4 mt-4">
+                        <button type="button" id="next-button"
+                            class="bg-blue-500 text-white py-2 px-4 rounded">Next</button>
+                    </div>
+                </form>
+                {{-- Question Status Tracker --}}
+                <div id="status-container" class="mt-4">
+                    <p class="text-sm text-gray-500">
+                        Question {{ $unansweredQuestions->keys()->first() + 1 }} of
+                        {{ $unansweredQuestions->count() }}
+                    </p>
+                </div>
                 @else
-                    <p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>
+                <p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>
                 @endif
             </div>
 
@@ -112,21 +112,21 @@
                         <!-- Radio buttons container -->
                         <div id="options-container" class="flex justify-center items-center px-4" style="gap:35px">
                             @foreach ($unansweredQuestions->first()->options as $index => $option)
-                                <div class="flex flex-col items-center">
-                                    <label for="option-{{ $option->id }}" class="cursor-pointer flex justify-center">
-                                        <input type="radio" name="answer" value="{{ $option->id }}"
-                                            id="option-{{ $option->id }}" class="hidden peer"
-                                            onchange="updateSelectedOption(this)">
-                                        <div style="width: 60px; height: 60px;"
-                                            class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
-                                            {{ $option->name }}
-                                        </div>
-                                    </label>
-                                    <div class="mt-1 text-sm text-gray-600">
-                                        {{ $index + 1 }} Cevap
-                                        {{ (($index + 1) * 100) / $unansweredQuestions->first()->options->count() }}%
+                            <div class="flex flex-col items-center">
+                                <label for="option-{{ $option->id }}" class="cursor-pointer flex justify-center">
+                                    <input type="radio" name="answer" value="{{ $option->id }}"
+                                        id="option-{{ $option->id }}" class="hidden peer"
+                                        onchange="updateSelectedOption(this)">
+                                    <div style="width: 60px; height: 60px;"
+                                        class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
+                                        {{ $option->name }}
                                     </div>
+                                </label>
+                                <div class="mt-1 text-sm text-gray-600">
+                                    {{ $index + 1 }} Cevap
+                                    {{ (($index + 1) * 100) / $unansweredQuestions->first()->options->count() }}%
                                 </div>
+                            </div>
                             @endforeach
                         </div>
                     </div>
@@ -136,39 +136,50 @@
                     </div>
                 </div>
 
-                <div class="p-3 max-w-7xl mx-auto space-y-6 mt-5">
-                    @foreach ($usersurvey as $survey)
-                    {{-- {{dd($survey)}} --}}
-                    <div class="flex justify-center items-center gap-5"  style="transform: translateX(-50px);">
-                        <!-- Username label -->
-                        <div class="col-1 flex text-sm text-red-500">
-                            <p>{{ \Illuminate\Support\Str::limit($survey?->user?->name, 15) }}</p>
+                <!-- Group Evaluation -->
+                <form id="group-evaluation-form">
+                    <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5">
+                        @foreach ($groupUsers as $user)
+                        <div class="user-block flex justify-center items-center gap-5" style="transform: translateX(-50px);">
+                            <!-- Username -->
+                            <div class="col-1 flex text-sm text-red-500">
+                                <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
+                            </div>
 
-                        </div>
-                    
-                        <!-- Options container -->
-                        <div class=" flex items-center relative max-w-xl">
-                            <!-- Radio buttons container -->
-                            <div id="options-container" class="flex justify-center items-center px-4" style="gap:35px">
-                                @foreach ($unansweredQuestions->first()->options as $option)
-                                    <div class="flex flex-col items-center">
+                            <!-- Options -->
+                            <div class="flex items-center relative max-w-xl">
+                                <div class="flex justify-center items-center px-4 gap-[35px]">
+                                    @foreach ($unansweredQuestions->first()->options as $option)
+                                    <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
+                                        <input type="radio"
+                                            name="answer[{{ $user->id }}]"
+                                            value="{{ $option->id }}"
+                                            id="option-{{ $user->id }}-{{ $option->id }}"
+                                            class="hidden peer" />
                                         <div style="width: 60px; height: 60px;"
-                                            class="rounded-full border-2 flex items-center justify-center fw-bold fs-5 
-                                            {{ $survey->options_id == $option->id ? 'checkedoption' : 'border-gray-300 bg-white' }}">
+                                            class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
                                             {{ $option->name }}
                                         </div>
-                                    </div>
-                                @endforeach
+                                    </label>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
+                        @endforeach
                     </div>
-                    
-                    
-                    @endforeach
-                </div>
+
+                    <input type="hidden" name="question_id" value="{{ $unansweredQuestions->first()->id }}">
+
+                    <div class="flex justify-center space-x-4 mt-4">
+                        <button type="button" id="submit-group-evaluation"
+                            class="bg-blue-500 text-white py-2 px-4 rounded">Submit All</button>
+                    </div>
+                </form>
+
+                <div id="message-container" class="mt-4"></div>
+
             </div>
         </div>
-    </div>
     </div>
 
     <script>
@@ -236,6 +247,7 @@
             }
         });
 
+        // Self Evaluation
         document.addEventListener("DOMContentLoaded", function() {
             const form = document.getElementById("question-form");
             const nextButton = document.getElementById("next-button");
@@ -253,6 +265,7 @@
                 const questionId = document.getElementById("question-id").value;
                 const surveyId = document.getElementById("survey-id").value;
                 const optionId = selectedOption.value;
+                const evaluateeId = document.getElementById("evaluatee-id").value;
 
                 fetch("{{ route('survey.submitAnswer') }}", {
                         method: "POST",
@@ -263,7 +276,8 @@
                         body: JSON.stringify({
                             survey_id: surveyId,
                             question_id: questionId,
-                            options_id: optionId
+                            options_id: optionId,
+                            evaluatee_id: evaluateeId
                         })
                     })
                     .then(response => response.json())
@@ -282,6 +296,56 @@
                     .catch(error => console.error("Error:", error));
             });
         });
+
+        // Group Evaluation 
+        document.addEventListener("DOMContentLoaded", function () {
+            const button = document.getElementById("submit-group-evaluation");
+            const messageContainer = document.getElementById("message-container");
+
+            button.addEventListener("click", function () {
+                const questionId = document.querySelector("input[name='question_id']").value;
+                const answers = document.querySelectorAll("input[type='radio']:checked");
+
+                if (answers.length === 0) {
+                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">Please select answers for at least one user.</div>`;
+                    return;
+                }
+
+                let completed = 0;
+
+                answers.forEach((answer) => {
+                    const evaluateeId = answer.name.match(/\d+/)[0]; // extract user ID from name="answer[5]"
+                    const optionId = answer.value;
+
+                    fetch("{{ route('survey.submitGroupAnswer') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                        },
+                        body: JSON.stringify({
+                            question_id: questionId,
+                            evaluatee_id: evaluateeId,
+                            options_id: optionId
+                            // user_id is set from Auth in controller
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        completed++;
+                        if (completed === answers.length) {
+                            messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">All answers submitted successfully.</div>`;
+                            setTimeout(() => location.reload(), 1000);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error:", err);
+                        messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">An error occurred. Please try again.</div>`;
+                    });
+                });
+            });
+        });
+
     </script>
 
 </x-app-layout>

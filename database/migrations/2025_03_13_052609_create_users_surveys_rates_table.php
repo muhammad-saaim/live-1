@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('users_surveys_rates', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('users_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('users_id')->constrained('users')->onDelete('cascade'); // evaluator
+            $table->foreignId('evaluatee_id')->constrained('users')->onDelete('cascade'); // person being evaluated
             $table->foreignId('question_id')->constrained('questions')->onDelete('cascade');
             $table->foreignId('options_id')->constrained('question_options')->onDelete('cascade');
             $table->foreignId('survey_id')->constrained('surveys')->onDelete('cascade');

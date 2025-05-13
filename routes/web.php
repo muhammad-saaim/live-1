@@ -48,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/survey/save-answer', [SurveyRateController::class, 'saveAnswer'])->name('survey.saveAnswer');
     Route::get('/survey/previous-question', [SurveyRateController::class, 'getPreviousQuestion'])->name('survey.previousQuestion');
     Route::post('/survey/submit-answer', [SurveyRateController::class, 'submitAnswer'])->name('survey.submitAnswer');
+    Route::post('/survey/submit-group-answer', [SurveyController::class, 'submitGroupAnswer'])->name('survey.submitGroupAnswer');
     Route::post('survey/ShowSurvey', [SurveyRateController::class, 'ShowSurvey'])->name('survey.ShowSurvey');
 
 

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Question;
 use App\Models\Survey;
+use App\Models\Group;
 use App\Models\UsersSurveysRate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SurveyRateController extends Controller
 {
@@ -13,38 +15,43 @@ class SurveyRateController extends Controller
     {
         $request->validate([
             'survey_id' => 'required|exists:surveys,id',
+            'group_id' => 'nullable',
         ]);
+
         $survey = Survey::find($request->survey_id);
         $questions = $survey->questions;
 
-        if($questions->isEmpty()) {
+        $groupUsers = [];
+
+        if ($request->group_id) {
+            $group = Group::find($request->group_id);
+            $groupUsers = $group ? $group->users : [];
+        }
+
+        if ($questions->isEmpty()) {
             return redirect()->route('dashboard.index')->with('error', 'No questions found for this survey.');
         }
-        $user = auth()->user();
-        // Check if user has already completed the survey
-        $userSurvey = $user->usersSurveysRates()->where('survey_id', $survey->id)->count();
 
-        if ($userSurvey === $survey->questions->count()) {
-            $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
-            return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
-        }
+        $user = auth()->user();
 
         // Get unanswered question IDs
-        $answeredQuestionIds = $user->usersSurveysRates()->where('survey_id', $survey->id)->pluck('question_id')->toArray();
+        $answeredQuestionIds = $user->usersSurveysRates()->where('survey_id', $survey->id)->pluck('question_id', 'evaluatee_id')->toArray();
         
         // Get unanswered questions
         $unansweredQuestions = $questions->whereNotIn('id', $answeredQuestionIds);
-        // dd($unansweredQuestions);
-        $usersurvey = UsersSurveysRate::with('user','survey','question','option')->where('survey_id',$request->survey_id)->where('question_id',$unansweredQuestions->first()->id)->get();
-        // dd($usersurvey);
+
+        // Get the answered survey rates to show the user's responses
+        $usersurvey = UsersSurveysRate::with('user', 'survey', 'question', 'option')
+            ->where('survey_id', $request->survey_id)
+            ->whereIn('question_id', $questions->pluck('id'))
+            ->get();
+
         if ($unansweredQuestions->isEmpty()) {
             return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
         }
-        //dd($unansweredQuestions);
 
-        return view('survey.rate', compact('survey', 'unansweredQuestions','usersurvey'));
+        return view('survey.rate', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers'));
     }
-
 
     public function getNextQuestion(Request $request)
     {
@@ -101,6 +108,7 @@ class SurveyRateController extends Controller
             'survey_id' => 'required|exists:surveys,id',
             'question_id' => 'required|exists:questions,id',
             'options_id' => 'required|exists:question_options,id',
+            'evaluatee_id' => 'required|exists:users,id', 
         ]);
 
         $user = auth()->user();
@@ -108,15 +116,18 @@ class SurveyRateController extends Controller
         // Save response
         UsersSurveysRate::create([
             'users_id' => $user->id,
+            'evaluatee_id' => $request->evaluatee_id,
             'survey_id' => $request->survey_id,
             'question_id' => $request->question_id,
             'options_id' => $request->options_id,
         ]);
 
         // Fetch unanswered question
-        $answeredQuestionIds = $user->usersSurveysRates()
-            ->where('survey_id', $request->survey_id)
-            ->pluck('question_id')->toArray();
+        $answeredQuestionIds = UsersSurveysRate::where([
+            ['users_id', '=', $user->id],
+            ['evaluatee_id', '=', $request->evaluatee_id],
+            ['survey_id', '=', $request->survey_id],
+        ])->pluck('question_id')->toArray();
 
         $nextQuestion = Question::where('survey_id', $request->survey_id)
             ->whereNotIn('id', $answeredQuestionIds)
@@ -138,6 +149,27 @@ class SurveyRateController extends Controller
         }
 
         return response()->json(['status' => 'success', 'message' => 'Answer saved. Loading next question...']);
+    }
+
+    public function submitGroupAnswer(Request $request)
+    {
+        $request->validate([
+            'question_id' => 'required|exists:questions,id',
+            'evaluatee_id' => 'required|exists:users,id',
+            'options_id' => 'required|exists:options,id',
+        ]);
+
+        UsersSurveysRate::create([
+            'user_id' => Auth::id(),
+            'evaluatee_id' => $request->evaluatee_id, 
+            'question_id' => $request->question_id,
+            'options_id' => $request->options_id,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
+        ]);
     }
 
 
