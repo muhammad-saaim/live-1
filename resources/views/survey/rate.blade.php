@@ -81,6 +81,8 @@
                     <input type="hidden" name="evaluatee_id" id="evaluatee-id" value="{{ Auth::id() }}">
 
                     <div class="flex justify-center space-x-4 mt-4">
+                        <button type="button" id="previous-button"
+                            class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600">Previous</button>
                         <button type="button" id="next-button"
                             class="bg-blue-500 text-white py-2 px-4 rounded">Next</button>
                     </div>
@@ -140,35 +142,45 @@
                 <form id="group-evaluation-form">
                     <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5">
                         @foreach ($groupUsers as $user)
-                        <div class="user-block flex justify-center items-center gap-5" style="transform: translateX(-50px);">
-                            <!-- Username -->
-                            <div class="col-1 flex text-sm text-red-500">
-                                <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
-                            </div>
+                            @if($user->id !== Auth::id())
+                            <div class="user-block flex justify-center items-center gap-5" style="transform: translateX(-50px);">
+                                <!-- Username -->
+                                <div class="col-1 flex text-sm text-red-500">
+                                    <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
+                                </div>
 
-                            <!-- Options -->
-                            <div class="flex items-center relative max-w-xl">
-                                <div class="flex justify-center items-center px-4 gap-[35px]">
-                                    @foreach ($unansweredQuestions->first()->options as $option)
-                                    <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
-                                        <input type="radio"
-                                            name="answer[{{ $user->id }}]"
-                                            value="{{ $option->id }}"
-                                            id="option-{{ $user->id }}-{{ $option->id }}"
-                                            class="hidden peer" />
-                                        <div style="width: 60px; height: 60px;"
-                                            class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
-                                            {{ $option->name }}
-                                        </div>
-                                    </label>
-                                    @endforeach
+                                <!-- Options -->
+                                <div class="flex items-center relative max-w-xl">
+                                    <div class="flex justify-center items-center px-4 gap-[35px]">
+                                        @php
+                                            $previousRating = $usersurvey->where('evaluatee_id', $user->id)
+                                                ->where('question_id', $unansweredQuestions->first()->id)
+                                                ->where('users_id', Auth::id())
+                                                ->first();
+                                        @endphp
+                                        @foreach ($unansweredQuestions->first()->options as $option)
+                                        <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
+                                            <input type="radio"
+                                                name="answer[{{ $user->id }}]"
+                                                value="{{ $option->id }}"
+                                                id="option-{{ $user->id }}-{{ $option->id }}"
+                                                class="hidden peer"
+                                                {{ $previousRating && $previousRating->options_id == $option->id ? 'checked' : '' }} />
+                                            <div style="width: 60px; height: 60px;"
+                                                class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
+                                                {{ $option->name }}
+                                            </div>
+                                        </label>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            @endif
                         @endforeach
                     </div>
 
                     <input type="hidden" name="question_id" value="{{ $unansweredQuestions->first()->id }}">
+                    <input type="hidden" name="survey_id" value="{{ $survey->id }}">
 
                     <div class="flex justify-center space-x-4 mt-4">
                         <button type="button" id="submit-group-evaluation"
@@ -251,8 +263,55 @@
         document.addEventListener("DOMContentLoaded", function() {
             const form = document.getElementById("question-form");
             const nextButton = document.getElementById("next-button");
+            const previousButton = document.getElementById("previous-button");
             const questionContainer = document.getElementById("question-container");
             const messageContainer = document.getElementById("message-container");
+
+            previousButton.addEventListener("click", function() {
+                const questionId = document.getElementById("question-id").value;
+                
+                fetch("{{ route('survey.previousQuestion') }}", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    params: {
+                        question_id: questionId
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.question) {
+                        // Update question text
+                        document.querySelector("#question-text").textContent = data.question.question;
+                        // Update question ID
+                        document.getElementById("question-id").value = data.question.id;
+                        // Update options
+                        const optionsContainer = document.querySelector("#options-container");
+                        optionsContainer.innerHTML = '';
+                        data.question.options.forEach(option => {
+                            optionsContainer.innerHTML += `
+                                <label for="option-${option.id}" class="cursor-pointer flex justify-center">
+                                    <input type="radio" name="answer" value="${option.id}"
+                                        id="option-${option.id}" class="hidden peer"
+                                        onchange="updateSelectedOption(this)">
+                                    <div style="width: 60px; height: 60px;"
+                                        class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
+                                        ${option.name}
+                                    </div>
+                                </label>
+                            `;
+                        });
+                    } else {
+                        messageContainer.innerHTML = `<div class="bg-yellow-500 text-white p-3 rounded">No previous question available.</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">An error occurred while loading the previous question.</div>`;
+                });
+            });
 
             nextButton.addEventListener("click", function() {
                 const selectedOption = document.querySelector("input[name='answer']:checked");
@@ -302,9 +361,44 @@
             const button = document.getElementById("submit-group-evaluation");
             const messageContainer = document.getElementById("message-container");
 
+            // Function to update selected option for group evaluation
+            function updateGroupSelectedOption(radioInput) {
+                const name = radioInput.name;
+                // Uncheck all radio buttons with the same name
+                document.querySelectorAll(`input[name="${name}"]`).forEach(radio => {
+                    radio.checked = false;
+                    const circle = radio.nextElementSibling;
+                    circle.style.backgroundColor = '';
+                    circle.style.borderColor = '';
+                    circle.style.color = '';
+                    circle.classList.add('bg-white', 'border-gray-300');
+                });
+
+                // Check the selected radio button and apply custom green styles
+                radioInput.checked = true;
+                const selectedCircle = radioInput.nextElementSibling;
+                selectedCircle.style.backgroundColor = '#8EEB64';
+                selectedCircle.style.borderColor = '#5cb031';
+                selectedCircle.style.color = 'white';
+                selectedCircle.classList.remove('bg-white', 'border-gray-300');
+            }
+
+            // Set up event listeners for group evaluation radio buttons
+            document.querySelectorAll('input[name^="answer["]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    updateGroupSelectedOption(this);
+                });
+            });
+
+            // Initialize any pre-selected options in group evaluation
+            document.querySelectorAll('input[name^="answer["]:checked').forEach(radio => {
+                updateGroupSelectedOption(radio);
+            });
+
             button.addEventListener("click", function () {
                 const questionId = document.querySelector("input[name='question_id']").value;
-                const answers = document.querySelectorAll("input[type='radio']:checked");
+                const surveyId = document.querySelector("input[name='survey_id']").value;
+                const answers = document.querySelectorAll("input[name^='answer[']:checked");
 
                 if (answers.length === 0) {
                     messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">Please select answers for at least one user.</div>`;
@@ -312,35 +406,56 @@
                 }
 
                 let completed = 0;
+                let failed = 0;
 
                 answers.forEach((answer) => {
-                    const evaluateeId = answer.name.match(/\d+/)[0]; // extract user ID from name="answer[5]"
+                    // Extract user ID from the name attribute (answer[user_id])
+                    const evaluateeId = answer.name.match(/\[(\d+)\]/)[1];
                     const optionId = answer.value;
 
                     fetch("{{ route('survey.submitGroupAnswer') }}", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "Accept": "application/json"
                         },
                         body: JSON.stringify({
                             question_id: questionId,
+                            survey_id: surveyId,
                             evaluatee_id: evaluateeId,
                             options_id: optionId
-                            // user_id is set from Auth in controller
                         })
                     })
-                    .then(res => res.json())
+                    .then(async res => {
+                        const contentType = res.headers.get("content-type");
+                        if (contentType && contentType.includes("application/json")) {
+                            const data = await res.json();
+                            if (!res.ok) {
+                                throw new Error(data.message || 'An error occurred');
+                            }
+                            return data;
+                        }
+                        throw new Error('Server returned non-JSON response');
+                    })
                     .then(data => {
                         completed++;
-                        if (completed === answers.length) {
-                            messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">All answers submitted successfully.</div>`;
-                            setTimeout(() => location.reload(), 1000);
+                        if (completed + failed === answers.length) {
+                            if (failed === 0) {
+                                messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">All answers submitted successfully.</div>`;
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                messageContainer.innerHTML = `<div class="bg-yellow-500 text-white p-3 rounded">Some answers were not saved. Please try again.</div>`;
+                            }
                         }
                     })
                     .catch(err => {
                         console.error("Error:", err);
-                        messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">An error occurred. Please try again.</div>`;
+                        failed++;
+                        const errorMessage = err.message || 'An error occurred. Please try again.';
+                        if (completed + failed === answers.length) {
+                            messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${errorMessage}</div>`;
+                        }
                     });
                 });
             });

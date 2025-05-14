@@ -20,7 +20,7 @@ class SurveyExport implements FromView
         $UserSurveys = UsersSurveysRate::with(['user', 'survey', 'question', 'option'])
             // ->where('users_id', $this->user->id)
             ->get();
-// dd($UserSurveys);
+
         return view('reports.export', [
             'UserSurveys' => $UserSurveys
         ]);

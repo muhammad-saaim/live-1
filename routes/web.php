@@ -48,7 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/survey/save-answer', [SurveyRateController::class, 'saveAnswer'])->name('survey.saveAnswer');
     Route::get('/survey/previous-question', [SurveyRateController::class, 'getPreviousQuestion'])->name('survey.previousQuestion');
     Route::post('/survey/submit-answer', [SurveyRateController::class, 'submitAnswer'])->name('survey.submitAnswer');
-    Route::post('/survey/submit-group-answer', [SurveyController::class, 'submitGroupAnswer'])->name('survey.submitGroupAnswer');
+    Route::post('/survey/submit-group-answer', [SurveyRateController::class, 'submitGroupAnswer'])->name('survey.submitGroupAnswer');
     Route::post('survey/ShowSurvey', [SurveyRateController::class, 'ShowSurvey'])->name('survey.ShowSurvey');
 
 
@@ -63,9 +63,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');
-    Route::get('/download-report', [ReportsController::class, 'downloadPdf'])->name('report.download');
-    Route::get('/export-survey', [ReportsController::class, 'exportSurveyExcel'])->name('survey.export');
-
 
     Route::group(['middleware' => ['role:admin']], function () {
 
@@ -73,6 +70,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('surveyModel',SurveyModelController::class);
         Route::resource('survey',SurveyController::class);
         Route::resource('users',UserController::class);
+    
+        Route::get('/download-report', [ReportsController::class, 'downloadPdf'])->name('report.download');
+        Route::get('/export-survey', [ReportsController::class, 'exportSurveyExcel'])->name('survey.export');
 
         Route::prefix('question')->name('question.')->group(function () {
             Route::get('/', [QuestionController::class, 'index'])->name('index'); // List all questions

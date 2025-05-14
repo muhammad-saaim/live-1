@@ -34,19 +34,26 @@ class SurveyRateController extends Controller
 
         $user = auth()->user();
 
-        // Get unanswered question IDs
-        $answeredQuestionIds = $user->usersSurveysRates()->where('survey_id', $survey->id)->pluck('question_id', 'evaluatee_id')->toArray();
+        // Get answered question IDs for self-evaluation only
+        $answeredQuestionIds = $user->usersSurveysRates()
+            ->where('survey_id', $survey->id)
+            ->where('users_id', $user->id)
+            ->where('evaluatee_id', $user->id)
+            ->pluck('question_id')
+            ->toArray();
         
-        // Get unanswered questions
+        // Get unanswered questions for self-evaluation
         $unansweredQuestions = $questions->whereNotIn('id', $answeredQuestionIds);
 
         // Get the answered survey rates to show the user's responses
         $usersurvey = UsersSurveysRate::with('user', 'survey', 'question', 'option')
             ->where('survey_id', $request->survey_id)
+            ->where('users_id', $user->id)
+            ->where('evaluatee_id', $user->id)
             ->whereIn('question_id', $questions->pluck('id'))
             ->get();
 
-        if ($unansweredQuestions->isEmpty()) {
+            if ($unansweredQuestions->isEmpty()) {
             return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
         }
 
@@ -153,23 +160,55 @@ class SurveyRateController extends Controller
 
     public function submitGroupAnswer(Request $request)
     {
-        $request->validate([
-            'question_id' => 'required|exists:questions,id',
-            'evaluatee_id' => 'required|exists:users,id',
-            'options_id' => 'required|exists:options,id',
-        ]);
+        try {
+            $request->validate([
+                'question_id' => 'required|exists:questions,id',
+                'evaluatee_id' => 'required|exists:users,id',
+                'options_id' => 'required|exists:question_options,id',
+                'survey_id' => 'required|exists:surveys,id',
+            ]);
 
-        UsersSurveysRate::create([
-            'user_id' => Auth::id(),
-            'evaluatee_id' => $request->evaluatee_id, 
-            'question_id' => $request->question_id,
-            'options_id' => $request->options_id,
-        ]);
+            // Check if a rating already exists for this user, question, and evaluatee
+            $existingRating = UsersSurveysRate::where([
+                'users_id' => Auth::id(),
+                'evaluatee_id' => $request->evaluatee_id,
+                'question_id' => $request->question_id,
+                'survey_id' => $request->survey_id,
+            ])->first();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
-        ]);
+            if ($existingRating) {
+                // Update existing rating
+                $existingRating->update([
+                    'options_id' => $request->options_id
+                ]);
+            } else {
+                // Create new rating
+                UsersSurveysRate::create([
+                    'users_id' => Auth::id(),
+                    'evaluatee_id' => $request->evaluatee_id, 
+                    'question_id' => $request->question_id,
+                    'options_id' => $request->options_id,
+                    'survey_id' => $request->survey_id,
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Group Answer Submission Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while saving the answer'
+            ], 500);
+        }
     }
 
 
