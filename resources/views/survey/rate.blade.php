@@ -54,11 +54,15 @@
                             <!-- Radio buttons container -->
                             <div id="options-container" class="flex justify-center items-center  px-4 "
                                 style="gap:35px">
+                                @php
+                                    $selfAnswer = isset($selfAnswers) ? $selfAnswers->get($unansweredQuestions->first()->id) : null;
+                                @endphp
                                 @foreach ($unansweredQuestions->first()->options as $option)
                                 <label for="option-{{ $option->id }}" class="cursor-pointer flex justify-center">
                                     <input type="radio" name="answer" value="{{ $option->id }}"
                                         id="option-{{ $option->id }}" class="hidden peer"
-                                        onchange="updateSelectedOption(this)">
+                                        onchange="updateSelectedOption(this)"
+                                        {{ $selfAnswer && $selfAnswer->options_id == $option->id ? 'checked' : '' }}>
                                     <div style="width: 60px; height: 60px;"
                                         class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
                                         {{ $option->name }}
@@ -244,15 +248,18 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Set up event listeners for all radio button labels
+            // Set up event listeners for all radio button labels (self-evaluation only)
             document.querySelectorAll('label[for^="option-"]').forEach(label => {
-                label.addEventListener('click', function() {
-                    const radioInput = this.querySelector('input[type="radio"]');
-                    updateSelectedOption(radioInput);
-                });
+                // Only attach to self-evaluation radios (not group evaluation)
+                const radioInput = label.querySelector('input[type="radio"]');
+                if (radioInput && radioInput.name === 'answer') {
+                    label.addEventListener('click', function() {
+                        updateSelectedOption(radioInput);
+                    });
+                }
             });
 
-            // Initialize any pre-selected option
+            // Initialize any pre-selected option for self-evaluation
             const selectedRadio = document.querySelector('input[name="answer"]:checked');
             if (selectedRadio) {
                 updateSelectedOption(selectedRadio);
@@ -383,7 +390,7 @@
                 selectedCircle.classList.remove('bg-white', 'border-gray-300');
             }
 
-            // Set up event listeners for group evaluation radio buttons
+            // Set up event listeners for group evaluation radio buttons (input only)
             document.querySelectorAll('input[name^="answer["]').forEach(radio => {
                 radio.addEventListener('change', function() {
                     updateGroupSelectedOption(this);

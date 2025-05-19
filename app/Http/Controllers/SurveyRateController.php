@@ -34,30 +34,53 @@ class SurveyRateController extends Controller
 
         $user = auth()->user();
 
-        // Get answered question IDs for self-evaluation only
-        $answeredQuestionIds = $user->usersSurveysRates()
-            ->where('survey_id', $survey->id)
+        // Get all question IDs for this survey
+        $questionIds = $questions->pluck('id')->toArray();
+
+        // Get all group user IDs except the current user
+        $groupUserIds = collect($groupUsers)->pluck('id')->filter(fn($id) => $id != $user->id)->toArray();
+
+        // Get all rates by the current user for this survey
+        $allRates = UsersSurveysRate::where('survey_id', $survey->id)
             ->where('users_id', $user->id)
-            ->where('evaluatee_id', $user->id)
-            ->pluck('question_id')
-            ->toArray();
-        
-        // Get unanswered questions for self-evaluation
-        $unansweredQuestions = $questions->whereNotIn('id', $answeredQuestionIds);
+            ->get();
+
+        // Find questions where self-evaluation is missing
+        $selfUnanswered = array_diff(
+            $questionIds,
+            $allRates->where('evaluatee_id', $user->id)->pluck('question_id')->toArray()
+        );
+
+        // Find questions where any group member is not rated
+        $groupUnanswered = [];
+        foreach ($questionIds as $qid) {
+            foreach ($groupUserIds as $gid) {
+                if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
+                    $groupUnanswered[] = $qid;
+                    break; // Only need to know at least one group member is missing
+                }
+            }
+        }
+
+        // Union of both
+        $unansweredQuestionIds = array_unique(array_merge($selfUnanswered, $groupUnanswered));
+        $unansweredQuestions = $questions->whereIn('id', $unansweredQuestionIds);
 
         // Get the answered survey rates to show the user's responses
         $usersurvey = UsersSurveysRate::with('user', 'survey', 'question', 'option')
             ->where('survey_id', $request->survey_id)
             ->where('users_id', $user->id)
-            ->where('evaluatee_id', $user->id)
             ->whereIn('question_id', $questions->pluck('id'))
             ->get();
 
-            if ($unansweredQuestions->isEmpty()) {
+        // Get previous self-evaluation answers keyed by question_id
+        $selfAnswers = $allRates->where('evaluatee_id', $user->id)->keyBy('question_id');
+
+        if ($unansweredQuestions->isEmpty()) {
             return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
         }
 
-        return view('survey.rate', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers'));
+        return view('survey.rate', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers', 'selfAnswers'));
     }
 
     public function getNextQuestion(Request $request)
@@ -120,6 +143,17 @@ class SurveyRateController extends Controller
 
         $user = auth()->user();
 
+        // Prevent duplicate answers
+        $exists = UsersSurveysRate::where([
+            'users_id' => $user->id,
+            'evaluatee_id' => $request->evaluatee_id,
+            'question_id' => $request->question_id,
+            'survey_id' => $request->survey_id,
+        ])->exists();
+        if ($exists) {
+            return response()->json(['status' => 'error', 'message' => 'This question is already answered.'], 409);
+        }
+
         // Save response
         UsersSurveysRate::create([
             'users_id' => $user->id,
@@ -140,19 +174,51 @@ class SurveyRateController extends Controller
             ->whereNotIn('id', $answeredQuestionIds)
             ->first();
 
-        if (!$nextQuestion) {
-            // update user's survey status is_completed to true
-            /*
-             * public function surveys(): BelongsToMany
-                {
-                    return $this->belongsToMany(Survey::class, 'users_surveys')
-                        ->withPivot('is_completed')
-                        ->withTimestamps();  // Include created_at and updated_at
-                }
-             * */
-            $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
+        // --- New logic: Only mark as completed if all self and group evaluations are done ---
+        // Get all question IDs for this survey
+        $questionIds = Question::where('survey_id', $request->survey_id)->pluck('id')->toArray();
 
+        // Get all group user IDs except the current user
+        $groupUsers = [];
+        if ($request->group_id) {
+            $group = \App\Models\Group::find($request->group_id);
+            $groupUsers = $group ? $group->users : [];
+        }
+        $groupUserIds = collect($groupUsers)->pluck('id')->filter(fn($id) => $id != $user->id)->toArray();
+
+        // Get all rates by the current user for this survey
+        $allRates = UsersSurveysRate::where('survey_id', $request->survey_id)
+            ->where('users_id', $user->id)
+            ->get();
+
+        // Find questions where self-evaluation is missing
+        $selfUnanswered = array_diff(
+            $questionIds,
+            $allRates->where('evaluatee_id', $user->id)->pluck('question_id')->toArray()
+        );
+
+        // Find questions where any group member is not rated
+        $groupUnanswered = [];
+        foreach ($questionIds as $qid) {
+            foreach ($groupUserIds as $gid) {
+                if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
+                    $groupUnanswered[] = $qid;
+                    break;
+                }
+            }
+        }
+
+        // If there are no unanswered self or group questions, mark as completed
+        if (empty($selfUnanswered) && empty($groupUnanswered)) {
+            $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
             return response()->json(['status' => 'success', 'message' => 'All questions completed. Thank you!']);
+        }
+        // --- End new logic ---
+
+        if (!$nextQuestion) {
+            // (Old logic, now only fallback)
+            // $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
+            return response()->json(['status' => 'success', 'message' => 'Answer saved. Loading next question...']);
         }
 
         return response()->json(['status' => 'success', 'message' => 'Answer saved. Loading next question...']);
@@ -168,29 +234,28 @@ class SurveyRateController extends Controller
                 'survey_id' => 'required|exists:surveys,id',
             ]);
 
-            // Check if a rating already exists for this user, question, and evaluatee
-            $existingRating = UsersSurveysRate::where([
+            // Prevent duplicate answers
+            $exists = UsersSurveysRate::where([
                 'users_id' => Auth::id(),
                 'evaluatee_id' => $request->evaluatee_id,
                 'question_id' => $request->question_id,
                 'survey_id' => $request->survey_id,
-            ])->first();
-
-            if ($existingRating) {
-                // Update existing rating
-                $existingRating->update([
-                    'options_id' => $request->options_id
-                ]);
-            } else {
-                // Create new rating
-                UsersSurveysRate::create([
-                    'users_id' => Auth::id(),
-                    'evaluatee_id' => $request->evaluatee_id, 
-                    'question_id' => $request->question_id,
-                    'options_id' => $request->options_id,
-                    'survey_id' => $request->survey_id,
-                ]);
+            ])->exists();
+            if ($exists) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'This question is already answered for this user.'
+                ], 409);
             }
+
+            // Create new rating
+            UsersSurveysRate::create([
+                'users_id' => Auth::id(),
+                'evaluatee_id' => $request->evaluatee_id, 
+                'question_id' => $request->question_id,
+                'options_id' => $request->options_id,
+                'survey_id' => $request->survey_id,
+            ]);
 
             return response()->json([
                 'status' => 'success',
