@@ -19,30 +19,50 @@ class InviteController extends Controller
         $this->inviteService = $inviteService;
     }
 
-    public function sendInvite(Request $request)
-    {
-        $request->validate([
-            'emails' => 'required|array',
-            'emails.*' => 'required|email',
-            'relations' => 'required|array',
-            'relations.*' => 'required|exists:relations,id',
-            'group_id' => 'required|exists:groups,id',
-        ]);
-    
-        $group = Group::findOrFail($request->group_id);
-    
-        // Check if user is a member of the group
-        if (!auth()->user()->groups->contains($group->id)) {
-            return redirect()->back()->with('error', 'You are not authorized to invite members to this group.');
-        }
-    
-        foreach ($request->emails as $index => $email) {
-            $relationId = $request->relations[$index];
-            $this->inviteService->invite(auth()->user(), $email, $group, $relationId);
-        }
-    
-        return redirect()->back()->with('success', 'Invitations sent successfully.');
+ public function sendInvite(Request $request)
+{
+    $isFriendGroup = strtolower($request->group_name) === 'friend';
+
+    // Validation rules
+    $rules = [
+        'emails' => 'required|array',
+        'emails.*' => 'required|email',
+        'group_id' => 'required|exists:groups,id',
+    ];
+
+    if (!$isFriendGroup) {
+        $rules['relations'] = 'required|array';
+        $rules['relations.*'] = 'required|exists:relations,id';
     }
+
+    $request->validate($rules);
+
+    $group = Group::findOrFail($request->group_id);
+
+    // Check if user is a member of the group
+    if (!auth()->user()->groups->contains($group->id)) {
+        return redirect()->back()->with('error', 'You are not authorized to invite members to this group.');
+    }
+
+    // Get the 'Friend' relation ID once if needed
+    $friendRelationId = $isFriendGroup
+        ? Relation::whereRaw('LOWER(name) = ?', ['friend'])->value('id')
+        : null;
+
+    foreach ($request->emails as $index => $email) {
+        $relationId = $isFriendGroup ? $friendRelationId : $request->relations[$index];
+
+        // Optional safeguard
+        if (!$relationId) {
+            continue; // or handle as error
+        }
+
+        $this->inviteService->invite(auth()->user(), $email, $group, $relationId);
+    }
+
+    return redirect()->back()->with('success', 'Invitations sent successfully.');
+}
+
 
     public function acceptInvite(Request $request)
     {

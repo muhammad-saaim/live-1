@@ -54,7 +54,7 @@ class Survey extends Model
 
     public function usersSurveysRates()
     {
-        return $this->hasMany(UsersSurveysRate::class, 'surveys_id');
+        return $this->hasMany(UsersSurveysRate::class, 'survey_id');
     }
 
 }

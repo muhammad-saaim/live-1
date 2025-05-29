@@ -13,6 +13,7 @@ class SurveyRateController extends Controller
 {
     public function rate(Request $request)
     {
+        
         $request->validate([
             'survey_id' => 'required|exists:surveys,id',
             'group_id' => 'nullable',

@@ -77,6 +77,7 @@ class GroupController extends Controller
     public function show(Group $group)
     {
         $relations = Relation::all(); // Fetch all relations
+        
         return view('group.show', compact('group', 'relations'));
     }
 

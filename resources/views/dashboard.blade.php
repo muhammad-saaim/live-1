@@ -88,43 +88,67 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     @foreach(auth()->user()->groups as $group)
-                        <div style="background-color: {{ $group->color }};" class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
-                            <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}</h1>
-                            <p class="text-gray-700 ml-2">{{ __('User') }}: {{ $group->users()->count() }}</p>
-                            <p class="text-gray-500 ml-2 text-sm">{{ __('Created') }}
-                                : {{ $group->created_at->format('d/m/Y')  }}
-                            </p>
-                            <div class="">
-                                <x-group-progressbar class="mb-2" num="100"> Me</x-group-progressbar>
-                                <x-group-progressbar num="40"> Others</x-group-progressbar>
-                            </div>
+                    <div style="background-color: {{ $group->color }};"
+                        class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
+                        <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}</h1>
+                        <p class="text-gray-700 ml-2">{{ __('User') }}: {{ $group->users()->count() }}</p>
+                        <p class="text-gray-500 ml-2 text-sm">{{ __('Created') }}
+                            : {{ $group->created_at->format('d/m/Y') }}
+                        </p>
+                        <div class="">
+                            @php
+                                $allSurveys = $group->defaultSurveys();
+                                $totalQuestions = 0;
+                                $completedQuestions = 0;
 
-                            <div class="space-y-3 mt-3 p-2">
+                                foreach ($allSurveys as $survey) {
+                                    $totalQuestions += $survey->questions->count();
+                                    $completedQuestions += $survey->usersSurveysRates()
+                                        ->where('users_id', auth()->id())
+                                        ->where('evaluatee_id', auth()->id())
+                                        ->count();
+                                }
+
+                                $selfPercentage = $totalQuestions > 0 ? round(($completedQuestions / $totalQuestions) * 100, 1) : 0;
+
+                                // For others' completion rate
+                                $othersCompletedQuestions = 0;
+                                foreach ($allSurveys as $survey) {
+                                    $othersCompletedQuestions += $survey->usersSurveysRates()
+                                        ->where('users_id', auth()->id())
+                                        ->where('evaluatee_id', '!=', auth()->id())
+                                        ->count();
+                                }
+
+                                $othersPercentage = $totalQuestions > 0 ? round(($othersCompletedQuestions / $totalQuestions) * 100, 1) : 0;
+                            @endphp
+                            <x-group-progressbar class="mb-2" :num="$selfPercentage">Me </x-group-progressbar>
+                            <x-group-progressbar :num="$othersPercentage">Others </x-group-progressbar>
+                        </div>
+
+                        <div class="space-y-3 mt-3 p-2">
+                            @foreach($group->defaultSurveys() as $survey)
                                 <div class="flex items-center justify-between space-x-2">
-                                    <label for="loyalty-survey" class="w-1/3 text-gray-600">Loyalty</label>
-                                    <button
-                                        class="w-1/4 bg-white text-ml-color-lime border border-ml-color-lime rounded-xl px-2 py-1 hover:bg-ml-color-sky transition">
-                                        Solve
-                                    </button>
-                                    <select id="loyalty-survey"
-                                            class="w-1/2 border border-gray-300 rounded-xl px-2 py-1 text-gray-600">
-                                        <option value="status">{{ __("Participant Status") }}</option>
+                                    <label for="survey-{{ $survey->id }}" class="w-2/5 text-gray-600 truncate whitespace-nowrap overflow-hidden" title="{{ $survey->title }}">{{ $survey->title }}</label>
+                                    <form action="{{ route('rate.survey') }}" method="POST" class="w-1/4">
+                                        @csrf
+                                        <input type="hidden" name="survey_id" value="{{ $survey->id }}">
+                                        <input type="hidden" name="group_id" value="{{ $group->id }}">
+                                        <button type="submit" class="w-full bg-white text-ml-color-lime border border-ml-color-lime rounded-xl px-2 py-1 hover:bg-ml-color-sky transition text-center text-secondary">
+                                            Rate
+                                        </button>
+                                    </form>
+                                    <select id="survey-{{ $survey->id }}"
+                                        class="w-1/2 border border-gray-300 rounded-xl px-2 py-1 text-gray-600">
+                                        <option value="status">
+                                            {{ $survey->users()->wherePivot('is_completed', true)->count() }} / {{ $group->users->count() }} {{ __('Completed') }}
+                                        </option>
                                     </select>
                                 </div>
+                            @endforeach
+                        </div>
 
-                                <div class="flex items-center justify-between space-x-2">
-                                    <label for="confidence-survey" class="w-1/3 text-gray-600">Confidence</label>
-                                    <button
-                                        class="w-1/4 bg-white text-ml-color-lime border border-ml-color-lime rounded-xl px-2 py-1 hover:bg-ml-color-sky transition">
-                                        Solve
-                                    </button>
-                                    <select id="confidence-survey"
-                                            class="w-1/2 border border-gray-300 rounded-xl px-2 py-1 text-gray-600">
-                                        <option value="status">{{ __("Participant Status") }}</option>
-                                    </select>
-                                </div>
-                            </div>
-
+                       
                             <div class="pt-3">
                                 <a href="{{ route('group.show',$group->id) }}">
                                     <x-secondary-button class=" flex justify-center w-full">
@@ -132,7 +156,9 @@
                                     </x-secondary-button>
                                 </a>
                             </div>
-                        </div>
+                            </form>
+                        
+                    </div>
                     @endforeach
                 </div>
             </div>

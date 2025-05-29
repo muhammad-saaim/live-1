@@ -22,7 +22,7 @@
                     </div>
                     @endif
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 ">
                         {{-- @foreach (auth()->user()->groups as $group) --}}
                         <div style="background-color: {{ $group->color }};"
                             class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
@@ -32,34 +32,56 @@
                                 : {{ $group->created_at->format('d/m/Y') }}
                             </p>
                             <div class="">
-                                <x-group-progressbar class="mb-2" num="100"> Me</x-group-progressbar>
-                                <x-group-progressbar num="40"> Others</x-group-progressbar>
+                                @php
+                                    $allSurveys = $group->defaultSurveys();
+                                    $totalQuestions = 0;
+                                    $completedQuestions = 0;
+
+                                    foreach ($allSurveys as $survey) {
+                                        $totalQuestions += $survey->questions->count();
+                                        $completedQuestions += $survey->usersSurveysRates()
+                                            ->where('users_id', auth()->id())
+                                            ->where('evaluatee_id', auth()->id())
+                                            ->count();
+                                    }
+
+                                    $selfPercentage = $totalQuestions > 0 ? round(($completedQuestions / $totalQuestions) * 100, 1) : 0;
+
+                                    // For others' completion rate
+                                    $othersCompletedQuestions = 0;
+                                    foreach ($allSurveys as $survey) {
+                                        $othersCompletedQuestions += $survey->usersSurveysRates()
+                                            ->where('users_id', auth()->id())
+                                            ->where('evaluatee_id', '!=', auth()->id())
+                                            ->count();
+                                    }
+
+                                    $othersPercentage = $totalQuestions > 0 ? round(($othersCompletedQuestions / $totalQuestions) * 100, 1) : 0;
+                                @endphp
+                                <x-group-progressbar class="mb-2" :num="$selfPercentage">Me ({{ $completedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
+                                <x-group-progressbar :num="$othersPercentage">Others ({{ $othersCompletedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
                             </div>
 
                             <div class="space-y-3 mt-3 p-2">
-                                <div class="flex items-center justify-between space-x-2">
-                                    <label for="loyalty-survey" class="w-1/3 text-gray-600">Loyalty</label>
-                                    <button
-                                        class="w-1/4 bg-white text-ml-color-lime border border-ml-color-lime rounded-xl px-2 py-1 hover:bg-ml-color-sky transition">
-                                        Solve
-                                    </button>
-                                    <select id="loyalty-survey"
-                                        class="w-1/2 border border-gray-300 rounded-xl px-2 py-1 text-gray-600">
-                                        <option value="status">{{ __('Participant Status') }}</option>
-                                    </select>
-                                </div>
-
-                                <div class="flex items-center justify-between space-x-2">
-                                    <label for="confidence-survey" class="w-1/3 text-gray-600">Confidence</label>
-                                    <button
-                                        class="w-1/4 bg-white text-ml-color-lime border border-ml-color-lime rounded-xl px-2 py-1 hover:bg-ml-color-sky transition">
-                                        Solve
-                                    </button>
-                                    <select id="confidence-survey"
-                                        class="w-1/2 border border-gray-300 rounded-xl px-2 py-1 text-gray-600">
-                                        <option value="status">{{ __('Participant Status') }}</option>
-                                    </select>
-                                </div>
+                                @foreach($group->defaultSurveys() as $survey)
+                                    <div class="flex items-center justify-between space-x-2">
+                                        <label for="survey-{{ $survey->id }}" class="w-2/5 text-gray-600 truncate whitespace-nowrap overflow-hidden" title="{{ $survey->title }}">{{ $survey->title }}</label>
+                                        <form action="{{ route('rate.survey') }}" method="POST" class="w-1/4">
+                                            @csrf
+                                            <input type="hidden" name="survey_id" value="{{ $survey->id }}">
+                                            <input type="hidden" name="group_id" value="{{ $group->id }}">
+                                            <button type="submit" class="w-full bg-white text-ml-color-lime border border-ml-color-lime rounded-xl px-2 py-1 hover:bg-ml-color-sky transition text-center text-secondary">
+                                                Rate
+                                            </button>
+                                        </form>
+                                        <select id="survey-{{ $survey->id }}"
+                                            class="w-1/2 border border-gray-300 rounded-xl px-2 py-1 text-gray-600">
+                                            <option value="status">
+                                                {{ $survey->users()->where('users_surveys.is_completed', true)->count() }} / {{ $group->users->count() }} {{ __('Completed') }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                @endforeach
                             </div>
 
                             <div class="pt-3 flex space-x-2">
@@ -153,6 +175,7 @@
                         </form>
                     </div> --}}
                     <hr class="my-3">
+                  
                     <div class="my-3">
                         <h3 class="text-xl font-semibold text-gray-800">{{ $group->name ?? __('Group Name') }}</h3>
 
@@ -254,78 +277,95 @@
                                 Add
                             </button>
                         </div>
-                        
                     </div>
-
+                    
                     <!-- Modal -->
-                    <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel"
-                        aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                            <div class="modal-content border-0 shadow-lg rounded-4" x-data="emailForm()">
-                                <div class="modal-header bg-primary text-white rounded-top-4">
-                                    <h5 class="modal-title" id="inviteModalLabel">
-                                        <i class="bi bi-person-plus me-2"></i> Invite Members
-                                    </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
+                   <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4"
+            x-data="emailForm('{{ strtolower($group?->groupTypes?->first()?->name) === 'friend' ? 'true' : 'false' }}')">
 
-                                <form action="{{ route('group.invite') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="group_id" value="{{ $group->id }}">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title" id="inviteModalLabel">
+                    <i class="bi bi-person-plus me-2"></i> Invite Members
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
 
-                                    <div class="modal-body">
-                                        <!-- Hidden inputs for email submission -->
-                                        <template x-for="(email, index) in emails" :key="index">
-                                            <input type="hidden" name="emails[]" :value="email">
-                                        </template>
+            <form action="{{ route('group.invite') }}" method="POST">
+                @csrf
+                <input type="hidden" name="group_id" value="{{ $group->id }}">
+                <input type="hidden" name="group name" value="{{ $group?->groupTypes?->first()?->name}}">
 
-                                        <!-- Email Input -->
-                                        <div class="flex items-center space-x-2 mb-3">
-                                            <x-form-input-small type="email" name="email_input" x-model="newEmail"
-                                                @keydown.enter.prevent="addEmail" placeholder="Enter email" />
-                                            <button type="button" @click="dropdownOpen = !dropdownOpen"
-                                                class="px-2 py-2" style="margin-left: -40px">
-                                                <svg :class="{ 'rotate-180': dropdownOpen }"
-                                                    class="w-4 h-4 transition-transform duration-200" fill="none"
-                                                    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </button>
-                                            <x-outline-button type="button" @click="addEmail">Add</x-outline-button>
-                                        </div>
+                <div class="modal-body">
+                    <!-- Hidden email inputs -->
+                    <template x-for="(email, index) in emails" :key="index">
+                        <input type="hidden" name="emails[]" :value="email">
+                    </template>
 
-                                        <!-- Dropdown Email List -->
-                                        <div x-show="dropdownOpen"
-                                            class="border rounded shadow-sm max-h-40 overflow-y-auto text-sm bg-white">
-                                            <template x-if="emails.length === 0">
-                                                <div class="text-gray-500 px-4 py-2">No emails added yet.</div>
-                                            </template>
-                                            <template x-for="(email, index) in emails" :key="index">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Relation for <span x-text="email"></span></label>
-                                                    <select class="form-select" name="relations[]" x-model="relations[index]">
-                                                        <option value="" disabled selected>Select relation</option>
-                                                        <template x-for="relation in relationOptions" :key="relation.id">
-                                                            <option :value="relation.id" x-text="`${capitalize(relation.name)} – ${capitalize(relation.inverse_name)}`"></option>
-                                                        </template>
-                                                    </select>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
+                    <!-- Hidden relation inputs only if not a friend group -->
+                    <template x-if="!isFriendGroup">
+                        <template x-for="(relation, index) in relations" :key="index">
+                            <input type="hidden" name="relations[]" :value="relation">
+                        </template>
+                    </template>
 
-                                    <div class="modal-footer border-0 pb-4 px-4">
-                                        <button type="button" class="btn btn-outline-secondary"
-                                            data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>
-                                            Invite</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+                    <!-- Email Input -->
+                    <div class="flex items-center space-x-2 mb-3">
+                        <x-form-input-small type="email" name="email_input" x-model="newEmail"
+                            @keydown.enter.prevent="addEmail" placeholder="Enter email" />
+                        <button type="button" @click="dropdownOpen = !dropdownOpen"
+                            class="px-2 py-2" style="margin-left: -40px">
+                            <svg :class="{ 'rotate-180': dropdownOpen }"
+                                class="w-4 h-4 transition-transform duration-200" fill="none"
+                                stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <x-outline-button type="button" @click="addEmail">Add</x-outline-button>
                     </div>
+
+                    <!-- Dropdown Email List -->
+                    <div x-show="dropdownOpen"
+                        class="border rounded shadow-sm max-h-40 overflow-y-auto text-sm bg-white">
+                        <template x-if="emails.length === 0">
+                            <div class="text-gray-500 px-4 py-2">No emails added yet.</div>
+                        </template>
+                        <template x-for="(email, index) in emails" :key="index">
+                            <div class="mb-3">
+                                <label class="form-label">Email: <span x-text="email"></span></label>
+
+                                <!-- Only show the relation select if not a friend group -->
+                                <template x-if="!isFriendGroup">
+                                    <div class="mt-1">
+                                        <label class="form-label">Relation</label>
+                                        <select class="form-select" name="relations[]" x-model="relations[index]">
+                                            <option value="" disabled selected>Select relation</option>
+                                            <template x-for="relation in relationOptions" :key="relation.id">
+                                                <option :value="relation.id"
+                                                    x-text="`${capitalize(relation.name)} – ${capitalize(relation.inverse_name)}`">
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send me-1"></i> Invite
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
                     @php
                     $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
                     @endphp
@@ -359,41 +399,45 @@
     </div>
 </x-app-layout>
 <script>
-    function emailForm() {
-        return {
-            newEmail: '',
-            emails: [],
-            dropdownOpen: false,
-            relations: [],
-            relationOptions: @json($relations), // inject Laravel variable
-            addEmail() {
-                const email = this.newEmail.trim();
-                if (email && this.validateEmail(email) && !this.emails.includes(email)) {
-                    this.emails.push(email);
-                    this.relations.push(''); // match index for relation
-                    this.newEmail = '';
+   function emailForm(isFriendGroup = false) {
+    return {
+        newEmail: '',
+        emails: [],
+        dropdownOpen: false,
+        relations: [],
+        isFriendGroup: isFriendGroup === true || isFriendGroup === 'true', // normalize type
+        relationOptions: @json($relations),
+        
+        addEmail() {
+            const email = this.newEmail.trim();
+            if (email && this.validateEmail(email) && !this.emails.includes(email)) {
+                this.emails.push(email);
+                this.relations.push('');
+                this.newEmail = '';
+                if (!this.isFriendGroup) {
                     this.dropdownOpen = true;
                 }
-                this.newEmail = '';
-            },
-            removeEmail(index) {
-                this.emails.splice(index, 1);
-                this.relations.splice(index, 1); // remove related relation
-            },
-            validateEmail(email) {
-                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return re.test(email);
-            },
-            getInverseName(relationId) {
-                const rel = this.relationOptions.find(r => r.id == relationId);
-                return rel ? rel.inverse_name : '';
-            },
-            capitalize(str) {
-                if (!str) return '';
-                return str.charAt(0).toUpperCase() + str.slice(1);
             }
-        };
-    }
+        },
+        removeEmail(index) {
+            this.emails.splice(index, 1);
+            this.relations.splice(index, 1);
+        },
+        validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        },
+        getInverseName(relationId) {
+            const rel = this.relationOptions.find(r => r.id == relationId);
+            return rel ? rel.inverse_name : '';
+        },
+        capitalize(str) {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+    };
+}
+
 
     
     //Select All Script
