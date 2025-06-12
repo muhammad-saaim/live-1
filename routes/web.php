@@ -64,6 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/group/invite', [InviteController::class, 'sendInvite'])->name('group.invite');
     Route::get('/groups/accept-invite', [InviteController::class, 'acceptInvite'])->name('groups.accept-invite');
     Route::delete('/groups/{group}/members/{user}', [GroupController::class, 'removeMember'])->name('groups.removeMember');
+    Route::delete('/groups/{group}/members', [GroupController::class, 'removeMember'])->name('groups.removeMembers');
 
 
     Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');

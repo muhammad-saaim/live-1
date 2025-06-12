@@ -27,13 +27,13 @@ class InviteService
 
         if ($user) {
             $link = url("/groups/accept-invite?token={$token}");
-            Mail::raw("Click the invitation link to Join the group: $link", function ($message) use ($email) {
+            Mail::raw("$inviter->name invited you to Join  $group->name: $link", function ($message) use ($email) {
                 $message->to($email)
                     ->subject("Group Invitation");
             });
         } else {
             $link = url("/register?token={$token}");
-            Mail::raw("Click the invitation link to register: $link", function ($message) use ($email) {
+            Mail::raw("$inviter->name invited you to register: $link", function ($message) use ($email) {
                 $message->to($email)
                     ->subject("Group Invitation");
             });

@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\User;
 use App\Models\GroupType;
+use App\Models\Invitation;
 use App\Models\InvitedMember;
 use Illuminate\Http\Request;
 use App\Models\Relation;
+use App\Models\UserRelative;
 
 class GroupController extends Controller
 {
@@ -78,7 +80,62 @@ class GroupController extends Controller
     {
         $relations = Relation::all(); // Fetch all relations
         
-        return view('group.show', compact('group', 'relations'));
+        // Get all invitations for this group
+        $invitations = Invitation::where('group_id', $group->id)->get();
+        
+        // Get all users from the group
+        $groupUsers = $group->users;
+        
+        // Create a collection to store all users (both group members and invited users)
+        $allUsers = collect();
+        
+        // Add existing group users
+        foreach ($groupUsers as $user) {
+            $allUsers->push([
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'status' => 'member',
+                'relation' => $group->groupTypes->first()?->name == 'Family' 
+                    ? UserRelative::where('relative_id', $user->id)
+                        ->where('user_id', $group->group_admin ?? auth()->id())
+                        ->with('relation')
+                        ->first()?->relation?->name ?? 'N/A'
+                    : $group->groupTypes->first()?->name ?? 'N/A'
+            ]);
+        }
+        
+        // Add invited users
+        foreach ($invitations as $invitation) {
+            // Check if user exists with this email
+            $existingUser = User::where('email', $invitation->email)->first();
+            
+            if ($existingUser) {
+                // If user exists, use their actual data
+                $allUsers->push([
+                    'id' => $existingUser->id,
+                    'name' => $existingUser->name,
+                    'email' => $existingUser->email,
+                    'status' => 'invited',
+                    'relation' => $group->groupTypes->first()?->name == 'Family'
+                        ? Relation::find($invitation->relation_id)?->name ?? 'N/A'
+                        : $group->groupTypes->first()?->name ?? 'N/A'
+                ]);
+            } else {
+                // If user doesn't exist, use placeholder data
+                $allUsers->push([
+                    'id' => null,
+                    'name' => 'Not Registered',
+                    'email' => $invitation->email,
+                    'status' => 'invited',
+                    'relation' => $group->groupTypes->first()?->name == 'Family'
+                        ? Relation::find($invitation->relation_id)?->name ?? 'N/A'
+                        : $group->groupTypes->first()?->name ?? 'N/A'
+                ]);
+            }
+        }
+        
+        return view('group.show', compact('group', 'relations', 'allUsers'));
     }
 
     /**
@@ -141,20 +198,37 @@ class GroupController extends Controller
         return redirect()->route('dashboard.index')->with('success', 'Group deleted successfully.');
     }
 
-    public function removeMember(Group $group, User $user)
-{
-    // dd($group);
-    // Check if the current user can modify the group
-    if (!auth()->user()->groups->contains($group->id)) {
-        return redirect()->back()->with('error', 'Unauthorized action.');
+    public function removeMember(Request $request, Group $group)
+    {
+        // Check if the current user can modify the group
+        if (!auth()->user()->groups->contains($group->id)) {
+            return redirect()->back()->with('error', 'Unauthorized action.');
+        }
+
+        // Handle multiple user removal
+        if ($request->has('user_ids')) {
+            $userIds = $request->input('user_ids');
+            // Don't allow removing the group admin
+            $userIds = array_filter($userIds, function($userId) use ($group) {
+                return $userId != $group->group_admin;
+            });
+            
+            if (!empty($userIds)) {
+                $group->users()->detach($userIds);
+                return redirect()->back()->with('success', 'Selected members removed successfully.');
+            }
+        }
+        // Handle single user removal
+        else if ($request->has('user')) {
+            $user = User::findOrFail($request->user);
+            // Don't allow removing the group admin
+            if ($user->id != $group->group_admin) {
+                $group->users()->detach($user->id);
+                return redirect()->back()->with('success', 'Member removed successfully.');
+            }
+        }
+
+        return redirect()->back()->with('error', 'No valid members selected for removal.');
     }
-
-    // Detach the user from the group
-    $group->users()->detach($user->id);
-
-    return redirect()->back()->with('success', 'Member removed successfully.');
-}
-
-
 
 }

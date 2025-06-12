@@ -180,99 +180,88 @@
                         <h3 class="text-xl font-semibold text-gray-800">{{ $group->name ?? __('Group Name') }}</h3>
 
                         <div class="overflow-hidden rounded-lg border border-gray-300 shadow-sm mt-4">
-                            <table class="min-w-full divide-y divide-gray-200 text-sm text-left bg-white">
-                                <thead class="bg-gray-100 text-gray-600">
-                                    <tr>
-                                        <th class="px-4 py-2 border border-gray-300">
-                                            <input type="checkbox" id="select-all"
-                                                class="form-checkbox h-4 w-4 text-blue-600">
-                                        </th>
-                                        <th class="px-4 py-2 border border-gray-300">#</th>
-                                        <th class="px-4 py-2 border border-gray-300">Name</th>
-                                        <th class="px-4 py-2 border border-gray-300">Email</th>
-                                        <th class="px-4 py-2 border border-gray-300">Member</th>
-                                        <th class="px-4 py-2 border border-gray-300">Status</th>
-                                        <th class="px-4 py-2 border border-gray-300">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    @foreach ($group->users as $user)
-                                    <tr>
-                                        <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                            <input type="checkbox" name="selected_users[]" value="{{ $user->id }}"
-                                                class="row-checkbox form-checkbox h-4 w-4 text-blue-600">
-                                        </td>
-                                        <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                            {{ $loop->iteration }}</td>
-                                        <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                            {{ $user->name }}</td>
-                                        <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                            {{ $user->email }}</td>
-                                            @if($group->groupTypes?->first()?->name == 'Family')
+                            <form id="bulk-action-form" method="POST" action="{{ route('groups.removeMembers', ['group' => $group->id]) }}">
+                                @csrf
+                                @method('DELETE')
+                                <div class="p-4 border-b border-gray-200">
+                                    <button type="submit" id="bulk-remove-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm hidden" onclick="return confirm('Are you sure you want to remove selected members?');">
+                                        Remove Selected
+                                    </button>
+                                </div>
+                                <table class="min-w-full divide-y divide-gray-200 text-sm text-left bg-white">
+                                    <thead class="bg-gray-100 text-gray-600">
+                                        <tr>
+                                            <th class="px-4 py-2 border border-gray-300">
+                                                <input type="checkbox" id="select-all"
+                                                    class="form-checkbox h-4 w-4 text-blue-600">
+                                            </th>
+                                            <th class="px-4 py-2 border border-gray-300">#</th>
+                                            <th class="px-4 py-2 border border-gray-300">Name</th>
+                                            <th class="px-4 py-2 border border-gray-300">Email</th>
+                                            <th class="px-4 py-2 border border-gray-300">Member</th>
+                                            <th class="px-4 py-2 border border-gray-300">Status</th>
+                                            <th class="px-4 py-2 border border-gray-300">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
+                                        @foreach ($allUsers as $user)
+                                        <tr>
                                             <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                                @if ($user->id === auth()->id())
-                                                    Me
-                                                @else
-                                                    @php
-                                                        $relation = \App\Models\UserRelative::where('relative_id', $user->id)
-                                                            ->where('user_id', $group->owner_id ?? auth()->id())
-                                                            ->with('relation')
-                                                            ->first();
-                                                    @endphp
-                                                    {{ $relation?->relation?->name ?? 'N/A' }}
+                                                <input type="checkbox" name="selected_users[]" value="{{ $user['id'] }}"
+                                                    class="row-checkbox form-checkbox h-4 w-4 text-blue-600">
+                                            </td>
+                                            <td class="px-4 py-2 border border-gray-300 text-gray-700">
+                                                {{ $loop->iteration }}</td>
+                                            <td class="px-4 py-2 border border-gray-300 text-gray-700">
+                                                {{ $user['name'] }}</td>
+                                            <td class="px-4 py-2 border border-gray-300 text-gray-700">
+                                                {{ $user['email'] }}</td>
+                                            <td class="px-4 py-2 border border-gray-300 text-gray-700">
+                                                {{ $user['relation'] }}
+                                            </td>
+                                            <td class="px-4 py-2 border border-gray-300">
+                                                <p class="px-3 text-center py-1 rounded text-white {{ $user['status'] === 'member' ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600' }} transition">
+                                                    {{ $user['status'] === 'member' ? 'Active' : 'Invited' }}
+                                                </p>
+                                            </td>
+                                            
+                                            <td class="px-4 py-2 border border-gray-300 text-gray-700 text-center">
+                                                @if ($user['status'] === 'member')
+                                                    @if (Auth::id() === $user['id'])
+                                                        {{-- Leave Button for Logged-in User --}}
+                                                        <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user['id']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to leave this group?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="w-24 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                                                Leave
+                                                            </button>
+                                                        </form>
+                                                    @elseif (Auth::id() === $group->group_admin)
+                                                        {{-- Admin can remove other members --}}
+                                                        <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user['id']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this member?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="w-24 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                                                Remove
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        {{-- Disabled Remove Button for Others --}}
+                                                        <button class="w-24 bg-gray-300 text-gray-600 px-3 py-1 rounded text-sm cursor-not-allowed" disabled>
+                                                            Remove
+                                                        </button>
+                                                    @endif
                                                 @endif
                                             </td>
-                                            @else
-                                            <td class="px-4 py-2 border border-gray-300 text-gray-700">
-                                                {{$group?->groupTypes?->first()?->name ?? 'N/A'}}
-                                                </td>
-                                                @endif
-                                        <td class="px-4 py-2 border border-gray-300">
-                                            <p
-                                                class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Invite Accept</p>
-                                        </td>
-                                        
-                                        <td class="px-4 py-2 border border-gray-300 text-gray-700 text-center">
-                                            @if (Auth::id() === $user->id)
-                                                {{-- Leave Button for Logged-in User --}}
-                                                <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to leave this group?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
-                                                        Leave
-                                                    </button>
-                                                </form>
-                                            @elseif (Auth::id() === $group->group_admin)
-                                                {{-- Admin can remove other members --}}
-                                                <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user->id]) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this member?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
-                                                        Remove
-                                                    </button>
-                                                </form>
-                                            @else
-                                                {{-- Disabled Remove Button for Others --}}
-                                                <button class="bg-gray-300 text-gray-600 px-3 py-1 rounded text-sm cursor-not-allowed" disabled>
-                                                    Remove
-                                                </button>
-                                            @endif
-                                        </td>
-                                        
-                                        
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </form>
                         </div>
 
                         <!-- Buttons below the table -->
                         <div class="flex gap-4 mt-4">
-                            <button 
-                                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
-                                Delete
-                            </button>
-                        
                             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteModal">
                                 Add
                             </button>
@@ -445,10 +434,49 @@
     document.addEventListener('DOMContentLoaded', function() {
         const selectAllCheckbox = document.getElementById('select-all');
         const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const bulkRemoveBtn = document.getElementById('bulk-remove-btn');
+        const bulkActionForm = document.getElementById('bulk-action-form');
+
+        // Handle select all checkbox
         selectAllCheckbox.addEventListener('change', function() {
             rowCheckboxes.forEach(checkbox => {
-                checkbox.checked = selectAllCheckbox.checked;
+                checkbox.checked = this.checked;
             });
+            updateBulkActionButton();
+        });
+
+        // Handle individual checkboxes
+        rowCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateBulkActionButton();
+                // Update select all checkbox state
+                selectAllCheckbox.checked = Array.from(rowCheckboxes).every(cb => cb.checked);
+            });
+        });
+
+        // Update bulk action button visibility
+        function updateBulkActionButton() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            bulkRemoveBtn.classList.toggle('hidden', checkedBoxes.length === 0);
+        }
+
+        // Handle form submission
+        bulkActionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const userIds = Array.from(checkedBoxes).map(cb => cb.value);
+            
+            // Add selected user IDs to form
+            userIds.forEach(userId => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'user_ids[]';
+                input.value = userId;
+                bulkActionForm.appendChild(input);
+            });
+
+            // Submit the form
+            this.submit();
         });
     });
 </script>

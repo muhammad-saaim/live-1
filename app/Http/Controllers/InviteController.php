@@ -66,9 +66,10 @@ class InviteController extends Controller
 
     public function acceptInvite(Request $request)
     {
+        
         $token = $request->query('token');
         $invitation = Invitation::where('token', $token)->first();
-
+// dd($invitation);
         if (!$invitation) {
             return redirect('/')->with('error', 'Invalid or expired invitation link.');
         }
