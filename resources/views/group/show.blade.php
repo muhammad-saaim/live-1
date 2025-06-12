@@ -199,8 +199,8 @@
                                             <th class="px-4 py-2 border border-gray-300">Name</th>
                                             <th class="px-4 py-2 border border-gray-300">Email</th>
                                             <th class="px-4 py-2 border border-gray-300">Member</th>
-                                            <th class="px-4 py-2 border border-gray-300">Status</th>
-                                            <th class="px-4 py-2 border border-gray-300">Action</th>
+                                            <th class="px-4 py-2 border border-gray-300 text-center">Status</th>
+                                            <th class="px-4 py-2 border border-gray-300 text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200">
