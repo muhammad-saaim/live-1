@@ -81,7 +81,7 @@ class SurveyRateController extends Controller
             return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
         }
 
-        return view('survey.rate', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers', 'selfAnswers'));
+        return view('survey.rate', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers', 'selfAnswers', 'request'));
     }
 
     public function getNextQuestion(Request $request)
@@ -235,9 +235,11 @@ class SurveyRateController extends Controller
                 'survey_id' => 'required|exists:surveys,id',
             ]);
 
+            $user = auth()->user();
+
             // Prevent duplicate answers
             $exists = UsersSurveysRate::where([
-                'users_id' => Auth::id(),
+                'users_id' => $user->id,
                 'evaluatee_id' => $request->evaluatee_id,
                 'question_id' => $request->question_id,
                 'survey_id' => $request->survey_id,
@@ -251,17 +253,61 @@ class SurveyRateController extends Controller
 
             // Create new rating
             UsersSurveysRate::create([
-                'users_id' => Auth::id(),
+                'users_id' => $user->id,
                 'evaluatee_id' => $request->evaluatee_id, 
                 'question_id' => $request->question_id,
                 'options_id' => $request->options_id,
                 'survey_id' => $request->survey_id,
             ]);
 
+            // Check if all group members have been rated for this question
+            $groupUsers = [];
+            if ($request->has('group_id')) {
+                $group = \App\Models\Group::find($request->group_id);
+                $groupUsers = $group ? $group->users : [];
+            }
+
+            // If no group context, just return success
+            if (empty($groupUsers)) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
+                ]);
+            }
+
+            // Get all group user IDs (including self)
+            $groupUserIds = $groupUsers->pluck('id')->toArray();
+
+            // Get all ratings by current user for this specific question
+            $questionRatings = UsersSurveysRate::where([
+                'users_id' => $user->id,
+                'question_id' => $request->question_id,
+                'survey_id' => $request->survey_id,
+            ])->pluck('evaluatee_id')->toArray();
+
+            // Check if all group members have been rated for this question
+            $allRated = true;
+            foreach ($groupUserIds as $groupId) {
+                if (!in_array($groupId, $questionRatings)) {
+                    $allRated = false;
+                    break;
+                }
+            }
+
+            if ($allRated) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'All group members rated for this question. Question completed!',
+                    'question_completed' => true
+                ]);
+            }
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
+                'question_completed' => false
             ]);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'status' => 'error',

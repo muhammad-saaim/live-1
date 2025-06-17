@@ -390,10 +390,40 @@
                         <h3 class="text-lg font-semibold mb-2">Default Surveys</h3>
 
                         @foreach ($defaultSurveys as $survey)
+                        @php
+                            // Count questions where all group members have been rated by the current user
+                            $totalQuestions = $survey->questions->count();
+                            $completedQuestions = 0;
+                            
+                            foreach ($survey->questions as $question) {
+                                // Get all group user IDs (including self)
+                                $groupUserIds = $group->users->pluck('id')->toArray();
+                                
+                                // Get all ratings by current user for this specific question
+                                $questionRatings = auth()->user()->usersSurveysRates
+                                    ->where('survey_id', $survey->id)
+                                    ->where('question_id', $question->id)
+                                    ->pluck('evaluatee_id')
+                                    ->toArray();
+                                
+                                // Check if all group members have been rated for this question
+                                $allRated = true;
+                                foreach ($groupUserIds as $groupId) {
+                                    if (!in_array($groupId, $questionRatings)) {
+                                        $allRated = false;
+                                        break;
+                                    }
+                                }
+                                
+                                if ($allRated) {
+                                    $completedQuestions++;
+                                }
+                            }
+                        @endphp
                         <x-dashboard-progressbar
-                            :completedQuestion="auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->where('users_id', auth()->id())->where('evaluatee_id', auth()->id())->count()"
+                            :completedQuestion="$completedQuestions"
                             :survey_id="$survey->id"
-                            :totalQuestion="$survey->questions->count()"
+                            :totalQuestion="$totalQuestions"
                             :group="$group">
                             {{ $survey->title }}
                         </x-dashboard-progressbar>

@@ -11,21 +11,13 @@
             <div class="d-flex justify-content-between w-100 p-2">
                 <button class="btn btn-danger">Leave the Survey</button>
 
-                <div class="btn-group d-none" role="group" aria-label="Toggle View">
-                    <!-- Check if coming from group (group_id present) to determine which tab to open -->
-                    @if($request->has('group_id') || isset($groupUsers) && count($groupUsers) > 0)
-                        <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off" checked>
-                        <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
+                <div class="btn-group" role="group" aria-label="Toggle View">
+                    <!-- Removed 'checked' from questionView and added to defaultView -->
+                    <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off">
+                    <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
 
-                        <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off">
-                        <label class="btn btn-outline-primary rounded-end-pill" for="defaultView">Default View</label>
-                    @else
-                        <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off">
-                        <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
-
-                        <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off" checked>
-                        <label class="btn btn-outline-primary rounded-end-pill" for="defaultView">Default View</label>
-                    @endif
+                    <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary rounded-end-pill" for="defaultView">Default View</label>
                 </div>
             </div>
         </div>
@@ -152,60 +144,44 @@
 
                 <!-- Group Evaluation -->
                 <form id="group-evaluation-form">
-                    <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5 d-flex">
-                        <!-- Usernames Column -->
-                        <div class="col-4 d-flex flex-column justify-start" style="margin-top: 1.5rem;">
-                            @foreach ($groupUsers as $user)  
-                            <div class="p-3 max-w-7xl mx-auto" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
-                                <div class="mb-3 text-md text-red-500">
-                                    @if($user->id == Auth::id())
-                                        <p>Self</p>
-                                    @else
-                                        <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
-                                    @endif
+                    <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5">
+                        @foreach ($groupUsers as $user)
+                            @if($user->id !== Auth::id())
+                            <div class="user-block flex justify-center items-center gap-5" style="transform: translateX(-50px);">
+                                <!-- Username -->
+                                <div class="col-1 flex text-sm text-red-500">
+                                    <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
                                 </div>
-                            </div>
-                            @endforeach
-                        </div>
 
-                        <!-- Options Column (unchanged) -->
-                        <div class="col-6 py-4 max-w-7xl space-y-6 border" style="border: 1px solid rgb(184, 184, 184) !important; border-radius:30px;">
-                            @foreach ($groupUsers as $user)  
-                            <div class="flex justify-center items-center relative max-w-xl">
-                                <div class="flex justify-center items-center px-4 gap-5" >
-                                    @php
-                                        $previousRating = $usersurvey->where('evaluatee_id', $user->id)
-                                            ->where('question_id', $unansweredQuestions->first()->id)
-                                            ->where('users_id', Auth::id())
-                                            ->first();
-                                    @endphp
-                                    {{-- {{$user->id}} --}}
-                                    @foreach ($unansweredQuestions->first()->options as $option)
-                                    <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
-                                        <input type="radio"
-                                            name="answer[{{ $user->id }}]"
-                                            value="{{ $option->id }}"
-                                            id="option-{{ $user->id }}-{{ $option->id }}"
-                                            class="hidden peer"
-                                            {{ $previousRating && $previousRating->options_id == $option->id ? 'checked' : '' }} />
-                                        <div style="width: 60px; height: 60px;"
-                                            class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
-                                            {{ $option->name }}
-                                        </div>
-                                    </label>
-                                    @endforeach
+                                <!-- Options -->
+                                <div class="flex items-center relative max-w-xl">
+                                    <div class="flex justify-center items-center px-4 gap-5">
+                                        @php
+                                            $previousRating = $usersurvey->where('evaluatee_id', $user->id)
+                                                ->where('question_id', $unansweredQuestions->first()->id)
+                                                ->where('users_id', Auth::id())
+                                                ->first();
+                                        @endphp
+                                        @foreach ($unansweredQuestions->first()->options as $option)
+                                        <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
+                                            <input type="radio"
+                                                name="answer[{{ $user->id }}]"
+                                                value="{{ $option->id }}"
+                                                id="option-{{ $user->id }}-{{ $option->id }}"
+                                                class="hidden peer"
+                                                {{ $previousRating && $previousRating->options_id == $option->id ? 'checked' : '' }} />
+                                            <div style="width: 60px; height: 60px;"
+                                                class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
+                                                {{ $option->name }}
+                                            </div>
+                                        </label>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
-                            {{-- Add separator unless it's the last item --}}
-                            @if (!$loop->last)
-                                <div style="display: flex; justify-content: center;">
-                                    <hr style="border: 1px solid rgb(184, 184, 184); width: 90%;">
-                                </div> 
                             @endif
-                            @endforeach
-                        </div>
+                        @endforeach
                     </div>
-
 
                     <input type="hidden" name="question_id" value="{{ $unansweredQuestions->first()->id }}">
                     <input type="hidden" name="survey_id" value="{{ $survey->id }}">
@@ -230,10 +206,7 @@
             const groupContainer = document.getElementById('group-container');
 
             // Set initial state based on which radio is checked
-            if (questionView.checked) {
-                groupContainer.style.display = 'block';
-                questionContainer.style.display = 'none';
-            } else if (defaultView.checked) {
+            if (defaultView.checked) {
                 questionContainer.style.display = 'block';
                 groupContainer.style.display = 'none';
             }
