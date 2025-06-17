@@ -26,8 +26,11 @@ class SurveyRateController extends Controller
 
         if ($request->group_id) {
             $group = Group::find($request->group_id);
-            $groupUsers = $group ? $group->users : [];
+            $groupUsers = $group ? $group->users->sortByDesc(function ($user) {
+                return $user->id === Auth::id(); // Auth user will get `true` (1), others `false` (0)
+            })->values() : collect();
         }
+        // dd($groupUsers);
 
         if ($questions->isEmpty()) {
             return redirect()->route('dashboard.index')->with('error', 'No questions found for this survey.');
@@ -78,7 +81,11 @@ class SurveyRateController extends Controller
         $selfAnswers = $allRates->where('evaluatee_id', $user->id)->keyBy('question_id');
 
         if ($unansweredQuestions->isEmpty()) {
-            return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
+            if ($request->group_id) {
+                return redirect()->route('group.show', ['group' => $request->group_id])->with('error', 'All questions are completed.');
+            } else {
+                return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
+            }
         }
 
         return view('survey.rate', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers', 'selfAnswers', 'request'));
@@ -144,15 +151,17 @@ class SurveyRateController extends Controller
 
         $user = auth()->user();
 
-        // Prevent duplicate answers
+        // Check if this rating already exists
         $exists = UsersSurveysRate::where([
             'users_id' => $user->id,
             'evaluatee_id' => $request->evaluatee_id,
             'question_id' => $request->question_id,
             'survey_id' => $request->survey_id,
         ])->exists();
+        
         if ($exists) {
-            return response()->json(['status' => 'error', 'message' => 'This question is already answered.'], 409);
+            // Silently skip existing rating and return success
+            return response()->json(['status' => 'success', 'message' => 'This question is already answered, skipped.', 'skipped' => true]);
         }
 
         // Save response
@@ -237,18 +246,21 @@ class SurveyRateController extends Controller
 
             $user = auth()->user();
 
-            // Prevent duplicate answers
+            // Check if this rating already exists
             $exists = UsersSurveysRate::where([
                 'users_id' => $user->id,
                 'evaluatee_id' => $request->evaluatee_id,
                 'question_id' => $request->question_id,
                 'survey_id' => $request->survey_id,
             ])->exists();
+            
             if ($exists) {
+                // Silently skip existing rating and return success
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'This question is already answered for this user.'
-                ], 409);
+                    'status' => 'success',
+                    'message' => 'Rating already exists for this user, skipped.',
+                    'skipped' => true
+                ]);
             }
 
             // Create new rating
@@ -323,6 +335,73 @@ class SurveyRateController extends Controller
         }
     }
 
+    public function checkExistingRatings(Request $request)
+    {
+        try {
+            $request->validate([
+                'question_id' => 'required|exists:questions,id',
+                'survey_id' => 'required|exists:surveys,id',
+                'group_id' => 'nullable|exists:groups,id',
+            ]);
+
+            $user = auth()->user();
+            $questionId = $request->question_id;
+            $surveyId = $request->survey_id;
+
+            // Get group users if group_id is provided
+            $groupUsers = [];
+            if ($request->group_id) {
+                $group = \App\Models\Group::find($request->group_id);
+                $groupUsers = $group ? $group->users : [];
+            }
+
+            // If no group context, check only self-rating
+            if (empty($groupUsers)) {
+                $selfExists = UsersSurveysRate::where([
+                    'users_id' => $user->id,
+                    'evaluatee_id' => $user->id,
+                    'question_id' => $questionId,
+                    'survey_id' => $surveyId,
+                ])->exists();
+
+                return response()->json([
+                    'status' => 'success',
+                    'all_existing' => $selfExists,
+                    'existing_count' => $selfExists ? 1 : 0,
+                    'total_count' => 1
+                ]);
+            }
+
+            // Get all group user IDs (including self)
+            $groupUserIds = $groupUsers->pluck('id')->toArray();
+
+            // Get existing ratings for this question by current user
+            $existingRatings = UsersSurveysRate::where([
+                'users_id' => $user->id,
+                'question_id' => $questionId,
+                'survey_id' => $surveyId,
+            ])->pluck('evaluatee_id')->toArray();
+
+            $existingCount = count($existingRatings);
+            $totalCount = count($groupUserIds);
+            $allExisting = $existingCount === $totalCount;
+
+            return response()->json([
+                'status' => 'success',
+                'all_existing' => $allExisting,
+                'existing_count' => $existingCount,
+                'total_count' => $totalCount,
+                'existing_user_ids' => $existingRatings
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Check Existing Ratings Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while checking existing ratings'
+            ], 500);
+        }
+    }
 
     public function ShowSurvey($survey_id){
 

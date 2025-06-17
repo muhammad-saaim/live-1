@@ -184,7 +184,12 @@
                   
                     <div class="my-3">
                         <h3 class="text-xl font-semibold text-gray-800">{{ $group->name ?? __('Group Name') }}</h3>
-
+                        <!-- Buttons below the table -->
+                        <div class="flex mt-4">
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteModal">
+                                Add Members
+                            </button>
+                        </div>
                         <div class="overflow-hidden rounded-lg border border-gray-300 shadow-sm mt-4">
                             <form id="bulk-action-form" method="POST" action="{{ route('groups.removeMembers', ['group' => $group->id]) }}">
                                 @csrf
@@ -274,13 +279,6 @@
                                     </tbody>
                                 </table>
                             </form>
-                        </div>
-
-                        <!-- Buttons below the table -->
-                        <div class="flex gap-4 mt-4">
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteModal">
-                                Add
-                            </button>
                         </div>
                     </div>
                     

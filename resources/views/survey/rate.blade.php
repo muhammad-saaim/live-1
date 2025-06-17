@@ -159,7 +159,7 @@
                             <div class="p-3 max-w-7xl mx-auto" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
                                 <div class="mb-3 text-md text-red-500">
                                     @if($user->id == Auth::id())
-                                        <p>Self</p>
+                                        <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }} (Self)</p>
                                     @else
                                         <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
                                     @endif
@@ -179,7 +179,6 @@
                                             ->where('users_id', Auth::id())
                                             ->first();
                                     @endphp
-                                    {{-- {{$user->id}} --}}
                                     @foreach ($unansweredQuestions->first()->options as $option)
                                     <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
                                         <input type="radio"
@@ -338,7 +337,7 @@
                             `;
                         });
                     } else {
-                        messageContainer.innerHTML = `<div class="bg-yellow-500 text-white p-3 rounded">No previous question available.</div>`;
+                        messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">No previous question available.</div>`;
                     }
                 })
                 .catch(error => {
@@ -439,59 +438,129 @@
                     return;
                 }
 
-                let completed = 0;
-                let failed = 0;
-
-                answers.forEach((answer) => {
-                    // Extract user ID from the name attribute (answer[user_id])
-                    const evaluateeId = answer.name.match(/\[(\d+)\]/)[1];
-                    const optionId = answer.value;
-
-                    fetch("{{ route('survey.submitGroupAnswer') }}", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                            "Accept": "application/json"
-                        },
-                        body: JSON.stringify({
-                            question_id: questionId,
-                            survey_id: surveyId,
-                            evaluatee_id: evaluateeId,
-                            options_id: optionId
-                        })
+                // First, check if all ratings are already existing
+                const groupId = "{{ $request->group_id ?? '' }}";
+                
+                fetch("{{ route('survey.checkExistingRatings') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        question_id: questionId,
+                        survey_id: surveyId,
+                        group_id: groupId
                     })
-                    .then(async res => {
-                        const contentType = res.headers.get("content-type");
-                        if (contentType && contentType.includes("application/json")) {
-                            const data = await res.json();
-                            if (!res.ok) {
-                                throw new Error(data.message || 'An error occurred');
-                            }
-                            return data;
-                        }
-                        throw new Error('Server returned non-JSON response');
-                    })
-                    .then(data => {
-                        completed++;
-                        if (completed + failed === answers.length) {
-                            if (failed === 0) {
-                                messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">All answers submitted successfully.</div>`;
-                                setTimeout(() => location.reload(), 1000);
-                            } else {
-                                messageContainer.innerHTML = `<div class="bg-yellow-500 text-white p-3 rounded">Some answers were not saved. Please try again.</div>`;
-                            }
-                        }
-                    })
-                    .catch(err => {
-                        console.error("Error:", err);
-                        failed++;
-                        const errorMessage = err.message || 'An error occurred. Please try again.';
-                        if (completed + failed === answers.length) {
-                            messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${errorMessage}</div>`;
-                        }
-                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.all_existing) {
+                        messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">All ratings for this question are already submitted. No new ratings to process.</div>`;
+                        return;
+                    }
+                    
+                    // Continue with submission if not all ratings exist
+                    submitSelectedAnswers();
+                })
+                .catch(error => {
+                    console.error("Error checking existing ratings:", error);
+                    // Continue with submission if check fails
+                    submitSelectedAnswers();
                 });
+
+                function submitSelectedAnswers() {
+                    // Filter out already answered questions
+                    const newAnswers = Array.from(answers).filter(answer => {
+                        const evaluateeId = answer.name.match(/\[(\d+)\]/)[1];
+                        // Check if this user has already been rated for this question
+                        const existingRating = document.querySelector(`input[name="answer[${evaluateeId}]"]:checked`);
+                        if (existingRating) {
+                            // Check if this rating was already saved (has data attribute or is pre-selected)
+                            return !existingRating.hasAttribute('data-already-saved') && !existingRating.defaultChecked;
+                        }
+                        return true;
+                    });
+
+                    if (newAnswers.length === 0) {
+                        messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">No new ratings to submit. Selected users have already been rated.</div>`;
+                        return;
+                    }
+
+                    let completed = 0;
+                    let failed = 0;
+                    let skipped = 0;
+
+                    newAnswers.forEach((answer) => {
+                        // Extract user ID from the name attribute (answer[user_id])
+                        const evaluateeId = answer.name.match(/\[(\d+)\]/)[1];
+                        const optionId = answer.value;
+
+                        fetch("{{ route('survey.submitGroupAnswer') }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                                "Accept": "application/json"
+                            },
+                            body: JSON.stringify({
+                                question_id: questionId,
+                                survey_id: surveyId,
+                                evaluatee_id: evaluateeId,
+                                options_id: optionId
+                            })
+                        })
+                        .then(async res => {
+                            const contentType = res.headers.get("content-type");
+                            if (contentType && contentType.includes("application/json")) {
+                                const data = await res.json();
+                                if (!res.ok) {
+                                    throw new Error(data.message || 'An error occurred');
+                                }
+                                return data;
+                            }
+                            throw new Error('Server returned non-JSON response');
+                        })
+                        .then(data => {
+                            if (data.skipped) {
+                                skipped++;
+                            } else {
+                                completed++;
+                            }
+                            // Mark this answer as already saved
+                            answer.setAttribute('data-already-saved', 'true');
+                            
+                            if (completed + failed + skipped === newAnswers.length) {
+                                let message = '';
+                                if (completed > 0) {
+                                    message += `Successfully submitted ${completed} new rating(s). `;
+                                }
+                                if (skipped > 0) {
+                                    message += `Skipped ${skipped} existing rating(s). `;
+                                }
+                                if (failed > 0) {
+                                    message += `Failed to submit ${failed} rating(s).`;
+                                }
+                                
+                                if (failed === 0) {
+                                    messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${message.trim()}</div>`;
+                                    setTimeout(() => location.reload(), 1000);
+                                } else {
+                                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${message.trim()}</div>`;
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Error:", err);
+                            failed++;
+                            const errorMessage = err.message || 'An error occurred. Please try again.';
+                            if (completed + failed + skipped === newAnswers.length) {
+                                messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${errorMessage}</div>`;
+                            }
+                        });
+                    });
+                }
             });
         });
 
