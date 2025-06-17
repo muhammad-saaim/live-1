@@ -55,25 +55,32 @@ class RegisteredUserController extends Controller
         $invitations = Invitation::where('email', $request->email)->get();
         foreach ($invitations as $invitation) {
             // Automatically add the user to the invited group(s)
-            $group = Group::find($invitation->group_id);
+            $group = Group::with('groupTypes')->find($invitation->group_id);
             if ($group) {
                 $user->groups()->attach($group->id, [
                     'invited_by' => $invitation->invited_by,
                 ]);
-            }
 
-            UserRelative::create([
-                'user_id' => $invitation->invited_by,
-                'relative_id' => $user->id,
-                'relation_id' => $invitation->relation_id,
-            ]);
+                // Only save relations if this is a family group
+                $isFamilyGroup = $group->groupTypes->contains(function ($type) {
+                    return strtolower($type->name) === 'family';
+                });
 
-            $relation = Relation::find($invitation->relation_id);
+                if ($isFamilyGroup) {
+                    UserRelative::create([
+                        'user_id' => $invitation->invited_by,
+                        'relative_id' => $user->id,
+                        'relation_id' => $invitation->relation_id,
+                    ]);
 
-            // Only proceed if relation exists
-            if ($relation) {
-                storeInverseRelation($user->id, $invitation->invited_by, $relation->name);
-                linkNewRelativeWithExistingRelations($invitation->invited_by, $user->id, $relation->name, $user->gender);
+                    $relation = Relation::find($invitation->relation_id);
+
+                    // Only proceed if relation exists
+                    if ($relation) {
+                        storeInverseRelation($user->id, $invitation->invited_by, $relation->name);
+                        linkNewRelativeWithExistingRelations($invitation->invited_by, $user->id, $relation->name, $user->gender);
+                    }
+                }
             }
 
             // Delete the invitation after accepting it

@@ -86,11 +86,17 @@
 
                             <div class="pt-3 flex space-x-2">
                                 <!-- Edit Group Button -->
-                                <a href="{{ route('group.edit', $group->id) }}"
-                                   class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 transition duration-150 {{ Auth::id() !== $group->group_admin ? 'opacity-50 cursor-not-allowed' : '' }}" 
-                                {{ Auth::id() !== $group->group_admin ? 'disabled' : '' }}>
-                                    <i class="fas fa-edit mr-2"></i> Edit 
-                                </a>
+                                @if (Auth::id() === $group->group_admin)
+                                    <a href="{{ route('group.edit', $group->id) }}"
+                                       class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 transition duration-150">
+                                        <i class="fas fa-edit mr-2"></i> Edit 
+                                    </a>
+                                @else
+                                    <button disabled
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md opacity-50 cursor-not-allowed">
+                                        <i class="fas fa-edit mr-2"></i> Edit 
+                                    </button>
+                                @endif
                             
                                 <!-- Delete Group Form -->
                                 <form action="{{ route('group.destroy', $group->id) }}" method="POST"
@@ -184,9 +190,11 @@
                                 @csrf
                                 @method('DELETE')
                                 <div class="p-4 border-b border-gray-200">
-                                    <button type="submit" id="bulk-remove-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm hidden" onclick="return confirm('Are you sure you want to remove selected members?');">
-                                        Remove Selected
-                                    </button>
+                                    @if (Auth::id() === $group->group_admin)
+                                        <button type="submit" id="bulk-remove-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm hidden" onclick="return confirm('Are you sure you want to remove selected members?');">
+                                            Remove Selected
+                                        </button>
+                                    @endif
                                 </div>
                                 <table class="min-w-full divide-y divide-gray-200 text-sm text-left bg-white">
                                     <thead class="bg-gray-100 text-gray-600">
@@ -219,8 +227,9 @@
                                             <td class="px-4 py-2 border border-gray-300 text-gray-700">
                                                 {{ $user['relation'] }}
                                             </td>
+
                                             <td class="px-4 py-2 border border-gray-300">
-                                                <p class="px-3 text-center py-1 rounded text-white {{ $user['status'] === 'member' ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600' }} transition">
+                                                <p class="px-3 text-center py-1 rounded text-white {{ $user['status'] === 'member' ? 'bg-green-500 hover:bg-green-600' : 'bg-ml-color-orange hover:bg-ml-color-orange' }} transition">
                                                     {{ $user['status'] === 'member' ? 'Active' : 'Invited' }}
                                                 </p>
                                             </td>
@@ -229,16 +238,15 @@
                                                 @if ($user['status'] === 'member')
                                                     @if (Auth::id() === $user['id'])
                                                         {{-- Leave Button for Logged-in User --}}
-                                                        <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user['id']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to leave this group?');">
-                                                            @csrf
+                                                        <form action="{{ route('groups.removeMembers', ['group' => $group->id, 'user' => $user['id']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to leave this group?');">
                                                             @method('DELETE')
+                                                            <input type="hidden" name="user_id" value="{{ $user['id'] }}">
                                                             <button type="submit" class="w-24 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
                                                                 Leave
                                                             </button>
                                                         </form>
                                                     @elseif (Auth::id() === $group->group_admin)
-                                                        {{-- Admin can remove other members --}}
-                                                        <form action="{{ route('groups.removeMember', ['group' => $group->id, 'user' => $user['id']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this member?');">
+                                                        <form action="{{ route('groups.removeMembers', ['group' => $group->id, 'user' => $user['id']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this member?');">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="w-24 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
@@ -246,11 +254,19 @@
                                                             </button>
                                                         </form>
                                                     @else
-                                                        {{-- Disabled Remove Button for Others --}}
                                                         <button class="w-24 bg-gray-300 text-gray-600 px-3 py-1 rounded text-sm cursor-not-allowed" disabled>
                                                             Remove
                                                         </button>
                                                     @endif
+                                                @elseif ($user['status'] === 'invited' && Auth::id() === $group->group_admin)
+                                                    {{-- Cancel Invitation Button for Group Admin --}}
+                                                    <form action="{{ route('groups.cancelInvitation', ['group' => $group->id, 'email' => $user['email']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this invitation?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="w-24 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                                            Cancel
+                                                        </button>
+                                                    </form>
                                                 @endif
                                             </td>
                                         </tr>
@@ -269,91 +285,96 @@
                     </div>
                     
                     <!-- Modal -->
-                   <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4"
-            x-data="emailForm('{{ strtolower($group?->groupTypes?->first()?->name) === 'friend' ? 'true' : 'false' }}')">
+                    <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-md">
+                            <div class="modal-content border-0 shadow-lg rounded-4"
+                                x-data="emailForm('{{ strtolower($group?->groupTypes?->first()?->name) === 'friend' ? 'true' : 'false' }}')">
 
-            <div class="modal-header bg-primary text-white rounded-top-4">
-                <h5 class="modal-title" id="inviteModalLabel">
-                    <i class="bi bi-person-plus me-2"></i> Invite Members
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+                                <div class="modal-header bg-primary text-white rounded-top-4">
+                                    <h5 class="modal-title" id="inviteModalLabel">
+                                        <i class="bi bi-person-plus me-2"></i> Invite Members
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
 
-            <form action="{{ route('group.invite') }}" method="POST">
-                @csrf
-                <input type="hidden" name="group_id" value="{{ $group->id }}">
-                <input type="hidden" name="group name" value="{{ $group?->groupTypes?->first()?->name}}">
+                                <form action="{{ route('group.invite') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="group_id" value="{{ $group->id }}">
+                                    <input type="hidden" name="group name" value="{{ $group?->groupTypes?->first()?->name}}">
 
-                <div class="modal-body">
-                    <!-- Hidden email inputs -->
-                    <template x-for="(email, index) in emails" :key="index">
-                        <input type="hidden" name="emails[]" :value="email">
-                    </template>
+                                    <div class="modal-body">
+                                        <!-- Hidden email inputs -->
+                                        <template x-for="(email, index) in emails" :key="index">
+                                            <input type="hidden" name="emails[]" :value="email">
+                                        </template>
 
-                    <!-- Hidden relation inputs only if not a friend group -->
-                    <template x-if="!isFriendGroup">
-                        <template x-for="(relation, index) in relations" :key="index">
-                            <input type="hidden" name="relations[]" :value="relation">
-                        </template>
-                    </template>
-
-                    <!-- Email Input -->
-                    <div class="flex items-center space-x-2 mb-3">
-                        <x-form-input-small type="email" name="email_input" x-model="newEmail"
-                            @keydown.enter.prevent="addEmail" placeholder="Enter email" />
-                        <button type="button" @click="dropdownOpen = !dropdownOpen"
-                            class="px-2 py-2" style="margin-left: -40px">
-                            <svg :class="{ 'rotate-180': dropdownOpen }"
-                                class="w-4 h-4 transition-transform duration-200" fill="none"
-                                stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <x-outline-button type="button" @click="addEmail">Add</x-outline-button>
-                    </div>
-
-                    <!-- Dropdown Email List -->
-                    <div x-show="dropdownOpen"
-                        class="border rounded shadow-sm max-h-40 overflow-y-auto text-sm bg-white">
-                        <template x-if="emails.length === 0">
-                            <div class="text-gray-500 px-4 py-2">No emails added yet.</div>
-                        </template>
-                        <template x-for="(email, index) in emails" :key="index">
-                            <div class="mb-3">
-                                <label class="form-label">Email: <span x-text="email"></span></label>
-
-                                <!-- Only show the relation select if not a friend group -->
-                                <template x-if="!isFriendGroup">
-                                    <div class="mt-1">
-                                        <label class="form-label">Relation</label>
-                                        <select class="form-select" name="relations[]" x-model="relations[index]">
-                                            <option value="" disabled selected>Select relation</option>
-                                            <template x-for="relation in relationOptions" :key="relation.id">
-                                                <option :value="relation.id"
-                                                    x-text="`${capitalize(relation.name)} – ${capitalize(relation.inverse_name)}`">
-                                                </option>
+                                        <!-- Hidden relation inputs only if not a friend group -->
+                                        <template x-if="!isFriendGroup">
+                                            <template x-for="(relation, index) in relations" :key="index">
+                                                <input type="hidden" name="relations[]" :value="relation">
                                             </template>
-                                        </select>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-                    </div>
-                </div>
+                                        </template>
 
-                <div class="modal-footer border-0 pb-4 px-4">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-send me-1"></i> Invite
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+                                        <!-- Email Input -->
+                                        <div class="flex items-center space-x-2 mb-3">
+                                            <input type="email" class="w-full border border-gray-300 rounded-md px-3 py-1 text-gray-700 focus:ring-ml-color-lime focus:border-ml-color-lime" name="email_input" x-model="newEmail"
+                                                 @keydown.enter.prevent="addEmail" placeholder="Enter email" style="margin-right: 5px" autocomplete="off" />
+                                            <button type="button" @click="dropdownOpen = !dropdownOpen"
+                                                class="px-2 py-2" style="margin-left: -40px">
+                                                <svg :class="{ 'rotate-180': dropdownOpen }"
+                                                    class="w-4 h-4 transition-transform duration-200" fill="none"
+                                                    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+                                            <x-outline-button type="button" @click="addEmail">Add</x-outline-button>
+                                        </div>
+
+                                        <!-- Dropdown Email List -->
+                                        <div x-show="dropdownOpen"
+                                            class="border rounded shadow-sm max-h-40 overflow-y-auto text-sm bg-white">
+                                            <template x-if="emails.length === 0">
+                                                <div class="text-gray-500 px-4 py-2">No emails added yet.</div>
+                                            </template>
+                                            <template x-for="(email, index) in emails" :key="index">
+                                                <div class="p-2 border border-gray-200 rounded-md bg-gray-50">
+                                                    <div class="flex items-center justify-between">
+                                                        <label class="font-semibold text-gray-800"><span x-text="email"></span></label>
+                                                        <button type="button" @click="removeEmail(index)"
+                                                            class="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 rounded-md border border-red-600 hover:bg-red-50 transition-colors duration-200">Remove</button>
+                                                    </div>
+
+                                                    <!-- Only show the relation select if not a friend group -->
+                                                    <template x-if="!isFriendGroup">
+                                                        <div class="mt-1">
+                                                            <label class="form-label text-gray-600 mb-1 block">Relation</label>
+                                                            <select class="form-select w-full border border-gray-300 rounded-md py-1 px-2 text-gray-700 focus:ring-ml-color-lime focus:border-ml-color-lime"
+                                                                name="relations[]" x-model="relations[index]">
+                                                                <option value="" disabled selected>Select relation</option>
+                                                                <template x-for="relation in relationOptions" :key="relation.id">
+                                                                    <option :value="relation.id"
+                                                                        x-text="`${capitalize(relation.name)} – ${capitalize(relation.inverse_name)}`">
+                                                                    </option>
+                                                                </template>
+                                                            </select>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <div class="modal-footer border-0 pb-4 px-4">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-send me-1"></i> Invite
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
 
                     @php
                     $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
@@ -402,10 +423,8 @@
             if (email && this.validateEmail(email) && !this.emails.includes(email)) {
                 this.emails.push(email);
                 this.relations.push('');
-                this.newEmail = '';
-                if (!this.isFriendGroup) {
-                    this.dropdownOpen = true;
-                }
+                this.$nextTick(() => this.newEmail = ''); // Clear the input after the next DOM update
+                this.dropdownOpen = true;
             }
         },
         removeEmail(index) {

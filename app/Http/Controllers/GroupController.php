@@ -78,6 +78,11 @@ class GroupController extends Controller
      */
     public function show(Group $group)
     {
+        // Check if the current user is a member of the group
+        if (!auth()->user()->groups->contains($group->id)) {
+            abort(404);
+        }
+
         $relations = Relation::all(); // Fetch all relations
         
         // Get all invitations for this group
@@ -96,12 +101,14 @@ class GroupController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'status' => 'member',
-                'relation' => $group->groupTypes->first()?->name == 'Family' 
-                    ? UserRelative::where('relative_id', $user->id)
-                        ->where('user_id', $group->group_admin ?? auth()->id())
-                        ->with('relation')
-                        ->first()?->relation?->name ?? 'N/A'
-                    : $group->groupTypes->first()?->name ?? 'N/A'
+                'relation' => $user->id === auth()->id() 
+                    ? 'Me'
+                    : ($group->groupTypes->first()?->name == 'Family' 
+                        ? UserRelative::where('user_id', auth()->id())
+                            ->where('relative_id', $user->id)
+                            ->with('relation')
+                            ->first()?->relation?->name ?? 'N/A'
+                        : 'Member')
             ]);
         }
         
@@ -119,7 +126,7 @@ class GroupController extends Controller
                     'status' => 'invited',
                     'relation' => $group->groupTypes->first()?->name == 'Family'
                         ? Relation::find($invitation->relation_id)?->name ?? 'N/A'
-                        : $group->groupTypes->first()?->name ?? 'N/A'
+                        : 'Member'
                 ]);
             } else {
                 // If user doesn't exist, use placeholder data
@@ -130,7 +137,7 @@ class GroupController extends Controller
                     'status' => 'invited',
                     'relation' => $group->groupTypes->first()?->name == 'Family'
                         ? Relation::find($invitation->relation_id)?->name ?? 'N/A'
-                        : $group->groupTypes->first()?->name ?? 'N/A'
+                        : 'Member'
                 ]);
             }
         }
@@ -143,6 +150,11 @@ class GroupController extends Controller
      */
     public function edit(Group $group)
     {
+        // Check if the current user is the group admin
+        if (auth()->id() !== $group->group_admin) {
+            return redirect()->back()->with('error', 'Only the group admin can edit the group.');
+        }
+
         $groupTypes = GroupType::whereNull('parent_id')->get();
         return view('group.edit', compact('group','groupTypes'));
     }
@@ -152,6 +164,11 @@ class GroupController extends Controller
      */
     public function update(Request $request, Group $group)
     {
+        // Check if the current user is the group admin
+        if (auth()->id() !== $group->group_admin) {
+            return redirect()->back()->with('error', 'Only the group admin can update the group.');
+        }
+
         // Validate the request data
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
@@ -200,13 +217,12 @@ class GroupController extends Controller
 
     public function removeMember(Request $request, Group $group)
     {
-        // Check if the current user can modify the group
-        if (!auth()->user()->groups->contains($group->id)) {
-            return redirect()->back()->with('error', 'Unauthorized action.');
-        }
-
-        // Handle multiple user removal
+        // Handle multiple user removal (admin only)
         if ($request->has('user_ids')) {
+            if (auth()->id() !== $group->group_admin) {
+                return redirect()->back()->with('error', 'Only the group admin can remove members.');
+            }
+
             $userIds = $request->input('user_ids');
             // Don't allow removing the group admin
             $userIds = array_filter($userIds, function($userId) use ($group) {
@@ -219,16 +235,57 @@ class GroupController extends Controller
             }
         }
         // Handle single user removal
-        else if ($request->has('user')) {
-            $user = User::findOrFail($request->user);
-            // Don't allow removing the group admin
-            if ($user->id != $group->group_admin) {
+        else if ($request->has('user') || $request->user_id) {                
+            // If user is trying to remove themselves
+            if (auth()->id() == $request->user_id) {
+                // Don't allow group admin to leave
+                if ($request->user_id === $group->group_admin) {
+                    return redirect()->back()->with('error', 'Group admin cannot leave the group. Please transfer admin rights first.');
+                }
+                
+                $group->users()->detach($request->user_id);
+                return redirect()->route('dashboard.index')->with('success', 'You have left the group successfully.');
+            }
+            // If admin is removing another user
+            else if (auth()->id() === $group->group_admin) {
+                $user = User::findOrFail($request->user);
+
+                // Don't allow removing the group admin
+                if ($user->id === $group->group_admin) {
+                    return redirect()->back()->with('error', 'Cannot remove the group admin.');
+                }
                 $group->users()->detach($user->id);
                 return redirect()->back()->with('success', 'Member removed successfully.');
+            }
+            else {
+                return redirect()->back()->with('error', 'You are not authorized to remove members.');
             }
         }
 
         return redirect()->back()->with('error', 'No valid members selected for removal.');
+    }
+
+    /**
+     * Cancel an invitation for a group.
+     */
+    public function cancelInvitation(Group $group, $email)
+    {
+        // Check if the current user is the group admin
+        if (auth()->id() !== $group->group_admin) {
+            return redirect()->back()->with('error', 'Only the group admin can cancel invitations.');
+        }
+
+        // Find and delete the invitation
+        $invitation = Invitation::where('group_id', $group->id)
+            ->where('email', $email)
+            ->first();
+
+        if ($invitation) {
+            $invitation->delete();
+            return redirect()->back()->with('success', 'Invitation cancelled successfully.');
+        }
+
+        return redirect()->back()->with('error', 'Invitation not found.');
     }
 
 }

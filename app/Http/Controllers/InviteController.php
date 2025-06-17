@@ -19,57 +19,62 @@ class InviteController extends Controller
         $this->inviteService = $inviteService;
     }
 
- public function sendInvite(Request $request)
-{
-    $isFriendGroup = strtolower($request->group_name) === 'friend';
+    public function sendInvite(Request $request)
+    {
+        // Load group and its types
+        $group = Group::with('groupTypes')->findOrFail($request->group_id);
 
-    // Validation rules
-    $rules = [
-        'emails' => 'required|array',
-        'emails.*' => 'required|email',
-        'group_id' => 'required|exists:groups,id',
-    ];
+        // Determine if group type is "family"
+        $isFamilyGroup = $group->groupTypes->contains(function ($type) {
+            return strtolower($type->name) === 'family';
+        });
 
-    if (!$isFriendGroup) {
-        $rules['relations'] = 'required|array';
-        $rules['relations.*'] = 'required|exists:relations,id';
-    }
+        // Basic validation rules
+        $rules = [
+            'emails' => 'required|array',
+            'emails.*' => 'required|email',
+            'group_id' => 'required|exists:groups,id',
+        ];
 
-    $request->validate($rules);
-
-    $group = Group::findOrFail($request->group_id);
-
-    // Check if user is a member of the group
-    if (!auth()->user()->groups->contains($group->id)) {
-        return redirect()->back()->with('error', 'You are not authorized to invite members to this group.');
-    }
-
-    // Get the 'Friend' relation ID once if needed
-    $friendRelationId = $isFriendGroup
-        ? Relation::whereRaw('LOWER(name) = ?', ['friend'])->value('id')
-        : null;
-
-    foreach ($request->emails as $index => $email) {
-        $relationId = $isFriendGroup ? $friendRelationId : $request->relations[$index];
-
-        // Optional safeguard
-        if (!$relationId) {
-            continue; // or handle as error
+        // Add relation validation only for family groups
+        if ($isFamilyGroup) {
+            $rules['relations'] = 'required|array';
+            $rules['relations.*'] = 'required|exists:relations,id';
         }
 
-        $this->inviteService->invite(auth()->user(), $email, $group, $relationId);
+        $request->validate($rules);
+
+        // Check if user is authorized to invite in this group
+        if (!auth()->user()->groups->contains($group->id)) {
+            return redirect()->back()->with('error', 'You are not authorized to invite members to this group.');
+        }
+
+        // Process each invitation
+        foreach ($request->emails as $index => $email) {
+            $relationId = null;
+
+            if ($isFamilyGroup) {
+                $relationId = $request->relations[$index] ?? null;
+
+                // Safety check, though validation should prevent this
+                if (!$relationId) {
+                    continue;
+                }
+            }
+
+            // Call invite service with nullable relationId
+            $this->inviteService->invite(auth()->user(), $email, $group, $relationId);
+        }
+
+        return redirect()->back()->with('success', 'Invitations sent successfully.');
     }
-
-    return redirect()->back()->with('success', 'Invitations sent successfully.');
-}
-
 
     public function acceptInvite(Request $request)
     {
         
         $token = $request->query('token');
         $invitation = Invitation::where('token', $token)->first();
-// dd($invitation);
+
         if (!$invitation) {
             return redirect('/')->with('error', 'Invalid or expired invitation link.');
         }
@@ -90,31 +95,40 @@ class InviteController extends Controller
         $user->groups()->attach($invitation->group_id, [
             'invited_by' => $invitation->invited_by,
         ]);    
-        $exists = UserRelative::where([
-            'user_id' => $invitation->invited_by,
-            'relative_id' => $user->id,
-        ])->exists();
 
-        // Save the family relation using the model
-        if (!$exists) {
-            UserRelative::create([
+        // Only save relations if this is a family group
+        $group = Group::with('groupTypes')->find($invitation->group_id);
+        $isFamilyGroup = $group->groupTypes->contains(function ($type) {
+            return strtolower($type->name) === 'family';
+        });
+
+        if ($isFamilyGroup) {
+            $exists = UserRelative::where([
                 'user_id' => $invitation->invited_by,
                 'relative_id' => $user->id,
-                'relation_id' => $invitation->relation_id,
-            ]);
-        }
+            ])->exists();
 
-        $relation = Relation::find($invitation->relation_id);
+            // Save the family relation using the model
+            if (!$exists) {
+                UserRelative::create([
+                    'user_id' => $invitation->invited_by,
+                    'relative_id' => $user->id,
+                    'relation_id' => $invitation->relation_id,
+                ]);
+            }
 
-        // Only proceed if relation exists
-        if ($relation) {
-            storeInverseRelation($user->id, $invitation->invited_by, $relation->name);
-            linkNewRelativeWithExistingRelations($invitation->invited_by, $user->id, $relation->name, $user->gender);
+            $relation = Relation::find($invitation->relation_id);
+
+            // Only proceed if relation exists
+            if ($relation) {
+                storeInverseRelation($user->id, $invitation->invited_by, $relation->name);
+                linkNewRelativeWithExistingRelations($invitation->invited_by, $user->id, $relation->name, $user->gender);
+            }
         }
 
         // Mark invitation as used or delete it
         $invitation->delete();
     
-        return redirect()->route('group.show', $invitation->group_id)->with('success', 'You’ve successfully joined the group!');
+        return redirect()->route('group.show', $invitation->group_id)->with('success', 'You have successfully joined the group!');
     }
 }
