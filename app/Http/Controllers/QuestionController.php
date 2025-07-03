@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use App\Models\Type;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class QuestionController extends Controller
 {
@@ -48,20 +49,35 @@ class QuestionController extends Controller
             //'options' => 'nullable|json', // Ensure JSON format if provided
             //'correct_answer' => 'nullable|string|max:255',
             'points' => 'nullable|integer|min:0',
-            'is_active' => 'boolean',
+            'is_active' => 'required|string',
+            'reverse_score' => 'required|string',
             'survey_id' => 'required|integer|exists:surveys,id',
-            'type_id' => 'required|integer|exists:types,id',
+            'type_id' => 'nullable|integer|exists:types,id',
         ]);
 
         $question = Question::create($request->all());
-        //create automatically 5 options for the question
-        $question->options()->createMany([
-            ['name' => '1','point' => '1'],
-            ['name' => '2','point' => '2'],
-            ['name' => '3','point' => '3'],
-            ['name' => '4','point' => '4'],
-            ['name' => '5','point' => '5'],
-        ]);
+        //create options for the question
+        $survey = $question->survey;
+        $model = $survey->model;
+
+        $isSelfType = Str::lower(preg_replace('/[^a-z0-9]/i', '', optional($model)->title)) === 'selfawarenessandmotivation';
+
+        $isReverse = $request->reverse_score === "1";
+
+        $options = [];
+
+        if ($isSelfType) {
+            $options = $isReverse
+                ? [['name' => '1','point' => '4'], ['name' => '2','point' => '3'], ['name' => '3','point' => '2'], ['name' => '4','point' => '1']]
+                : [['name' => '1','point' => '1'], ['name' => '2','point' => '2'], ['name' => '3','point' => '3'], ['name' => '4','point' => '4']];
+        } else {
+            $options = $isReverse
+                ? [['name' => '1','point' => '5'], ['name' => '2','point' => '4'], ['name' => '3','point' => '3'], ['name' => '4','point' => '2'], ['name' => '5','point' => '1']]
+                : [['name' => '1','point' => '1'], ['name' => '2','point' => '2'], ['name' => '3','point' => '3'], ['name' => '4','point' => '4'], ['name' => '5','point' => '5']];
+        }
+
+        $question->options()->createMany($options);
+
 
         return redirect()->route('survey.show',$request->survey_id)->with('success', 'Question created successfully.');
     }
@@ -94,9 +110,9 @@ class QuestionController extends Controller
             //'options' => 'nullable|json', // Ensure JSON format if provided
             //'correct_answer' => 'nullable|string|max:255',
             'points' => 'nullable|integer|min:0',
-            'is_active' => 'boolean',
+            'is_active' => 'required|string',
             'survey_id' => 'required|integer|exists:surveys,id',
-            'type_id' => 'required|integer|exists:types,id',
+            'type_id' => 'nullable|integer|exists:types,id',
         ]);
 
         $question->update($request->all());

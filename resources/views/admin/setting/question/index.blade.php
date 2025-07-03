@@ -71,7 +71,7 @@
                                             {{ Str::limit($question->question, 50) }} <!-- Shorten text -->
                                         </a>
                                     </th>
-                                    <td class="px-6 py-4">{{ $question->type->name }}</td>
+                                    <td class="px-6 py-4">{{ $question->type->name ?? 'N/A' }}</td>
                                     <td class="px-6 py-4">{{ $question->points }}</td>
                                     <td class="px-6 py-4">{{ $question->survey->title }}</td>
                                     <td class="px-6 py-4">

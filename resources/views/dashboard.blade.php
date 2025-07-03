@@ -54,12 +54,28 @@
             <div class="bg-ml-color-lime border rounded-xl p-4 space-y-3">
                 <h2 class="text-xl mb-0"> {{ __("My Surveys") }} </h2>
                 <p class="text-xs my-0">Date: {{ now() }} </p>
-                @if(auth()->user()->surveys->isNotEmpty())
-                    @foreach(auth()->user()->surveys as $survey)
+                @php
+                    // $userSurveys = auth()->user()->surveys; 
+
+                    $individualSurveys = \App\Models\Survey::where('is_active', true)
+                        ->whereJsonContains('applies_to', 'Individual')
+                        ->get();
+
+                    // $allSurveys = $userSurveys->merge($individualSurveys)->unique('id');
+                @endphp
+
+                @if($individualSurveys->isNotEmpty())
+                    @foreach($individualSurveys as $survey)
                         <x-dashboard-progressbar
                             completedQuestion="{{ auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->where('users_id', auth()->id())->where('evaluatee_id', auth()->id())->count() }}"
                             survey_id="{{ $survey->id }}"
-                            totalQuestion="{{ $survey->questions->count() }}">
+                            totalQuestion="{{ $survey->questions->count() }}"
+                            total_points="{{ $surveyPoints[$survey->id] ?? 0 }}"
+                            points_self="{{ $typePoints['SELF'][$survey->id] ?? 0 }}"
+                            points_competence="{{ $typePoints['COMPETENCE'][$survey->id] ?? 0 }}"
+                            points_autonomy="{{ $typePoints['AUTONOMY'][$survey->id] ?? 0 }}"
+                            points_relatedness="{{ $typePoints['RELATEDNESS'][$survey->id] ?? 0 }}"
+                        >
                             {{ $survey->title }}
                         </x-dashboard-progressbar>
                     @endforeach

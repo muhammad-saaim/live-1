@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use App\Models\Survey;
 use App\Models\Group;
+use App\Models\User;
 use App\Models\UsersSurveysRate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -245,6 +246,7 @@ class SurveyRateController extends Controller
             ]);
 
             $user = auth()->user();
+            $evaluatee = User::findOrFail($request->evaluatee_id);
 
             // Check if this rating already exists
             $exists = UsersSurveysRate::where([
@@ -283,7 +285,7 @@ class SurveyRateController extends Controller
             if (empty($groupUsers)) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
+                    'message' => 'Answer submitted for ' . $evaluatee->name,
                 ]);
             }
 

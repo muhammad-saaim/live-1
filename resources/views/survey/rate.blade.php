@@ -122,25 +122,20 @@
                     </div>
                     <!-- Options container with line -->
                     <div class=" flex items-center relative max-w-xl">
-
-                        <!-- Radio buttons container -->
-                        <div id="options-container" class="flex justify-center items-center px-4" style="gap:35px">
+                        <div id="guidance-options" class="flex justify-center items-center px-4" style="gap:35px">
                             @foreach ($unansweredQuestions->first()->options as $index => $option)
-                            <div class="flex flex-col items-center">
-                                <label for="option-{{ $option->id }}" class="cursor-pointer flex justify-center">
-                                    <input type="radio" name="answer" value="{{ $option->id }}"
-                                        id="option-{{ $option->id }}" class="hidden peer"
-                                        onchange="updateSelectedOption(this)">
-                                    <div style="width: 60px; height: 60px;"
-                                        class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
-                                        {{ $option->name }}
+                                {{-- @if ($index >= 0 ) <!-- Adjust range as needed for guidance options --> --}}
+                                    <div class="flex flex-col items-center opacity-60 select-none">
+                                        <div style="width: 60px; height: 60px; background: #ffffff; border: 2px dashed #ccc;"
+                                            class="rounded-full flex items-center justify-center fw-bold fs-5">
+                                            {{ $option->name }}
+                                        </div>
+                                        <div class="mt-1 text-sm text-gray-600">
+                                            {{ $index + 1 }} Cevap
+                                            {{ (($index + 1) * 100) / $unansweredQuestions->first()->options->count() }}%
+                                        </div>
                                     </div>
-                                </label>
-                                <div class="mt-1 text-sm text-gray-600">
-                                    {{ $index + 1 }} Cevap
-                                    {{ (($index + 1) * 100) / $unansweredQuestions->first()->options->count() }}%
-                                </div>
-                            </div>
+                                {{-- @endif --}}
                             @endforeach
                         </div>
                     </div>
@@ -168,7 +163,7 @@
                             @endforeach
                         </div>
 
-                        <!-- Options Column (unchanged) -->
+                        <!-- Options Column -->
                         <div class="col-6 py-4 max-w-7xl space-y-6 border" style="border: 1px solid rgb(184, 184, 184) !important; border-radius:30px;">
                             @foreach ($groupUsers as $user)  
                             <div class="flex justify-center items-center relative max-w-xl">
@@ -211,7 +206,7 @@
 
                     <div class="flex justify-center space-x-4 mt-4">
                         <button type="button" id="submit-group-evaluation"
-                            class="bg-blue-500 text-white py-2 px-4 rounded">Submit All</button>
+                            class="bg-blue-500 text-white py-2 px-4 rounded">Next</button>
                     </div>
                 </form>
 
@@ -275,14 +270,41 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             // Set up event listeners for all radio button labels (self-evaluation only)
-            document.querySelectorAll('label[for^="option-"]').forEach(label => {
-                // Only attach to self-evaluation radios (not group evaluation)
-                const radioInput = label.querySelector('input[type="radio"]');
-                if (radioInput && radioInput.name === 'answer') {
-                    label.addEventListener('click', function() {
-                        updateSelectedOption(radioInput);
-                    });
-                }
+            document.querySelectorAll('input[name="answer"]').forEach(radioInput => {
+                radioInput.addEventListener('change', function() {
+                    updateSelectedOption(radioInput);
+                    // Auto-submit for self-evaluation
+                    const questionId = document.getElementById("question-id").value;
+                    const surveyId = document.getElementById("survey-id").value;
+                    const optionId = radioInput.value;
+                    const evaluateeId = document.getElementById("evaluatee-id").value;
+                    const messageContainer = document.getElementById("message-container");
+                    fetch("{{ route('survey.submitAnswer') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                        },
+                        body: JSON.stringify({
+                            survey_id: surveyId,
+                            question_id: questionId,
+                            options_id: optionId,
+                            evaluatee_id: evaluateeId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${data.message}</div>`;
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${data.message}</div>`;
+                        }
+                    })
+                    .catch(error => console.error("Error:", error));
+                });
             });
 
             // Initialize any pre-selected option for self-evaluation
@@ -420,6 +442,49 @@
             document.querySelectorAll('input[name^="answer["]').forEach(radio => {
                 radio.addEventListener('change', function() {
                     updateGroupSelectedOption(this);
+                    // Auto-submit for group evaluation
+                    const questionId = document.querySelector("input[name='question_id']").value;
+                    const surveyId = document.querySelector("input[name='survey_id']").value;
+                    const optionId = this.value;
+                    const evaluateeId = this.name.match(/\[(\d+)\]/)[1];
+                    fetch("{{ route('survey.submitGroupAnswer') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({
+                            question_id: questionId,
+                            survey_id: surveyId,
+                            evaluatee_id: evaluateeId,
+                            options_id: optionId
+                        })
+                    })
+                    .then(async res => {
+                        const contentType = res.headers.get("content-type");
+                        if (contentType && contentType.includes("application/json")) {
+                            const data = await res.json();
+                            if (!res.ok) {
+                                throw new Error(data.message || 'An error occurred');
+                            }
+                            return data;
+                        }
+                        throw new Error('Server returned non-JSON response');
+                    })
+                    .then(data => {
+                        if (data.status === "success" || data.skipped) {
+                            messageContainer.innerHTML = `<div class=\"bg-green-500 text-white p-3 rounded\">${data.message || 'Rating submitted.'}</div>`;
+                            setTimeout(() => location.reload(), 1200);
+                        } else {
+                            messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${data.message}</div>`;
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error:", err);
+                        const errorMessage = err.message || 'An error occurred. Please try again.';
+                        messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${errorMessage}</div>`;
+                    });
                 });
             });
 
@@ -434,7 +499,7 @@
                 const answers = document.querySelectorAll("input[name^='answer[']:checked");
 
                 if (answers.length === 0) {
-                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">Please select answers for at least one user.</div>`;
+                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">Please submit answers for all users first.</div>`;
                     return;
                 }
 

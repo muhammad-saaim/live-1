@@ -45,7 +45,7 @@
                         </div>
                         <div class="mb-4">
                             <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea name="description" id="description" rows="2" required
+                            <textarea name="description" id="description" rows="2"
                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300
                                 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                 {{ old('description', $question->description) }}
@@ -53,7 +53,7 @@
                         </div>
                         <div class="mb-4">
                             <label for="type_id" class="block text-sm font-medium text-gray-700">Type</label>
-                            <select name="type_id" id="type_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <select name="type_id" id="type_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                 <option value="">Select a type</option>
                                 @foreach($types as $type)
                                     <option value="{{ $type->id }}" {{ old('type_id', $question->type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>

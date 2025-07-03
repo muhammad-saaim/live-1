@@ -82,7 +82,7 @@ class GroupController extends Controller
         if (!auth()->user()->groups->contains($group->id)) {
             abort(404);
         }
-
+        // dd($group);
         $relations = Relation::all(); // Fetch all relations
         
         // Get all invitations for this group

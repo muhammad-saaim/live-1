@@ -24,11 +24,18 @@ class Group extends Model
     public function defaultSurveys()
     {
         $groupType = $this->groupTypes->first()?->name ?? null;
-    // dd($groupType);
-        return Survey::where('is_default', true)
-            ->where('is_active', true)
-            ->whereJsonContains('applies_to', 'Group')
-            ->get();
+
+        $query = Survey::where('is_active', true);
+
+        if ($groupType === 'Family') {
+            // For family groups, only include surveys that apply to "Family"
+            $query->whereJsonContains('applies_to', 'Family');
+        } else {
+            // For normal groups, only include surveys that apply to "Group"
+            $query->whereJsonContains('applies_to', 'Group');
+        }
+
+        return $query->get();
     }
 
 }

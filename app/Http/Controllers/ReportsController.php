@@ -42,51 +42,51 @@ class ReportsController extends Controller
     
 
     public function downloadPdf(Request $request)
-{
-    $type = $request->get('type');
+    {
+        $type = $request->get('type');
 
-    // Prepare the data for the views
-    $data = [];
+        // Prepare the data for the views
+        $data = [];
 
-    if ($type === 'bar') {
-        // Bar report data
-        $data['bars'] = [
-            ['label' => 'Completed Tasks', 'value' => 70],
-            ['label' => 'In Progress Tasks', 'value' => 40],
-            ['label' => 'Pending Tasks', 'value' => 90],
-            // Add more bars as needed
-        ];
+        if ($type === 'bar') {
+            // Bar report data
+            $data['bars'] = [
+                ['label' => 'Completed Tasks', 'value' => 70],
+                ['label' => 'In Progress Tasks', 'value' => 40],
+                ['label' => 'Pending Tasks', 'value' => 90],
+                // Add more bars as needed
+            ];
 
-        $view = view('reports.bar', $data)->render();
-    } else {
-        // Text report data
-        $data = [
-            'title' => 'Mentor Değerlendirme Raporu',
-            'summary' => 'Bay/Ms. Smith, iş dünyasında deneyimli ve yetenekli bir profesyoneldir...',
-            'performance' => [
-                ['label' => 'Bilgi ve Deneyim', 'content' => 'Smith\'in iş dünyasındaki bilgi ve deneyimi etkileyicidir...'],
-                ['label' => 'İletişim Becerileri', 'content' => 'İletişimde son derece başarılı olan Smith...'],
-                // Add more points as needed
-            ],
-            'suggestions' => [
-                'Smith’in mentorluk hizmetlerini daha geniş kitlelere ulaştırması için dijital platformları kullanması önerilebilir...',
-                'Smith’in profesyonel gelişimine devam etmesi önemlidir...',
-            ],
-            'conclusion' => 'Bay/Ms. Smith, kusursuz mentorluk becerileri ve geniş iş deneyimiyle öne çıkan biridir...',
-        ];
+            $view = view('reports.bar', $data)->render();
+        } else {
+            // Text report data
+            $data = [
+                'title' => 'Mentor Değerlendirme Raporu',
+                'summary' => 'Bay/Ms. Smith, iş dünyasında deneyimli ve yetenekli bir profesyoneldir...',
+                'performance' => [
+                    ['label' => 'Bilgi ve Deneyim', 'content' => 'Smith\'in iş dünyasındaki bilgi ve deneyimi etkileyicidir...'],
+                    ['label' => 'İletişim Becerileri', 'content' => 'İletişimde son derece başarılı olan Smith...'],
+                    // Add more points as needed
+                ],
+                'suggestions' => [
+                    'Smith’in mentorluk hizmetlerini daha geniş kitlelere ulaştırması için dijital platformları kullanması önerilebilir...',
+                    'Smith’in profesyonel gelişimine devam etmesi önemlidir...',
+                ],
+                'conclusion' => 'Bay/Ms. Smith, kusursuz mentorluk becerileri ve geniş iş deneyimiyle öne çıkan biridir...',
+            ];
 
-        $view = view('reports.text', $data)->render();
+            $view = view('reports.text', $data)->render();
+        }
+
+        // Generate the PDF
+        $pdf = Pdf::loadHTML($view);
+        return $pdf->download('report.pdf');
     }
 
-    // Generate the PDF
-    $pdf = Pdf::loadHTML($view);
-    return $pdf->download('report.pdf');
-}
-
-public function exportSurveyExcel()
-{
-    $user = Auth::user();
-    return Excel::download(new SurveyExport($user), 'survey-report.xlsx');
-}
+    public function exportSurveyExcel()
+    {
+        $user = Auth::user();
+        return Excel::download(new SurveyExport($user), 'survey-report.xlsx');
+    }
 
 }

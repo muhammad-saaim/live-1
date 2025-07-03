@@ -68,7 +68,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Survey::class, 'users_surveys')
             ->withPivot('is_completed')
-            ->withTimestamps();  // Include created_at and updated_at
+            ->withTimestamps();
     }
 
     public function usersSurveysRates()

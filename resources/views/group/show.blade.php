@@ -375,7 +375,7 @@
                     </div>
 
                     @php
-                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
+                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 1;
                     @endphp
 
                     @if ($group->users()->count() >= $minimumUsers)
