@@ -23,29 +23,30 @@
         <div class="space-y-4">
             <div class="flex items-center justify-between border-b pb-2">
                 <span class="text-sm font-semibold text-gray-700">Self-Esteem:</span>
-                {{$total_points}}
-                @if (($total_points) > 32)
+                @if (($total_points) >= 33)
                 <span class="text-sm font-bold text-green-600">Very good</span>
-                @elseif(($total_points) > 25 && ($total_points) < 33)
+                @elseif(($total_points) >= 25 && ($total_points) < 33)
                 <span class="text-sm font-semibold text-yellow-600">Good</span>
-                @elseif (($total_points) < 25)
+                @elseif(($total_points) >= 16 && ($total_points) < 25)
+                <span class="text-sm font-semibold text-orange-500">You can be better</span>
+                @elseif (($total_points) < 16)
                 <span class="text-sm font-semibold text-red-500">You can be better</span>
                 @endif
             </div>
             {{-- <div class="flex items-center justify-between border-b pb-2">
                 <span class="text-sm font-semibold text-gray-700">Self-Esteem:</span>
-                {{$points_self}}
-                @if (($points_self ?? 0) > 32)
+                @if (($points_self) >= 33)
                 <span class="text-sm font-bold text-green-600">Very good</span>
-                @elseif(($points_self ?? 0) > 25 && ($points_self ?? 0) < 33)
-                <span class="text-sm font-semibold text-lime-600">Good</span>
-                @else
+                @elseif(($points_self) >= 25 && ($points_self) < 33)
+                <span class="text-sm font-semibold text-yellow-600">Good</span>
+                @elseif(($points_self) >= 16 && ($points_self) < 25)
+                <span class="text-sm font-semibold text-orange-500">You can be better</span>
+                @elseif (($points_self) < 16)
                 <span class="text-sm font-semibold text-red-500">You can be better</span>
                 @endif
             </div> --}}
             <div class="flex items-center justify-between border-b pb-2">
                 <span class="text-sm font-semibold text-gray-700">Competence:</span>
-                {{$points_competence}}
                 @if (($points_competence ?? 0) >= 25)
                 <span class="text-sm font-bold text-green-600">Perfect</span>
                 @elseif(($points_competence ?? 0) >= 20 && ($points_competence ?? 0) < 25)
@@ -58,7 +59,6 @@
             </div>
             <div class="flex items-center justify-between border-b pb-2">
                 <span class="text-sm font-semibold text-gray-700">Autonomy:</span>
-                {{$points_autonomy}}    
                 @if (($points_autonomy ?? 0) >= 30)
                 <span class="text-sm font-bold text-green-600">Perfect</span>
                 @elseif(($points_autonomy ?? 0) >= 22 && ($points_autonomy ?? 0) < 30)
@@ -71,7 +71,6 @@
             </div>
             <div class="flex items-center justify-between">
                 <span class="text-sm font-semibold text-gray-700">Relatedness:</span>
-                {{$points_relatedness}}
                 @if (($points_relatedness ?? 0) >= 32)
                 <span class="text-sm font-bold text-green-600">Perfect</span>
                 @elseif(($points_relatedness ?? 0) >= 25 && ($points_relatedness ?? 0) < 32)

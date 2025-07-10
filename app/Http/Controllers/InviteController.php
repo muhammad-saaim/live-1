@@ -53,6 +53,13 @@ class InviteController extends Controller
         foreach ($request->emails as $index => $email) {
             $relationId = null;
 
+            // Check if user is already in the group
+            $user = User::where('email', $email)->first();
+            if ($user && $group->users->contains($user->id)) {
+                // User is already a member, skip inviting
+                continue;
+            }
+
             if ($isFamilyGroup) {
                 $relationId = $request->relations[$index] ?? null;
 

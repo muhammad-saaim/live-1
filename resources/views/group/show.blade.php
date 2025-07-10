@@ -265,13 +265,30 @@
                                                     @endif
                                                 @elseif ($user['status'] === 'invited' && Auth::id() === $group->group_admin)
                                                     {{-- Cancel Invitation Button for Group Admin --}}
-                                                    <form action="{{ route('groups.cancelInvitation', ['group' => $group->id, 'email' => $user['email']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this invitation?');">
+                                                    <form action="{{ route('groups.cancelInvitation', ['group' => $group->id, 'email' => $user['email']]) }}" method="POST" style="display:inline-block" onsubmit="return confirm('Are you sure you want to cancel this invitation?');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="w-24 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
                                                             Cancel
                                                         </button>
                                                     </form>
+                                                    {{-- Invite Again Button (only for inviter) --}}
+                                                    @if(isset($user['invited_by']) && $user['invited_by'] == Auth::id())
+                                                        @php
+                                                            $canInviteAgain = isset($user['invitation_created_at']) && \Carbon\Carbon::parse($user['invitation_created_at'])->diffInHours(now()) >= 24;
+                                                        @endphp
+                                                        <form action="{{ route('group.invite') }}" method="POST" style="display:inline-block">
+                                                            @csrf
+                                                            <input type="hidden" name="group_id" value="{{ $group->id }}">
+                                                            <input type="hidden" name="emails[]" value="{{ $user['email'] }}">
+                                                            @if ($group->groupTypes->first()?->name !== 'Friend')
+                                                                <input type="hidden" name="relations[]" value="">
+                                                            @endif
+                                                            <button type="submit" class="w-26 bg-blue-500 text-white px-3 py-1 rounded text-sm ml-2 {{ $canInviteAgain ? 'hover:bg-blue-600' : 'opacity-50 cursor-not-allowed' }}" @if(!$canInviteAgain) disabled @endif>
+                                                                Invite Again
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 @endif
                                             </td>
                                         </tr>
@@ -328,6 +345,7 @@
                                             </button>
                                             <x-outline-button type="button" @click="addEmail">Add</x-outline-button>
                                         </div>
+                                        <div x-show="errorMessage" class="text-red-600 text-sm mb-2" x-text="errorMessage"></div>
 
                                         <!-- Dropdown Email List -->
                                         <div x-show="dropdownOpen"
@@ -445,15 +463,29 @@
         relations: [],
         isFriendGroup: isFriendGroup === true || isFriendGroup === 'true', // normalize type
         relationOptions: @json($relations),
+        existingMemberEmails: @json($allUsers->filter(fn($u) => $u['status'] === 'member')->pluck('email')->map(fn($e) => strtolower($e))->toArray()),
+        errorMessage: '',
         
         addEmail() {
-            const email = this.newEmail.trim();
-            if (email && this.validateEmail(email) && !this.emails.includes(email)) {
-                this.emails.push(email);
-                this.relations.push('');
-                this.$nextTick(() => this.newEmail = ''); // Clear the input after the next DOM update
-                this.dropdownOpen = true;
+            const email = this.newEmail.trim().toLowerCase();
+            this.errorMessage = '';
+            if (!email) return;
+            if (!this.validateEmail(email)) {
+                this.errorMessage = 'Please enter a valid email address.';
+                return;
             }
+            if (this.emails.includes(email)) {
+                this.errorMessage = 'This email is already in the invitation list.';
+                return;
+            }
+            if (this.existingMemberEmails.includes(email)) {
+                this.errorMessage = 'This user is already a member of the group.';
+                return;
+            }
+            this.emails.push(email);
+            this.relations.push('');
+            this.$nextTick(() => this.newEmail = ''); // Clear the input after the next DOM update
+            this.dropdownOpen = true;
         },
         removeEmail(index) {
             this.emails.splice(index, 1);

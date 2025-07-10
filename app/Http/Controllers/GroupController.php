@@ -126,7 +126,9 @@ class GroupController extends Controller
                     'status' => 'invited',
                     'relation' => $group->groupTypes->first()?->name == 'Family'
                         ? Relation::find($invitation->relation_id)?->name ?? 'N/A'
-                        : 'Member'
+                        : 'Member',
+                    'invitation_created_at' => $invitation->created_at,
+                    'invited_by' => $invitation->invited_by,
                 ]);
             } else {
                 // If user doesn't exist, use placeholder data
@@ -137,7 +139,9 @@ class GroupController extends Controller
                     'status' => 'invited',
                     'relation' => $group->groupTypes->first()?->name == 'Family'
                         ? Relation::find($invitation->relation_id)?->name ?? 'N/A'
-                        : 'Member'
+                        : 'Member',
+                    'invitation_created_at' => $invitation->created_at,
+                    'invited_by' => $invitation->invited_by,
                 ]);
             }
         }
