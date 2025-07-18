@@ -126,17 +126,22 @@
     <div id="barshaped" style="display: none;">
       @foreach ($UserSurveys as $survey)
         @php
-            $overallAverage = $surveyAverages[$survey->id] ?? 0;
+            $surveyId = $survey?->id;
+            $overallAverage = $surveyId ? ($surveyAverages[$surveyId] ?? 0) : 0;
+            $title = $survey?->title ?? 'Untitled';
+            $appliesTo = is_array($survey?->applies_to) ? implode(', ', $survey->applies_to) : '';
         @endphp
- 
-        <div class="progress-item">
-          <div class="progress-label">
-            {{ $survey->title . ' (' . implode(', ', (array) $survey->applies_to) . ')' }}
-        </div>        
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: {{ $overallAverage * 20 }}%;"></div>
+
+        @if($surveyId) {{-- Only render if survey exists --}}
+          <div class="progress-item">
+            <div class="progress-label">
+              {{ $title }} {{ $appliesTo ? "($appliesTo)" : '' }}
             </div>
-        </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: {{ $overallAverage * 20 }}%;"></div>
+            </div>
+          </div>
+        @endif
       @endforeach
     </div>
     

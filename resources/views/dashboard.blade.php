@@ -67,7 +67,7 @@
                 @if($individualSurveys->isNotEmpty())
                     @foreach($individualSurveys as $survey)
                         <x-dashboard-progressbar
-                            completedQuestion="{{ auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->where('users_id', auth()->id())->where('evaluatee_id', auth()->id())->count() }}"
+                            completedQuestion="{{ auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->where('users_id', auth()->id())->where('evaluatee_id', auth()->id())->whereNull('group_id')->count() }}"
                             survey_id="{{ $survey->id }}"
                             totalQuestion="{{ $survey->questions->count() }}"
                             total_points="{{ $surveyPoints[$survey->id] ?? 0 }}"
@@ -122,6 +122,7 @@
                                     $completedQuestions += $survey->usersSurveysRates()
                                         ->where('users_id', auth()->id())
                                         ->where('evaluatee_id', auth()->id())
+                                        ->where('group_id', $group->id)
                                         ->count();
                                 }
 
@@ -133,6 +134,7 @@
                                     $othersCompletedQuestions += $survey->usersSurveysRates()
                                         ->where('users_id', auth()->id())
                                         ->where('evaluatee_id', '!=', auth()->id())
+                                        ->where('group_id', $group->id)
                                         ->count();
                                 }
 

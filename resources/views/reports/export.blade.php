@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th>#</th>
+            {{-- <th>Gruop Id</th> --}}
             <th>Evaluator</th>
             <th>Evaluatee</th>
             <th>Survey</th>
@@ -15,6 +16,7 @@
         @foreach ($UserSurveys as $index => $entry)
             <tr>
                 <td>{{ $index + 1 }}</td>
+                {{-- <td>{{ $entry->group_id ?? 'N/A' }}</td> --}}
                 <td>{{ $entry->users_id ?? 'N/A' }}</td>
                 <td>{{ $entry->evaluatee_id ?? 'N/A' }}</td>
                 <td>{{ $entry->survey->title ?? 'N/A' }}</td>

@@ -38,8 +38,8 @@ class SurveyController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'boolean',
             'is_default' => 'boolean',
-            'applies_to' => 'nullable|array',
-            'targets' => 'nullable|array',
+            'applies_to' => 'required|array',
+            'targets' => 'required|array',
         ]);
 
         Survey::create([

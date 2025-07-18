@@ -23,9 +23,9 @@ class TypeSeeder extends Seeder
             ['name' => 'OTHERS', 'description' => 'Others type'],
             ['name' => 'PARENTS', 'description' => 'Parents type'],
             ['name' => 'INTROVERTS', 'description' => 'Introverts type'],
-            ['name' => 'Extravert', 'description' => 'Extravert type'],
-            ['name' => 'Relationship', 'description' => 'Relationship type'],
-            ['name' => 'Self-perception', 'description' => 'Self-perception type'],
+            ['name' => 'EXTRAVERT', 'description' => 'Extravert type'],
+            ['name' => 'RELATIONSHIP', 'description' => 'Relationship type'],
+            ['name' => 'SELF-PERCEPTION', 'description' => 'Self-perception type'],
         ];
 
         foreach ($types as $type) {

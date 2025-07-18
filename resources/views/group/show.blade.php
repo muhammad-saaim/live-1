@@ -22,7 +22,7 @@
                     </div>
                     @endif
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 ">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         {{-- @foreach (auth()->user()->groups as $group) --}}
                         <div style="background-color: {{ $group->color }};"
                             class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
@@ -31,7 +31,7 @@
                             <p class="text-gray-500 ml-2 text-sm">{{ __('Created') }}
                                 : {{ $group->created_at->format('d/m/Y') }}
                             </p>
-                            <div class="">
+                            {{-- <div class="">
                                 @php
                                     $allSurveys = $group->defaultSurveys();
                                     $totalQuestions = 0;
@@ -42,6 +42,7 @@
                                         $completedQuestions += $survey->usersSurveysRates()
                                             ->where('users_id', auth()->id())
                                             ->where('evaluatee_id', auth()->id())
+                                            ->where('group_id', $group->id)
                                             ->count();
                                     }
 
@@ -53,6 +54,7 @@
                                         $othersCompletedQuestions += $survey->usersSurveysRates()
                                             ->where('users_id', auth()->id())
                                             ->where('evaluatee_id', '!=', auth()->id())
+                                            ->where('group_id', $group->id)
                                             ->count();
                                     }
 
@@ -60,6 +62,50 @@
                                 @endphp
                                 <x-group-progressbar class="mb-2" :num="$selfPercentage">Me ({{ $completedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
                                 <x-group-progressbar :num="$othersPercentage">Others ({{ $othersCompletedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
+                            </div> --}}
+                            <div>
+                                @php
+                                    $selfTotals = $groupSurveyTypePoints['all_surveys_totals']['self'] ?? null;
+                                    $othersTotals = $groupSurveyTypePoints['all_surveys_totals']['others'] ?? null;
+
+                                    $selfPoints = $selfTotals['total_points'] ?? 0;
+                                    $selfRatings = $selfTotals['total_ratings'] ?? 0;
+                                    $selfMaxPoints = $selfRatings * 5;
+                                    $selfPercentage = $selfMaxPoints > 0 ? round(($selfPoints / $selfMaxPoints) * 100, 1) : 0;
+
+                                    $othersPoints = $othersTotals['total_points'] ?? 0;
+                                    $othersRatings = $othersTotals['total_ratings'] ?? 0;
+                                    $othersMaxPoints = $othersRatings * 5;
+                                    $othersPercentage = $othersMaxPoints > 0 ? round(($othersPoints / $othersMaxPoints) * 100, 1) : 0;
+
+                                    // Function to get status & color
+                                    function getStatus($percentage) {
+                                        if ($percentage >= 84) {
+                                            return ['Perfect', 'text-green-600'];
+                                        } elseif ($percentage >= 70) {
+                                            return ['Very Good', 'text-blue-600'];
+                                        } elseif ($percentage >= 40) {
+                                            return ['Good', 'text-yellow-600'];
+                                        } else {
+                                            return ['Poor', 'text-red-500'];
+                                        }
+                                    }
+
+                                    [$selfStatus, $selfColor] = getStatus($selfPercentage);
+                                    [$othersStatus, $othersColor] = getStatus($othersPercentage);
+                                @endphp
+
+                                @if($selfRatings >= 4)
+                                    <x-group-progressbar class="mb-1" :num="$selfPercentage" :selfStatus="$selfStatus" :selfColor="$selfColor">
+                                        Me ({{ $selfRatings }})
+                                    </x-group-progressbar>
+                                @endif
+
+                                @if($othersRatings >= 4)
+                                    <x-group-progressbar :num="$othersPercentage" :othersStatus="$othersStatus" :othersColor="$othersColor">
+                                        Others ({{ $othersRatings }})
+                                    </x-group-progressbar>
+                                @endif
                             </div>
 
                             <div class="space-y-3 mt-3 p-2">
@@ -312,7 +358,7 @@
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
 
-                                <form action="{{ route('group.invite') }}" method="POST">
+                                <form action="{{ route('group.invite') }}" method="POST" x-on:submit.prevent="handleSubmit($event)">
                                     @csrf
                                     <input type="hidden" name="group_id" value="{{ $group->id }}">
                                     <input type="hidden" name="group name" value="{{ $group?->groupTypes?->first()?->name}}">
@@ -383,8 +429,18 @@
 
                                     <div class="modal-footer border-0 pb-4 px-4">
                                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="bi bi-send me-1"></i> Invite
+                                        <button type="submit" class="btn btn-primary" :disabled="loading">
+                                            <template x-if="loading">
+                                                <span>
+                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                    Sending...
+                                                </span>
+                                            </template>
+                                            <template x-if="!loading">
+                                                <span>
+                                                    <i class="bi bi-send me-1"></i> Invite
+                                                </span>
+                                            </template>
                                         </button>
                                     </div>
                                 </form>
@@ -419,6 +475,7 @@
                                 $questionRatings = auth()->user()->usersSurveysRates
                                     ->where('survey_id', $survey->id)
                                     ->where('question_id', $question->id)
+                                    ->where('group_id', $group->id)
                                     ->pluck('evaluatee_id')
                                     ->toArray();
                                 
@@ -440,6 +497,7 @@
                             :completedQuestion="$completedQuestions"
                             :survey_id="$survey->id"
                             :totalQuestion="$totalQuestions"
+                            :groupSurveyTypePoints="$groupSurveyTypePoints"
                             :group="$group">
                             {{ $survey->title }}
                         </x-dashboard-progressbar>
@@ -465,7 +523,11 @@
         relationOptions: @json($relations),
         existingMemberEmails: @json($allUsers->filter(fn($u) => $u['status'] === 'member')->pluck('email')->map(fn($e) => strtolower($e))->toArray()),
         errorMessage: '',
-        
+        loading: false,
+        handleSubmit(e) {
+            this.loading = true;
+            e.target.submit();
+        },
         addEmail() {
             const email = this.newEmail.trim().toLowerCase();
             this.errorMessage = '';

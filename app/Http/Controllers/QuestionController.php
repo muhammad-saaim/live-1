@@ -60,7 +60,7 @@ class QuestionController extends Controller
         $survey = $question->survey;
         $model = $survey->model;
 
-        $isSelfType = Str::lower(preg_replace('/[^a-z0-9]/i', '', optional($model)->title)) === 'selfawarenessandmotivation';
+        $isSelfType = Str::lower(preg_replace('/[^a-z0-9]/i', '', optional($model)->title)) === 'rosenberg';
 
         $isReverse = $request->reverse_score === "1";
 

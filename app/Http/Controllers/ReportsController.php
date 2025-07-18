@@ -16,12 +16,21 @@ class ReportsController extends Controller
     {
         $user = Auth::user();
     
-        // Get all rating records for this user, eager load related survey and option points
-        $userSurveyRates = $user->usersSurveysRates()
-            ->with('survey')
-            ->join('question_options', 'users_surveys_rates.options_id', '=', 'question_options.id')
-            ->select('users_surveys_rates.*', 'question_options.point')
-            ->get();
+        // Check if user is admin using Spatie's hasRole method
+        if ($user->hasRole('admin')) {
+            // Admin: Get all rating records, eager load related survey and option points
+            $userSurveyRates = \App\Models\UsersSurveysRate::with('survey')
+                ->join('question_options', 'users_surveys_rates.options_id', '=', 'question_options.id')
+                ->select('users_surveys_rates.*', 'question_options.point')
+                ->get();
+        } else {
+            // Non-admin: Get only the user's rating records
+            $userSurveyRates = $user->usersSurveysRates()
+                ->with('survey')
+                ->join('question_options', 'users_surveys_rates.options_id', '=', 'question_options.id')
+                ->select('users_surveys_rates.*', 'question_options.point')
+                ->get();
+        }
     
         $surveyAverages = [];
     
@@ -32,7 +41,7 @@ class ReportsController extends Controller
         }
     
         // Collect distinct surveys (so you're not looping over raw rating rows)
-        $distinctSurveys = $userSurveyRates->pluck('survey')->unique('id');
+        $distinctSurveys = $userSurveyRates->pluck('survey')->filter()->unique('id')->values();
     
         return view('reports.reports-index', [
             'UserSurveys' => $distinctSurveys,

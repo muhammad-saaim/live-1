@@ -17,6 +17,7 @@ class Question extends Model
         'correct_answer',
         'points',
         'is_active',
+        'reverse_score',
         'survey_id',
         'type_id',
     ];

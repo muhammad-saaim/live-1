@@ -47,6 +47,10 @@
                         <p class="text-gray-800 dark:text-gray-300">{{ $question->is_active ? 'Active' : 'Inactive' }}</p>
                     </div>
                     <div class="mt-4">
+                        <strong>Score Type:</strong>
+                        <p class="text-gray-800 dark:text-gray-300">{{ $question->reverse_score ? 'Reverse' : 'Normal' }}</p>
+                    </div>
+                    <div class="mt-4">
                         <strong>Created At:</strong>
                         <p class="text-gray-800 dark:text-gray-300">{{ $question->created_at->format('d M Y H:i') }}</p>
                     </div>

@@ -279,6 +279,7 @@
                     const optionId = radioInput.value;
                     const evaluateeId = document.getElementById("evaluatee-id").value;
                     const messageContainer = document.getElementById("message-container");
+                    const groupId = "{{ $request->group_id ?? '' }}";
                     fetch("{{ route('survey.submitAnswer') }}", {
                         method: "POST",
                         headers: {
@@ -289,7 +290,8 @@
                             survey_id: surveyId,
                             question_id: questionId,
                             options_id: optionId,
-                            evaluatee_id: evaluateeId
+                            evaluatee_id: evaluateeId,
+                            group_id: groupId
                         })
                     })
                     .then(response => response.json())
@@ -380,6 +382,7 @@
                 const surveyId = document.getElementById("survey-id").value;
                 const optionId = selectedOption.value;
                 const evaluateeId = document.getElementById("evaluatee-id").value;
+                const groupId = "{{ $request->group_id ?? '' }}";
 
                 fetch("{{ route('survey.submitAnswer') }}", {
                         method: "POST",
@@ -391,7 +394,8 @@
                             survey_id: surveyId,
                             question_id: questionId,
                             options_id: optionId,
-                            evaluatee_id: evaluateeId
+                            evaluatee_id: evaluateeId,
+                            group_id: groupId
                         })
                     })
                     .then(response => response.json())
@@ -447,6 +451,7 @@
                     const surveyId = document.querySelector("input[name='survey_id']").value;
                     const optionId = this.value;
                     const evaluateeId = this.name.match(/\[(\d+)\]/)[1];
+                    const groupId = "{{ $request->group_id ?? '' }}";
                     fetch("{{ route('survey.submitGroupAnswer') }}", {
                         method: "POST",
                         headers: {
@@ -458,7 +463,8 @@
                             question_id: questionId,
                             survey_id: surveyId,
                             evaluatee_id: evaluateeId,
-                            options_id: optionId
+                            options_id: optionId,
+                            group_id: groupId
                         })
                     })
                     .then(async res => {
@@ -561,6 +567,7 @@
                         // Extract user ID from the name attribute (answer[user_id])
                         const evaluateeId = answer.name.match(/\[(\d+)\]/)[1];
                         const optionId = answer.value;
+                        const groupId = "{{ $request->group_id ?? '' }}";
 
                         fetch("{{ route('survey.submitGroupAnswer') }}", {
                             method: "POST",
@@ -573,7 +580,8 @@
                                 question_id: questionId,
                                 survey_id: surveyId,
                                 evaluatee_id: evaluateeId,
-                                options_id: optionId
+                                options_id: optionId,
+                                group_id: groupId
                             })
                         })
                         .then(async res => {

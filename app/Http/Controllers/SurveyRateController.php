@@ -48,6 +48,11 @@ class SurveyRateController extends Controller
         // Get all rates by the current user for this survey
         $allRates = UsersSurveysRate::where('survey_id', $survey->id)
             ->where('users_id', $user->id)
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
             ->get();
 
         // Find questions where self-evaluation is missing
@@ -75,6 +80,11 @@ class SurveyRateController extends Controller
         $usersurvey = UsersSurveysRate::with('user', 'survey', 'question', 'option')
             ->where('survey_id', $request->survey_id)
             ->where('users_id', $user->id)
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
             ->whereIn('question_id', $questions->pluck('id'))
             ->get();
 
@@ -99,7 +109,7 @@ class SurveyRateController extends Controller
         $questions = $survey->questions;
 
         // Find the next unanswered question
-        $unansweredQuestion = $questions->whereNotIn('id', auth()->user()->questions()
+        $unansweredQuestion = $questions->whereNotIn('id', auth()->user()->surveys()
             ->wherePivot('is_completed', 1)
             ->pluck('question_id'))
             ->first();
@@ -133,7 +143,7 @@ class SurveyRateController extends Controller
     public function saveAnswer(Request $request)
     {
         // Save user's answer and mark the question as completed
-        auth()->user()->questions()->updateExistingPivot(
+        auth()->user()->surveys()->updateExistingPivot(
             $request->question_id,
             ['is_completed' => 1]
         );
@@ -158,7 +168,13 @@ class SurveyRateController extends Controller
             'evaluatee_id' => $request->evaluatee_id,
             'question_id' => $request->question_id,
             'survey_id' => $request->survey_id,
-        ])->exists();
+        ])
+        ->when($request->group_id, function($query) use ($request) {
+            $query->where('group_id', $request->group_id);
+        }, function($query) {
+            $query->whereNull('group_id');
+        })
+        ->exists();
         
         if ($exists) {
             // Silently skip existing rating and return success
@@ -172,6 +188,7 @@ class SurveyRateController extends Controller
             'survey_id' => $request->survey_id,
             'question_id' => $request->question_id,
             'options_id' => $request->options_id,
+            'group_id' => $request->group_id ?? null,
         ]);
 
         // Fetch unanswered question
@@ -179,7 +196,14 @@ class SurveyRateController extends Controller
             ['users_id', '=', $user->id],
             ['evaluatee_id', '=', $request->evaluatee_id],
             ['survey_id', '=', $request->survey_id],
-        ])->pluck('question_id')->toArray();
+        ])
+        ->when($request->group_id, function($query) use ($request) {
+            $query->where('group_id', $request->group_id);
+        }, function($query) {
+            $query->whereNull('group_id');
+        })
+        ->pluck('question_id')
+        ->toArray();
 
         $nextQuestion = Question::where('survey_id', $request->survey_id)
             ->whereNotIn('id', $answeredQuestionIds)
@@ -200,6 +224,11 @@ class SurveyRateController extends Controller
         // Get all rates by the current user for this survey
         $allRates = UsersSurveysRate::where('survey_id', $request->survey_id)
             ->where('users_id', $user->id)
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
             ->get();
 
         // Find questions where self-evaluation is missing
@@ -254,7 +283,13 @@ class SurveyRateController extends Controller
                 'evaluatee_id' => $request->evaluatee_id,
                 'question_id' => $request->question_id,
                 'survey_id' => $request->survey_id,
-            ])->exists();
+            ])
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
+            ->exists();
             
             if ($exists) {
                 // Silently skip existing rating and return success
@@ -272,6 +307,7 @@ class SurveyRateController extends Controller
                 'question_id' => $request->question_id,
                 'options_id' => $request->options_id,
                 'survey_id' => $request->survey_id,
+                'group_id' => $request->group_id ?? null,
             ]);
 
             // Check if all group members have been rated for this question
@@ -297,7 +333,14 @@ class SurveyRateController extends Controller
                 'users_id' => $user->id,
                 'question_id' => $request->question_id,
                 'survey_id' => $request->survey_id,
-            ])->pluck('evaluatee_id')->toArray();
+            ])
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
+            ->pluck('evaluatee_id')
+            ->toArray();
 
             // Check if all group members have been rated for this question
             $allRated = true;
@@ -364,7 +407,13 @@ class SurveyRateController extends Controller
                     'evaluatee_id' => $user->id,
                     'question_id' => $questionId,
                     'survey_id' => $surveyId,
-                ])->exists();
+                ])
+                ->when($request->group_id, function($query) use ($request) {
+                    $query->where('group_id', $request->group_id);
+                }, function($query) {
+                    $query->whereNull('group_id');
+                })
+                ->exists();
 
                 return response()->json([
                     'status' => 'success',
@@ -382,7 +431,14 @@ class SurveyRateController extends Controller
                 'users_id' => $user->id,
                 'question_id' => $questionId,
                 'survey_id' => $surveyId,
-            ])->pluck('evaluatee_id')->toArray();
+            ])
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
+            ->pluck('evaluatee_id')
+            ->toArray();
 
             $existingCount = count($existingRatings);
             $totalCount = count($groupUserIds);

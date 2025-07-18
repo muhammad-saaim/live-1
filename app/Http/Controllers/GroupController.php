@@ -82,18 +82,13 @@ class GroupController extends Controller
         if (!auth()->user()->groups->contains($group->id)) {
             abort(404);
         }
-        // dd($group);
+
         $relations = Relation::all(); // Fetch all relations
-        
-        // Get all invitations for this group
         $invitations = Invitation::where('group_id', $group->id)->get();
-        
-        // Get all users from the group
         $groupUsers = $group->users;
-        
-        // Create a collection to store all users (both group members and invited users)
+
         $allUsers = collect();
-        
+
         // Add existing group users
         foreach ($groupUsers as $user) {
             $allUsers->push([
@@ -111,14 +106,11 @@ class GroupController extends Controller
                         : 'Member')
             ]);
         }
-        
+
         // Add invited users
         foreach ($invitations as $invitation) {
-            // Check if user exists with this email
             $existingUser = User::where('email', $invitation->email)->first();
-            
             if ($existingUser) {
-                // If user exists, use their actual data
                 $allUsers->push([
                     'id' => $existingUser->id,
                     'name' => $existingUser->name,
@@ -131,7 +123,6 @@ class GroupController extends Controller
                     'invited_by' => $invitation->invited_by,
                 ]);
             } else {
-                // If user doesn't exist, use placeholder data
                 $allUsers->push([
                     'id' => null,
                     'name' => 'Not Registered',
@@ -145,8 +136,10 @@ class GroupController extends Controller
                 ]);
             }
         }
-        
-        return view('group.show', compact('group', 'relations', 'allUsers'));
+
+        $groupSurveyTypePoints = calculateSurveyTypePoints($group);
+
+        return view('group.show', compact('group', 'relations', 'allUsers', 'groupSurveyTypePoints'));
     }
 
     /**

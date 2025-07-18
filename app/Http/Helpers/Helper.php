@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Models\Relation;
 use App\Models\UserRelative;
+use App\Models\Group;
 
 if (!function_exists('RandomSecurePassword')) {
     function RandomSecurePassword($lower = 5, $upper = 2, $digits = 2, $special_characters = 1): string
@@ -206,4 +207,120 @@ if (!function_exists('linkNewRelativeWithExistingRelations')) {
 
         }
     }
+}
+
+if (!function_exists('calculateSurveyTypePoints')) {
+    function calculateSurveyTypePoints(Group $group)
+    {
+        $typeNames = ['INTROVERTS', 'EXTRAVERT', 'RELATIONSHIP', 'SELF-PERCEPTION'];
+        $typeMap = \App\Models\Type::whereIn('name', $typeNames)->pluck('id', 'name');
+
+        $groupSurveyTypePoints = []; // [survey_id][type_name]['self'|'others']
+
+        // 👇 Initialize grand totals across all surveys
+        $grandSelfTotalRatings = 0;
+        $grandOthersTotalRatings = 0;
+        $grandSelfTotalPoints = 0;
+        $grandOthersTotalPoints = 0;
+
+        foreach ($group->defaultSurveys() as $survey) {
+            // 👇 Initialize totals for this survey
+            $surveySelfTotalRatings = 0;
+            $surveyOthersTotalRatings = 0;
+            $surveySelfTotalPoints = 0;
+            $surveyOthersTotalPoints = 0;
+
+            foreach ($typeMap as $typeName => $typeId) {
+
+                // Self rating
+                $selfRates = \App\Models\UsersSurveysRate::where('group_id', $group->id)
+                    ->where('survey_id', $survey->id)
+                    ->where('users_id', auth()->id())
+                    ->where('evaluatee_id', auth()->id())
+                    ->whereHas('question', fn($q) => $q->where('type_id', $typeId))
+                    ->with('option', 'question')
+                    ->get();
+
+                $selfPoints = $selfRates->sum(fn($rate) => optional($rate->option)->point ?? 0);
+
+                $selfPointCounts = $selfRates->groupBy(fn($rate) =>
+                    optional($rate->option)->point
+                )->map->count();
+
+                $selfTotalRatings = $selfPointCounts->sum();
+
+                // 👇 Add to survey totals
+                $surveySelfTotalRatings += $selfTotalRatings;
+                $surveySelfTotalPoints += $selfPoints;
+
+                // Others rating
+                $othersRates = \App\Models\UsersSurveysRate::where('group_id', $group->id)
+                    ->where('survey_id', $survey->id)
+                    ->where('evaluatee_id', auth()->id())
+                    ->where('users_id', '!=', auth()->id())
+                    ->whereHas('question', fn($q) => $q->where('type_id', $typeId))
+                    ->with('option', 'question')
+                    ->get();
+
+                $othersPoints = $othersRates->sum(fn($rate) => optional($rate->option)->point ?? 0);
+
+                $othersPointCounts = $othersRates->groupBy(fn($rate) =>
+                    optional($rate->option)->point
+                )->map->count();
+
+                $othersTotalRatings = $othersPointCounts->sum();
+
+                // 👇 Add to survey totals
+                $surveyOthersTotalRatings += $othersTotalRatings;
+                $surveyOthersTotalPoints += $othersPoints;
+
+                // Store per type
+                $groupSurveyTypePoints[$survey->id][$typeName] = [
+                    'self' => [
+                        'total_points'  => $selfPoints,
+                        'point_counts'  => $selfPointCounts,
+                        'total_ratings' => $selfTotalRatings,
+                    ],
+                    'others' => [
+                        'total_points'  => $othersPoints,
+                        'point_counts'  => $othersPointCounts,
+                        'total_ratings' => $othersTotalRatings,
+                    ],
+                ];
+            }
+
+            // Store per survey totals
+            $groupSurveyTypePoints[$survey->id]['totals'] = [
+                'self' => [
+                    'total_ratings' => $surveySelfTotalRatings,
+                    'total_points'  => $surveySelfTotalPoints,
+                ],
+                'others' => [
+                    'total_ratings' => $surveyOthersTotalRatings,
+                    'total_points'  => $surveyOthersTotalPoints,
+                ],
+            ];
+
+            // 👇 Accumulate into grand totals
+            $grandSelfTotalRatings += $surveySelfTotalRatings;
+            $grandOthersTotalRatings += $surveyOthersTotalRatings;
+            $grandSelfTotalPoints += $surveySelfTotalPoints;
+            $grandOthersTotalPoints += $surveyOthersTotalPoints;
+        }
+
+        // 👇 Add grand totals across all surveys
+        $groupSurveyTypePoints['all_surveys_totals'] = [
+            'self' => [
+                'total_ratings' => $grandSelfTotalRatings,
+                'total_points'  => $grandSelfTotalPoints,
+            ],
+            'others' => [
+                'total_ratings' => $grandOthersTotalRatings,
+                'total_points'  => $grandOthersTotalPoints,
+            ],
+        ];
+
+        return $groupSurveyTypePoints;
+    }
+
 }

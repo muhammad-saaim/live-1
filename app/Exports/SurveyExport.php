@@ -18,12 +18,17 @@ class SurveyExport implements FromView
     public function view(): View
     {
         $UserSurveys = UsersSurveysRate::with(['user', 'survey', 'question', 'option'])
-            // ->where('users_id', $this->user->id)
-            ->get();
+            ->get()
+            ->filter(function ($rate) {
+                // Remove if any related model is missing
+                return $rate->survey && $rate->user && $rate->question && $rate->option;
+            })
+            ->values(); // optional: reset keys nicely
 
         return view('reports.export', [
             'UserSurveys' => $UserSurveys
         ]);
     }
+
 }
 
