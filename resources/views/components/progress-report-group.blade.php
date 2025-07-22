@@ -30,17 +30,19 @@
                 $totalSelfRatings = $groupSurveyTypePoints['totals']['self']['total_ratings'];
             @endphp
             @if ($totalSelfRatings >= 2)
-            <div>
-                <h4 class="font-medium text-gray-600 mb-2">Self Evaluation</h4>
-                <ul class="text-sm text-gray-700 space-y-1">
-                    @foreach ($groupSurveyTypePoints as $type => $data)
-                        {{-- @if ($type !== 'totals' && $data['self']['total_ratings'] >= 4) --}}
+                @php
+                    $totalPoints = $groupSurveyTypePoints['totals']['self']['total_points'];
+                @endphp
+                @if ($totalPoints > 0)
+                <div>
+                    <h4 class="font-medium text-gray-600 mb-2">Self Evaluation</h4>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                        @foreach ($groupSurveyTypePoints as $type => $data)
                             @php
                                 $points = $data['self']['total_points'];
                                 $ratings = $data['self']['total_ratings'];
                                 $maxPoints = $ratings * 5;
                                 $percentage = $maxPoints > 0 ? round(($points / $maxPoints) * 100, 1) : 0;
-
                                 if ($percentage >= 84) {
                                     $status = 'Perfect';
                                     $statusColor = 'text-green-600';
@@ -55,6 +57,7 @@
                                     $statusColor = 'text-red-500';
                                 }
                             @endphp
+                            @if ($points > 0)
                             <li class="flex items-center space-x-2">
                                 <div class="flex-1 flex items-center justify-between">
                                     <span>{{ $type }}: {{ $points }} points, {{ $ratings }} ratings ({{ $percentage }}%)</span>
@@ -62,56 +65,55 @@
                                     <span class="font-bold {{ $statusColor }}">{{ $status }}</span>
                                 </div>
                             </li>
-                        {{-- @endif --}}
-                    @endforeach
+                            @endif
+                        @endforeach
 
-                    @php
-                        $totalPoints = $groupSurveyTypePoints['totals']['self']['total_points'];
-                        $totalRatings = $totalSelfRatings;
-                        $totalMaxPoints = $totalRatings * 5;
-                        $totalPercentage = $totalMaxPoints > 0 ? round(($totalPoints / $totalMaxPoints) * 100, 1) : 0;
-
-                        if ($totalPercentage >= 84) {
-                            $totalStatus = 'Perfect';
-                            $totalStatusColor = 'text-green-600';
-                        } elseif ($totalPercentage >= 70) {
-                            $totalStatus = 'Very Good';
-                            $totalStatusColor = 'text-blue-600';
-                        } elseif ($totalPercentage >= 40) {
-                            $totalStatus = 'Good';
-                            $totalStatusColor = 'text-yellow-600';
-                        } else {
-                            $totalStatus = 'Poor';
-                            $totalStatusColor = 'text-red-500';
-                        }
-                    @endphp
-                    <li class="flex items-center space-x-2 mt-1 font-bold">
-                        <div class="flex-1 flex items-center justify-between">
-                            <span>Total Self: {{ $totalPoints }} points, {{ $totalRatings }} ratings ({{ $totalPercentage }}%)</span>
-                            <div class="flex-grow mx-2 border-t border-dashed border-gray-300"></div>
-                            <span class="{{ $totalStatusColor }}">{{ $totalStatus }}</span>
-                        </div>
-                    </li>
-                </ul>
-            </div>
+                        @php
+                            $totalRatings = $totalSelfRatings;
+                            $totalMaxPoints = $totalRatings * 5;
+                            $totalPercentage = $totalMaxPoints > 0 ? round(($totalPoints / $totalMaxPoints) * 100, 1) : 0;
+                            if ($totalPercentage >= 84) {
+                                $totalStatus = 'Perfect';
+                                $totalStatusColor = 'text-green-600';
+                            } elseif ($totalPercentage >= 70) {
+                                $totalStatus = 'Very Good';
+                                $totalStatusColor = 'text-blue-600';
+                            } elseif ($totalPercentage >= 40) {
+                                $totalStatus = 'Good';
+                                $totalStatusColor = 'text-yellow-600';
+                            } else {
+                                $totalStatus = 'Poor';
+                                $totalStatusColor = 'text-red-500';
+                            }
+                        @endphp
+                        <li class="flex items-center space-x-2 mt-1 font-bold">
+                            <div class="flex-1 flex items-center justify-between">
+                                <span>Total Self: {{ $totalPoints }} points, {{ $totalRatings }} ratings ({{ $totalPercentage }}%)</span>
+                                <div class="flex-grow mx-2 border-t border-dashed border-gray-300"></div>
+                                <span class="{{ $totalStatusColor }}">{{ $totalStatus }}</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                @endif
             @endif
 
             <!-- Others Evaluation -->
             @php
                 $totalOthersRatings = $groupSurveyTypePoints['totals']['others']['total_ratings'];
+                $totalOthersPoints = $groupSurveyTypePoints['totals']['others']['total_points'];
             @endphp
             @if ($totalOthersRatings >= 2)
-            <div>
-                <h4 class="font-medium text-gray-600 mb-2">Others Evaluation</h4>
-                <ul class="text-sm text-gray-700 space-y-1">
-                    @foreach ($groupSurveyTypePoints as $type => $data)
-                        {{-- @if ($type !== 'totals' && $data['others']['total_ratings'] >= 4) --}}
+                @if ($totalOthersPoints > 0)
+                <div>
+                    <h4 class="font-medium text-gray-600 mb-2">Others Evaluation</h4>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                        @foreach ($groupSurveyTypePoints as $type => $data)
                             @php
                                 $points = $data['others']['total_points'];
                                 $ratings = $data['others']['total_ratings'];
                                 $maxPoints = $ratings * 5;
                                 $percentage = $maxPoints > 0 ? round(($points / $maxPoints) * 100, 1) : 0;
-
                                 if ($percentage >= 84) {
                                     $status = 'Perfect';
                                     $statusColor = 'text-green-600';
@@ -126,6 +128,7 @@
                                     $statusColor = 'text-red-500';
                                 }
                             @endphp
+                            @if ($points > 0)
                             <li class="flex items-center space-x-2">
                                 <div class="flex-1 flex items-center justify-between">
                                     <span>{{ $type }}: {{ $points }} points, {{ $ratings }} ratings ({{ $percentage }}%)</span>
@@ -133,38 +136,37 @@
                                     <span class="font-bold {{ $statusColor }}">{{ $status }}</span>
                                 </div>
                             </li>
-                        {{-- @endif --}}
-                    @endforeach
+                            @endif
+                        @endforeach
 
-                    @php
-                        $totalPoints = $groupSurveyTypePoints['totals']['others']['total_points'];
-                        $totalRatings = $totalOthersRatings;
-                        $totalMaxPoints = $totalRatings * 5;
-                        $totalPercentage = $totalMaxPoints > 0 ? round(($totalPoints / $totalMaxPoints) * 100, 1) : 0;
-
-                        if ($totalPercentage >= 84) {
-                            $totalStatus = 'Perfect';
-                            $totalStatusColor = 'text-green-600';
-                        } elseif ($totalPercentage >= 70) {
-                            $totalStatus = 'Very Good';
-                            $totalStatusColor = 'text-blue-600';
-                        } elseif ($totalPercentage >= 40) {
-                            $totalStatus = 'Good';
-                            $totalStatusColor = 'text-yellow-600';
-                        } else {
-                            $totalStatus = 'Poor';
-                            $totalStatusColor = 'text-red-500';
-                        }
-                    @endphp
-                    <li class="flex items-center space-x-2 mt-1 font-bold">
-                        <div class="flex-1 flex items-center justify-between">
-                            <span>Total Others: {{ $totalPoints }} points, {{ $totalRatings }} ratings ({{ $totalPercentage }}%)</span>
-                            <div class="flex-grow mx-2 border-t border-dashed border-gray-300"></div>
-                            <span class="{{ $totalStatusColor }}">{{ $totalStatus }}</span>
-                        </div>
-                    </li>
-                </ul>
-            </div>
+                        @php
+                            $totalRatings = $totalOthersRatings;
+                            $totalMaxPoints = $totalRatings * 5;
+                            $totalPercentage = $totalMaxPoints > 0 ? round(($totalOthersPoints / $totalMaxPoints) * 100, 1) : 0;
+                            if ($totalPercentage >= 84) {
+                                $totalStatus = 'Perfect';
+                                $totalStatusColor = 'text-green-600';
+                            } elseif ($totalPercentage >= 70) {
+                                $totalStatus = 'Very Good';
+                                $totalStatusColor = 'text-blue-600';
+                            } elseif ($totalPercentage >= 40) {
+                                $totalStatus = 'Good';
+                                $totalStatusColor = 'text-yellow-600';
+                            } else {
+                                $totalStatus = 'Poor';
+                                $totalStatusColor = 'text-red-500';
+                            }
+                        @endphp
+                        <li class="flex items-center space-x-2 mt-1 font-bold">
+                            <div class="flex-1 flex items-center justify-between">
+                                <span>Total Others: {{ $totalOthersPoints }} points, {{ $totalRatings }} ratings ({{ $totalPercentage }}%)</span>
+                                <div class="flex-grow mx-2 border-t border-dashed border-gray-300"></div>
+                                <span class="{{ $totalStatusColor }}">{{ $totalStatus }}</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                @endif
             @endif
         </div>
     </div>

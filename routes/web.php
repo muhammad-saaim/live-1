@@ -93,7 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
     Route::get('options/auto-complete', [QuestionController::class, 'autoComplete'])->name('options.autoComplete');
 });
-
+Route::get('reverse', [QuestionController::class, 'reverseQuestions']);
 require __DIR__.'/auth.php';
 
 Route::fallback(function () {

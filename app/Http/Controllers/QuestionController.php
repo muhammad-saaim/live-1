@@ -146,5 +146,23 @@ class QuestionController extends Controller
         }
         return redirect()->route('question.index')->with('success', 'Questions options created successfully.');
     }
-
+public function reverseQuestions()
+    {
+        $selfQuestionIds = Question::whereHas('options', function ($query) {
+            $query->where(function ($q) {
+                $q->where('name', '1')->where('point', '4');
+            });
+        })->pluck('id');
+    
+        $reverseQuestionIds = Question::whereHas('options', function ($query) {
+            $query->where(function ($q) {
+                $q->where('name', '1')->where('point', '5');
+            });
+        })->pluck('id');
+    
+        return response()->json([
+            'self_reverse_questions' => $selfQuestionIds,
+            'reverse_questions' => $reverseQuestionIds
+        ]);
+    }
 }

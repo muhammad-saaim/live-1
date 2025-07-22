@@ -24,9 +24,127 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         {{-- @foreach (auth()->user()->groups as $group) --}}
-                        <div style="background-color: {{ $group->color }};"
-                            class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
-                            <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}</h1>
+                          @php
+        $groupSurveyTypetotalPoints = calculateSurveyTypetotalPoints($group);
+    $combined = $groupSurveyTypetotalPoints['combined_totals_by_type'] ?? [];
+@endphp
+
+
+
+        @php 
+            $groupSurveyTypePoints = calculateSurveyTypePoints($group);
+
+            $selfTotals = $groupSurveyTypePoints['all_surveys_totals']['self'] ?? null;
+            $othersTotals = $groupSurveyTypePoints['all_surveys_totals']['others'] ?? null;
+
+            $selfPoints = $selfTotals['total_points'] ?? 0;
+            $selfRatings = $selfTotals['total_ratings'] ?? 0;
+            $selfMaxPoints = $selfRatings * 5;
+            $selfPercentage = $selfMaxPoints > 0 ? round(($selfPoints / $selfMaxPoints) * 100, 1) : 0;
+
+            $othersPoints = $othersTotals['total_points'] ?? 0;
+            $othersRatings = $othersTotals['total_ratings'] ?? 0;
+            $othersMaxPoints = $othersRatings * 5;
+            $othersPercentage = $othersMaxPoints > 0 ? round(($othersPoints / $othersMaxPoints) * 100, 1) : 0;
+
+            
+        @endphp
+                       <div style="background-color: {{ $group->color }};" class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
+            <div x-data="{ showCombinedModal_{{ $group->id }}: false }" class="mt-3">
+                            <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}
+
+                <!-- Trigger Button -->
+                <button
+                @click="showCombinedModal_{{ $group->id }} = true"
+                class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-xs px-3 py-2 hover:bg-blue-600 transition">
+                Group Report
+                </button>
+</h1>
+
+    <!-- Modal -->
+   
+   
+   
+    <div
+        x-show="showCombinedModal_{{ $group->id }}"
+        x-cloak
+@click.away="showCombinedModal_{{ $group->id }} = false"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"    >
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Combined Totals by Type</h2>
+                
+            </div>
+@php
+                if (!function_exists('getStatusModal')) {
+                    function getStatusModal($percentage) {
+                        if ($percentage >= 84) return ['Perfect', 'text-green-600'];
+                        elseif ($percentage >= 70) return ['Very Good', 'text-blue-600'];
+                        elseif ($percentage >= 40) return ['Good', 'text-yellow-600'];
+                        else return ['Poor', 'text-red-500'];
+                    }
+                }
+            @endphp
+            @if(!empty($combined))
+                <table class="w-full text-sm text-left border">
+                    <thead>
+                        <tr class="bg-gray-100 border-b">
+                            <th class="p-2">Type</th>
+                            <th class="p-2 text-center">Self Points</th>
+                           <th class="p-2 text-center">Self Rating</th>
+                            <th class="p-2 text-center">Others Points</th>
+                             <th class="p-2 text-center">Others Rating</th>
+                             <th class="p-2 text-center">Self (%)</th>
+            <th class="p-2 text-center">Others (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($combined as $type => $data)
+                         @php
+                $selfPoints = $data['self']['total_points'] ?? 0;
+                $selfRatings = $data['self']['total_ratings'] ?? 0;
+                $selfMax = $selfRatings * 5;
+                // dd($selfMax);
+                 $self_Percent = $selfMax > 0 ? number_format(($selfPoints / $selfMax) * 100, 1) : 0;
+                 
+                $othersPoints = $data['others']['total_points'] ?? 0;
+                $othersRatings = $data['others']['total_ratings'] ?? 0;
+                $othersMax = $othersRatings * 5;
+                 $others_Percent = $othersMax > 0 ? number_format(($othersPoints / $othersMax) * 100, 1) : 0;
+            [$self_Status, $self_Color] = getStatusModal($self_Percent);
+                                 [$others_Status, $others_Color] = getStatusModal($others_Percent);
+                            @endphp
+                            <tr class="border-b">
+                                <td class="p-2 font-medium">{{ $type }}</td>
+                                <td class="p-2 text-center">{{ $selfPoints }}</td>
+                                <td class="p-2 text-center">{{ $selfRatings }}</td>
+                                <td class="p-2 text-center">{{ $othersPoints }}</td>
+                                <td class="p-2 text-center">{{ $othersRatings }}</td>
+                                <td class="p-2 text-center">
+                                    <span class="{{ $self_Color }}">{{ $self_Percent }}% ({{ $self_Status }})</span>
+                                </td>
+                                <td class="p-2 text-center">
+                                    <span class="{{ $others_Color }}">{{ $others_Percent }}% ({{ $others_Status }})</span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+                <p>No combined totals available for this group.</p>
+            @endif
+
+            <div class="mt-4 text-right">
+                <button
+                    @click="showCombinedModal_{{ $group->id }} = false"
+                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
                             <p class="text-gray-700 ml-2">{{ __('User') }}: {{ $group->users()->count() }}</p>
                             <p class="text-gray-500 ml-2 text-sm">{{ __('Created') }}
                                 : {{ $group->created_at->format('d/m/Y') }}
