@@ -22,9 +22,9 @@
                     </div>
                     @endif
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 ">
                         {{-- @foreach (auth()->user()->groups as $group) --}}
-                          @php
+                           @php
         $groupSurveyTypetotalPoints = calculateSurveyTypetotalPoints($group);
     $combined = $groupSurveyTypetotalPoints['combined_totals_by_type'] ?? [];
 @endphp
@@ -68,7 +68,7 @@
     <div
         x-show="showCombinedModal_{{ $group->id }}"
         x-cloak
-@click.away="showCombinedModal_{{ $group->id }} = false"
+@click="showCombinedModal_{{ $group->id }} = false"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"    >
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-xl">
             <div class="flex justify-between items-center mb-4">
@@ -145,11 +145,12 @@
         </div>
     </div>
 </div>
+
                             <p class="text-gray-700 ml-2">{{ __('User') }}: {{ $group->users()->count() }}</p>
                             <p class="text-gray-500 ml-2 text-sm">{{ __('Created') }}
                                 : {{ $group->created_at->format('d/m/Y') }}
                             </p>
-                            {{-- <div class="">
+                            <div class="">
                                 @php
                                     $allSurveys = $group->defaultSurveys();
                                     $totalQuestions = 0;
@@ -160,7 +161,6 @@
                                         $completedQuestions += $survey->usersSurveysRates()
                                             ->where('users_id', auth()->id())
                                             ->where('evaluatee_id', auth()->id())
-                                            ->where('group_id', $group->id)
                                             ->count();
                                     }
 
@@ -172,58 +172,24 @@
                                         $othersCompletedQuestions += $survey->usersSurveysRates()
                                             ->where('users_id', auth()->id())
                                             ->where('evaluatee_id', '!=', auth()->id())
-                                            ->where('group_id', $group->id)
                                             ->count();
                                     }
 
                                     $othersPercentage = $totalQuestions > 0 ? round(($othersCompletedQuestions / $totalQuestions) * 100, 1) : 0;
-                                @endphp
-                                <x-group-progressbar class="mb-2" :num="$selfPercentage">Me ({{ $completedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
-                                <x-group-progressbar :num="$othersPercentage">Others ({{ $othersCompletedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
-                            </div> --}}
-                            <div>
-                                @php
-                                    $selfTotals = $groupSurveyTypePoints['all_surveys_totals']['self'] ?? null;
-                                    $othersTotals = $groupSurveyTypePoints['all_surveys_totals']['others'] ?? null;
-
-                                    $selfPoints = $selfTotals['total_points'] ?? 0;
-                                    $selfRatings = $selfTotals['total_ratings'] ?? 0;
-                                    $selfMaxPoints = $selfRatings * 5;
-                                    $selfPercentage = $selfMaxPoints > 0 ? round(($selfPoints / $selfMaxPoints) * 100, 1) : 0;
-
-                                    $othersPoints = $othersTotals['total_points'] ?? 0;
-                                    $othersRatings = $othersTotals['total_ratings'] ?? 0;
-                                    $othersMaxPoints = $othersRatings * 5;
-                                    $othersPercentage = $othersMaxPoints > 0 ? round(($othersPoints / $othersMaxPoints) * 100, 1) : 0;
-
-                                    // Function to get status & color
-                                    function getStatus($percentage) {
-                                        if ($percentage >= 84) {
-                                            return ['Perfect', 'text-green-600'];
-                                        } elseif ($percentage >= 70) {
-                                            return ['Very Good', 'text-blue-600'];
-                                        } elseif ($percentage >= 40) {
-                                            return ['Good', 'text-yellow-600'];
-                                        } else {
-                                            return ['Poor', 'text-red-500'];
-                                        }
-                                    }
-
-                                    [$selfStatus, $selfColor] = getStatus($selfPercentage);
-                                    [$othersStatus, $othersColor] = getStatus($othersPercentage);
-                                @endphp
-
-                                @if($selfRatings >= 4)
-                                    <x-group-progressbar class="mb-1" :num="$selfPercentage" :selfStatus="$selfStatus" :selfColor="$selfColor">
-                                        Me ({{ $selfRatings }})
-                                    </x-group-progressbar>
-                                @endif
-
-                                @if($othersRatings >= 4)
-                                    <x-group-progressbar :num="$othersPercentage" :othersStatus="$othersStatus" :othersColor="$othersColor">
-                                        Others ({{ $othersRatings }})
-                                    </x-group-progressbar>
-                                @endif
+                               if (!function_exists('getStatus')) {
+                    function getStatus($percentage) {
+                        if ($percentage >= 84) return ['Perfect', 'text-green-600'];
+                        elseif ($percentage >= 70) return ['Very Good', 'text-blue-600'];
+                        elseif ($percentage >= 40) return ['Good', 'text-yellow-600'];
+                        else return ['Poor', 'text-red-500'];
+                    }
+                }
+                            [$selfStatus, $selfColor] = getStatus($selfPercentage);
+                                 [$othersStatus, $othersColor] = getStatus($othersPercentage);
+                              @endphp
+                                <x-group-progressbar class="mb-2" :num="$selfPercentage" :selfStatus="$selfStatus"
+                                    :selfColor="$selfColor">Me ({{ $completedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
+                                <x-group-progressbar :num="$othersPercentage" :othersStatus="$othersStatus" :othersColor="$othersColor">Others ({{ $othersCompletedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
                             </div>
 
                             <div class="space-y-3 mt-3 p-2">
@@ -429,30 +395,13 @@
                                                     @endif
                                                 @elseif ($user['status'] === 'invited' && Auth::id() === $group->group_admin)
                                                     {{-- Cancel Invitation Button for Group Admin --}}
-                                                    <form action="{{ route('groups.cancelInvitation', ['group' => $group->id, 'email' => $user['email']]) }}" method="POST" style="display:inline-block" onsubmit="return confirm('Are you sure you want to cancel this invitation?');">
+                                                    <form action="{{ route('groups.cancelInvitation', ['group' => $group->id, 'email' => $user['email']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this invitation?');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="w-24 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
                                                             Cancel
                                                         </button>
                                                     </form>
-                                                    {{-- Invite Again Button (only for inviter) --}}
-                                                    @if(isset($user['invited_by']) && $user['invited_by'] == Auth::id())
-                                                        @php
-                                                            $canInviteAgain = isset($user['invitation_created_at']) && \Carbon\Carbon::parse($user['invitation_created_at'])->diffInHours(now()) >= 24;
-                                                        @endphp
-                                                        <form action="{{ route('group.invite') }}" method="POST" style="display:inline-block">
-                                                            @csrf
-                                                            <input type="hidden" name="group_id" value="{{ $group->id }}">
-                                                            <input type="hidden" name="emails[]" value="{{ $user['email'] }}">
-                                                            @if ($group->groupTypes->first()?->name !== 'Friend')
-                                                                <input type="hidden" name="relations[]" value="">
-                                                            @endif
-                                                            <button type="submit" class="w-26 bg-blue-500 text-white px-3 py-1 rounded text-sm ml-2 {{ $canInviteAgain ? 'hover:bg-blue-600' : 'opacity-50 cursor-not-allowed' }}" @if(!$canInviteAgain) disabled @endif>
-                                                                Invite Again
-                                                            </button>
-                                                        </form>
-                                                    @endif
                                                 @endif
                                             </td>
                                         </tr>
@@ -476,7 +425,7 @@
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
 
-                                <form action="{{ route('group.invite') }}" method="POST" x-on:submit.prevent="handleSubmit($event)">
+                                <form action="{{ route('group.invite') }}" method="POST">
                                     @csrf
                                     <input type="hidden" name="group_id" value="{{ $group->id }}">
                                     <input type="hidden" name="group name" value="{{ $group?->groupTypes?->first()?->name}}">
@@ -509,7 +458,6 @@
                                             </button>
                                             <x-outline-button type="button" @click="addEmail">Add</x-outline-button>
                                         </div>
-                                        <div x-show="errorMessage" class="text-red-600 text-sm mb-2" x-text="errorMessage"></div>
 
                                         <!-- Dropdown Email List -->
                                         <div x-show="dropdownOpen"
@@ -547,18 +495,8 @@
 
                                     <div class="modal-footer border-0 pb-4 px-4">
                                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary" :disabled="loading">
-                                            <template x-if="loading">
-                                                <span>
-                                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                                    Sending...
-                                                </span>
-                                            </template>
-                                            <template x-if="!loading">
-                                                <span>
-                                                    <i class="bi bi-send me-1"></i> Invite
-                                                </span>
-                                            </template>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-send me-1"></i> Invite
                                         </button>
                                     </div>
                                 </form>
@@ -593,7 +531,6 @@
                                 $questionRatings = auth()->user()->usersSurveysRates
                                     ->where('survey_id', $survey->id)
                                     ->where('question_id', $question->id)
-                                    ->where('group_id', $group->id)
                                     ->pluck('evaluatee_id')
                                     ->toArray();
                                 
@@ -639,33 +576,15 @@
         relations: [],
         isFriendGroup: isFriendGroup === true || isFriendGroup === 'true', // normalize type
         relationOptions: @json($relations),
-        existingMemberEmails: @json($allUsers->filter(fn($u) => $u['status'] === 'member')->pluck('email')->map(fn($e) => strtolower($e))->toArray()),
-        errorMessage: '',
-        loading: false,
-        handleSubmit(e) {
-            this.loading = true;
-            e.target.submit();
-        },
+        
         addEmail() {
-            const email = this.newEmail.trim().toLowerCase();
-            this.errorMessage = '';
-            if (!email) return;
-            if (!this.validateEmail(email)) {
-                this.errorMessage = 'Please enter a valid email address.';
-                return;
+            const email = this.newEmail.trim();
+            if (email && this.validateEmail(email) && !this.emails.includes(email)) {
+                this.emails.push(email);
+                this.relations.push('');
+                this.$nextTick(() => this.newEmail = ''); // Clear the input after the next DOM update
+                this.dropdownOpen = true;
             }
-            if (this.emails.includes(email)) {
-                this.errorMessage = 'This email is already in the invitation list.';
-                return;
-            }
-            if (this.existingMemberEmails.includes(email)) {
-                this.errorMessage = 'This user is already a member of the group.';
-                return;
-            }
-            this.emails.push(email);
-            this.relations.push('');
-            this.$nextTick(() => this.newEmail = ''); // Clear the input after the next DOM update
-            this.dropdownOpen = true;
         },
         removeEmail(index) {
             this.emails.splice(index, 1);
