@@ -176,11 +176,14 @@
     <!-- Excel download (only for bar view) -->
     <form action="{{ route('survey.export') }}" method="GET" id="excelForm" style="display: none;">
         <input type="hidden" name="type" value="bar">
+           @if(Auth::user()->hasRole('admin'))
+
         <button type="submit" class="btn" style="background-color: #8CB368; color: white;">
             Download Excel
         </button>
-    </form>
+        @endif
 
+    </form>
     <!-- PDF download (only for text view) -->
     <form action="{{ route('report.download') }}" method="GET" id="pdfForm">
         <input type="hidden" name="type" value="text">

@@ -70,7 +70,7 @@
         x-cloak
 @click="showCombinedModal_{{ $group->id }} = false"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"    >
-        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-xl">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-xl" @click.stop>
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold">Combined Totals by Type</h2>
                 
@@ -152,8 +152,9 @@
                             </p>
                             <div class="">
                                 @php
-                                    $allSurveys = $group->defaultSurveys();
-                                    $totalQuestions = 0;
+ $allSurveys = $group->defaultSurveys()->filter(function ($survey) use ($group) {
+        return in_array('Family', $survey->applies_to); // Ensure surveys are scoped to 'Family'
+    });                                    $totalQuestions = 0;
                                     $completedQuestions = 0;
 
                                     foreach ($allSurveys as $survey) {
@@ -161,6 +162,7 @@
                                         $completedQuestions += $survey->usersSurveysRates()
                                             ->where('users_id', auth()->id())
                                             ->where('evaluatee_id', auth()->id())
+                                            ->where('group_id', $group->id) // Filter by group ID
                                             ->count();
                                     }
 
@@ -172,6 +174,7 @@
                                         $othersCompletedQuestions += $survey->usersSurveysRates()
                                             ->where('users_id', auth()->id())
                                             ->where('evaluatee_id', '!=', auth()->id())
+                                            ->where('group_id', $group->id) // Filter by group ID
                                             ->count();
                                     }
 

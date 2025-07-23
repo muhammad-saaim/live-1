@@ -23,14 +23,12 @@ class DashboardController extends Controller
         // Get user's answers (rates)
         $surveyRates = Survey::whereHas('usersSurveysRates', function ($query) use ($authUserId) {
                 $query->where('users_id', $authUserId)
-                    ->where('evaluatee_id', $authUserId)
-                    ->whereNull('group_id');
+                    ->where('evaluatee_id', $authUserId);
             })
             ->with([
                 'usersSurveysRates' => function ($q) use ($authUserId) {
                     $q->where('users_id', $authUserId)
                     ->where('evaluatee_id', $authUserId)
-                    ->whereNull('group_id')
                     ->with('option'); // Load the selected option to get its points
                 }
             ])
