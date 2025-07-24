@@ -54,11 +54,13 @@
                             <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}
 
                 <!-- Trigger Button -->
-                <button
-                @click="showCombinedModal_{{ $group->id }} = true"
-                class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-xs px-3 py-2 hover:bg-blue-600 transition">
-                Group Report
-                </button>
+            <button
+    @click="showCombinedModal_{{ $group->id }} = true"
+    class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-[10px] px-2 py-1 hover:bg-blue-600 transition">
+    Group Report
+</button>
+
+
 </h1>
 
     <!-- Modal -->
@@ -194,7 +196,11 @@
                                     :selfColor="$selfColor">Me ({{ $completedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
                                 <x-group-progressbar :num="$othersPercentage" :othersStatus="$othersStatus" :othersColor="$othersColor">Others ({{ $othersCompletedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
                             </div>
+@php
+                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
+                    @endphp
 
+                    @if ($group->users()->count() >= $minimumUsers)
                             <div class="space-y-3 mt-3 p-2">
                                 @foreach($group->defaultSurveys() as $survey)
                                     <div class="flex items-center justify-between space-x-2">
@@ -216,7 +222,7 @@
                                     </div>
                                 @endforeach
                             </div>
-
+                                @endif
                             <div class="pt-3 flex space-x-2">
                                 <!-- Edit Group Button -->
                                 @if (Auth::id() === $group->group_admin)
@@ -508,7 +514,7 @@
                     </div>
 
                     @php
-                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 1;
+                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
                     @endphp
 
                     @if ($group->users()->count() >= $minimumUsers)

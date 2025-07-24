@@ -67,7 +67,7 @@
                 @if($individualSurveys->isNotEmpty())
                     @foreach($individualSurveys as $survey)
                         <x-dashboard-progressbar
-                            completedQuestion="{{ auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->where('users_id', auth()->id())->where('evaluatee_id', auth()->id())->count() }}"
+                            completedQuestion="{{ auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->where('users_id', auth()->id())->where('evaluatee_id', auth()->id())->whereNull('group_id')->count()  }}"
                             survey_id="{{ $survey->id }}"
                             totalQuestion="{{ $survey->questions->count() }}"
                             total_points="{{ $surveyPoints[$survey->id] ?? 0 }}"
@@ -134,11 +134,13 @@
                             <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}
 
                 <!-- Trigger Button -->
-                <button
-                @click="showCombinedModal_{{ $group->id }} = true"
-                class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-xs px-3 py-2 hover:bg-blue-600 transition">
-                Group Report
-                </button>
+              <button
+    @click="showCombinedModal_{{ $group->id }} = true"
+    class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-[10px] px-2 py-1 hover:bg-blue-600 transition">
+    Group Report
+</button>
+
+
 </h1>
 
     <!-- Modal -->
@@ -282,6 +284,10 @@
                                 <x-group-progressbar :num="$othersPercentage" :othersStatus="$othersStatus"
                                     :othersColor="$othersColor">Others </x-group-progressbar>
                                    </div>
+@php
+                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
+                    @endphp
+                                        @if ($group->users()->count() >= $minimumUsers)
 
                         <div class="space-y-3 mt-3 p-2">
                             @foreach($group->defaultSurveys() as $survey)
@@ -304,7 +310,7 @@
                                 </div>
                             @endforeach
                         </div>
-
+                          @endif
                        
                             <div class="pt-3">
                                 <a href="{{ route('group.show',$group->id) }}">

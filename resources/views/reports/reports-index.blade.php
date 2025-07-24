@@ -132,16 +132,20 @@
             $appliesTo = is_array($survey?->applies_to) ? implode(', ', $survey->applies_to) : '';
         @endphp
 
-        @if($surveyId) {{-- Only render if survey exists --}}
+       @if($surveyId) {{-- Only render if survey exists --}}
           <div class="progress-item">
             <div class="progress-label">
               {{ $title }} {{ $appliesTo ? "($appliesTo)" : '' }}
             </div>
             <div class="progress-bar">
               <div class="progress-fill" style="width: {{ $overallAverage * 20 }}%;"></div>
+              
+            </div>
+            <div class="mt-2">
+                <a href="{{ route('survey.export', ['id' => $surveyId]) }}" class="btn btn-primary">Download Excel</a>
             </div>
           </div>
-        @endif
+        @endif 
       @endforeach
     </div>
     

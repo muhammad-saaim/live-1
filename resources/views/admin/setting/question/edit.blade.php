@@ -57,7 +57,7 @@
                                 <option value="">Select a type</option>
                                 @foreach($types as $type)
                                     <option value="{{ $type->id }}" {{ old('type_id', $question->type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
-                                @endforeach 
+                                @endforeach
                             </select>
                         </div>
                         <div class="mb-4">

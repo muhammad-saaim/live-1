@@ -92,10 +92,13 @@ class ReportsController extends Controller
         return $pdf->download('report.pdf');
     }
 
-    public function exportSurveyExcel()
+    public function exportSurveyExcel(Request $request)
     {
+        // Validate the request to ensure 'id' is provided
+    $survey_id = $request->input('id');
         $user = Auth::user();
-        return Excel::download(new SurveyExport($user), 'survey-report.xlsx');
-    }
+        return Excel::download(new SurveyExport($user,$survey_id), 'survey-report.xlsx');
+    
 
+}
 }
