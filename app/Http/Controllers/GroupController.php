@@ -48,7 +48,7 @@ class GroupController extends Controller
             'subgroup_types' => 'array',
             'subgroup_types.*' => 'exists:group_types,id',
         ]);
-
+       
         $color = sprintf('#%06X', mt_rand(0, 0xFFFFFF));
 
         // Create the new group

@@ -42,6 +42,12 @@ class DashboardController extends Controller
             'AUTONOMY' => [],
             'RELATEDNESS' => [],
         ];
+        $totalTypePoints = [
+            'SELF' => 0,
+            'COMPETENCE' => 0,
+            'AUTONOMY' => 0,
+            'RELATEDNESS' => 0,
+        ];
         // Get type IDs for each type name
         $typeMap = \App\Models\Type::whereIn('name', ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS'])->pluck('id', 'name');
         foreach ($surveyRates as $survey) {
@@ -59,6 +65,7 @@ class DashboardController extends Controller
                 foreach ($typeMap as $typeName => $typeId) {
                     if ($questionTypeId == $typeId) {
                         $typeTotals[$typeName] += $point;
+                        $totalTypePoints[$typeName] += $point; // <-- Add to total
                     }
                 }
             }
@@ -87,8 +94,9 @@ class DashboardController extends Controller
                 ]);
             }
         }
+        //  dd($surveyPoints,$totalTypePoints);
 
-        return view('dashboard', compact('surveyPoints', 'typePoints'));
+        return view('dashboard', compact('surveyPoints', 'typePoints', 'totalTypePoints'));
     }
 
 

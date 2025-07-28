@@ -49,7 +49,18 @@
 
             
         @endphp
-                       <div style="background-color: {{ $group->color }};" class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
+         @php
+    if ($group->groupTypes->contains('id', 1) || $group->groupTypes->contains('name', 'Friend')) {
+        $groupColor = '#D0F0FD'; // Soft Sky Blue (Friend)
+    } elseif ($group->groupTypes->contains('id', 2) || $group->groupTypes->contains('name', 'Family')) {
+        $groupColor = '#FFE0F0'; // Light Pink Rose (Family)
+    } else {
+        $groupColor = $group->color ?? '#F2F2F2'; // Neutral Light Grey fallback
+    }
+@endphp
+
+
+                       <div style="background-color: {{ $groupColor }};" class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
             <div x-data="{ showCombinedModal_{{ $group->id }}: false }" class="mt-3">
                             <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}
 

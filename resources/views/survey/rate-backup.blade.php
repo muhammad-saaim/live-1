@@ -9,7 +9,9 @@
     <div class="p-3 max-w-7xl mx-auto space-y-4">
         <div class="col-md-8">
             <div class="d-flex justify-content-between w-100 p-2">
-                <button class="btn btn-danger">Leave the Survey</button>
+<button class="btn btn-danger" onclick="window.location.href='{{ route('dashboard.index') }}'">
+    Leave the Survey
+</button>
 
                 <div class="btn-group" role="group" aria-label="Toggle View">
                     <!-- Removed 'checked' from questionView and added to defaultView -->

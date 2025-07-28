@@ -486,3 +486,147 @@ if (!function_exists('calculateSurveyTypetotalPoints')) {
         return $groupSurveyTypetotalPoints;
     }
 }
+
+if (!function_exists('calculateallSurveyTypetotalPoints')) {
+    function calculateallSurveyTypetotalPoints(Group $group)
+    {
+        // 👇 Fetch lowercase group type names
+        $groupTypeNames = $group->groupTypes->pluck('name')->map(fn($n) => strtolower($n))->toArray();
+
+        // 👇 Decide which type names to include based on group type
+        if (in_array('family', $groupTypeNames)) {
+            $typeNames = ['INTROVERTS', 'EXTRAVERT', 'RELATIONSHIP', 'SELF-PERCEPTION'];
+        } elseif (in_array('friend', $groupTypeNames)) {
+            $typeNames = ['SOCIAL', 'ACADEMIC'];
+        } else {
+            $typeNames = []; // fallback if needed
+        }
+
+        // 👇 Map type names to type IDs
+        $typeMap = \App\Models\Type::whereIn('name', $typeNames)->pluck('id', 'name');
+
+        $groupSurveyTypePoints = [];
+
+        $grandSelfTotalRatings = 0;
+        $grandOthersTotalRatings = 0;
+        $grandSelfTotalPoints = 0;
+        $grandOthersTotalPoints = 0;
+
+        // Initialize combined totals per type
+        $combinedTotals = [];
+
+        foreach ($group->defaultSurveys() as $survey) {
+            $surveySelfTotalRatings = 0;
+            $surveyOthersTotalRatings = 0;
+            $surveySelfTotalPoints = 0;
+            $surveyOthersTotalPoints = 0;
+
+            foreach ($typeMap as $typeName => $typeId) {
+                // Self rating
+                $selfRates = \App\Models\UsersSurveysRate::where('group_id', $group->id)
+                    ->where('survey_id', $survey->id)
+                    ->where('users_id', auth()->id())
+                    ->where('evaluatee_id', auth()->id())
+                    ->whereHas('question', fn($q) => $q->where('type_id', $typeId))
+                    ->with('option', 'question')
+                    ->get();
+
+                $selfPoints = $selfRates->sum(fn($rate) => optional($rate->option)->point ?? 0);
+                $selfPointCounts = $selfRates->groupBy(fn($rate) =>
+                    optional($rate->option)->point
+                )->map->count();
+                $selfTotalRatings = $selfPointCounts->sum();
+
+                $surveySelfTotalRatings += $selfTotalRatings;
+                $surveySelfTotalPoints += $selfPoints;
+
+                // Others rating
+                $othersRates = \App\Models\UsersSurveysRate::where('group_id', $group->id)
+                    ->where('survey_id', $survey->id)
+                    ->where('evaluatee_id', auth()->id())
+                    ->where('users_id', '!=', auth()->id())
+                    ->whereHas('question', fn($q) => $q->where('type_id', $typeId))
+                    ->with('option', 'question')
+                    ->get();
+
+                $othersPoints = $othersRates->sum(fn($rate) => optional($rate->option)->point ?? 0);
+                $othersPointCounts = $othersRates->groupBy(fn($rate) =>
+                    optional($rate->option)->point
+                )->map->count();
+                $othersTotalRatings = $othersPointCounts->sum();
+
+                $surveyOthersTotalRatings += $othersTotalRatings;
+                $surveyOthersTotalPoints += $othersPoints;
+
+                // Store per survey & type info
+                $groupSurveyTypePoints[$survey->id][$typeName] = [
+                    'self' => [
+                        'total_points'  => $selfPoints,
+                        'point_counts'  => $selfPointCounts,
+                        'total_ratings' => $selfTotalRatings,
+                    ],
+                    'others' => [
+                        'total_points'  => $othersPoints,
+                        'point_counts'  => $othersPointCounts,
+                        'total_ratings' => $othersTotalRatings,
+                    ],
+                ];
+
+                // --- NEW: accumulate combined totals per question type ---
+                if (!isset($combinedTotals[$typeName])) {
+                    $combinedTotals[$typeName] = [
+                        'self' => [
+                            'total_points' => 0,
+                            'total_ratings' => 0,
+                        ],
+                        'others' => [
+                            'total_points' => 0,
+                            'total_ratings' => 0,
+                        ],
+                    ];
+                }
+
+                $combinedTotals[$typeName]['self']['total_points'] += $selfPoints;
+                $combinedTotals[$typeName]['self']['total_ratings'] += $selfTotalRatings;
+
+                $combinedTotals[$typeName]['others']['total_points'] += $othersPoints;
+                $combinedTotals[$typeName]['others']['total_ratings'] += $othersTotalRatings;
+            }
+
+            // Totals per survey
+            $groupSurveyTypePoints[$survey->id]['totals'] = [
+                'self' => [
+                    'total_ratings' => $surveySelfTotalRatings,
+                    'total_points'  => $surveySelfTotalPoints,
+                ],
+                'others' => [
+                    'total_ratings' => $surveyOthersTotalRatings,
+                    'total_points'  => $surveyOthersTotalPoints,
+                ],
+            ];
+
+            $grandSelfTotalRatings += $surveySelfTotalRatings;
+            $grandOthersTotalRatings += $surveyOthersTotalRatings;
+            $grandSelfTotalPoints += $surveySelfTotalPoints;
+            $grandOthersTotalPoints += $surveyOthersTotalPoints;
+        }
+
+        // Grand totals for all surveys
+        $groupSurveyTypePoints['all_surveys_totals'] = [
+            'self' => [
+                'total_ratings' => $grandSelfTotalRatings,
+                'total_points'  => $grandSelfTotalPoints,
+            ],
+            'others' => [
+                'total_ratings' => $grandOthersTotalRatings,
+                'total_points'  => $grandOthersTotalPoints,
+            ],
+        ];
+
+        // Add the combined totals per question type to the result (without modifying models)
+        $groupSurveyTypetotalPoints['combined_totals_by_type'] = $combinedTotals;
+
+        return $groupSurveyTypetotalPoints;
+    }
+}
+

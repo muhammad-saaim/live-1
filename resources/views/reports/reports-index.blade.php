@@ -141,9 +141,9 @@
               <div class="progress-fill" style="width: {{ $overallAverage * 20 }}%;"></div>
               
             </div>
-            <div class="mt-2">
+            <!-- <div class="mt-2">
                 <a href="{{ route('survey.export', ['id' => $surveyId]) }}" class="btn btn-primary">Download Excel</a>
-            </div>
+            </div> -->
           </div>
         @endif 
       @endforeach
@@ -188,12 +188,15 @@
         @endif
 
     </form>
-    <!-- PDF download (only for text view) -->
-    <form action="{{ route('report.download') }}" method="GET" id="pdfForm">
+    <!-- Excel download (only for text view) -->
+    <form action="{{ route('survey.export') }}" method="GET" id="excelFormText">
         <input type="hidden" name="type" value="text">
+        @if(Auth::user()->hasRole('admin'))
+
         <button type="submit" class="btn" style="background-color: #8CB368; color: white;">
-            Download PDF
+            Download Excel
         </button>
+        @endif
     </form>
 
     <button class="btn" style="background-color: #8CB368; color: white;">
@@ -211,7 +214,7 @@
           const barDiv = document.getElementById('barshaped');
           const textDiv = document.getElementById('textshaped');
           const excelForm = document.getElementById('excelForm');
-          const pdfForm = document.getElementById('pdfForm');
+          const excelFormText = document.getElementById('excelFormText');
   
           function toggleView() {
               const isBar = barRadio.checked;
@@ -220,7 +223,7 @@
               textDiv.style.display = isBar ? 'none' : 'block';
   
               excelForm.style.display = isBar ? 'inline-block' : 'none';
-              pdfForm.style.display = isBar ? 'none' : 'inline-block';
+              excelFormText.style.display = isBar ? 'none' : 'inline-block';
           }
   
           toggleView();

@@ -1,79 +1,109 @@
 @php
-    // Get unique type names
-    $typeNames = $UserSurveys->pluck('types.name')->filter()->unique();
-
-    // Calculate totals per type
-    $totalsByType = [];
-
-    foreach ($typeNames as $typeName) {
-        $totalsByType[$typeName] = $UserSurveys->filter(function ($entry) use ($typeName) {
-            return $entry->types->name === $typeName;
-        })->sum(function ($entry) {
-            return is_numeric($entry->option->name) ? (int) $entry->option->name : 0;
-        });
-    }
+    $groupedSurveys = $UserSurveys->groupBy(fn($item) => $item->surveyModel->title ?? 'Untitled');
+    $shownPairs = [];
 @endphp
 
-<table border="1" cellpadding="6" cellspacing="0">
+<table class="table table-bordered text-center" style="border-collapse: collapse; font-size: 12px;">
     <thead>
+        {{-- Row 1: Score Type --}}
         <tr>
-            <th>#</th>
-            <th>Group Id</th>
-            <th>Group Name</th>
-            <th>Evaluator</th>
-            <th>Evaluatee</th>
-            <th>Survey</th>
-            <th>Survey Type</th>
-            <th>Question</th>
-            <th>Question Type</th>
-            <th>Selected Option</th>
-            <th>Applies To</th>
-            <th>Score Type</th>
-            @foreach ($typeNames as $typeName)
-                <th>{{ $typeName }}</th>
+            <th colspan="9" style="vertical-align: middle; background: #fff; border: 1px solid #000; min-width: 40px;"></th>
+            @foreach ($groupedSurveys as $surveyTitle => $questions)
+                @php $uniqueQuestions = $questions->unique('question_id'); @endphp
+                {{-- Blank cell for the survey title --}}
+                <th style="border: 1px solid #000; background: #eee;"></th>
+                {{-- Output a Score Type cell for each question --}}
+                @foreach ($uniqueQuestions as $entry)
+                    @php $reverse = $entry->question->reverse_score ?? null; @endphp
+                    <th style="border: 1px solid #000;{{ $reverse === 1 ? ' color: red; font-weight: bold;' : '' }} writing-mode: vertical-rl; transform: rotate(180deg); vertical-align: bottom; padding: 2px 0; min-width: 20px;">
+                        {{ $reverse === 0 ? 'Normal' : ($reverse === 1 ? 'Reverse' : 'N/A') }}
+                    </th>
+                @endforeach
+                {{-- Add a blank cell for the "Total" column --}}
+                <th style="border: 1px solid #000; background: #ffe;"></th>
+            @endforeach
+        </tr>
+
+        {{-- Row 2: Survey Titles + Question Texts --}}
+        <tr>
+            <th style="border: 1px solid #000; min-width: 60px;">Date</th>
+            <th style="border: 1px solid #000;">Group ID</th>
+            <th style="border: 1px solid #000;">Group Type</th>
+            <th style="border: 1px solid #000;">Evaluator ID</th>
+            <th style="border: 1px solid #000;">Evaluator Role</th>
+            <th style="border: 1px solid #000;">Evaluator Gender</th>
+            <th style="border: 1px solid #000;">Evaluatee ID</th>
+            <th style="border: 1px solid #000;">Evaluatee Role</th>
+            <th style="border: 1px solid #000;">Evaluatee Gender</th>
+            @foreach ($groupedSurveys as $surveyTitle => $questions)
+                @php $uniqueQuestions = $questions->unique('question_id'); @endphp
+                <th style="border: 1px solid #000; background: #eee; font-weight: bold;" >
+                    {{ $surveyTitle }}
+                </th>
+                @foreach ($uniqueQuestions as $entry)
+                    @php
+                    //  dd($entry);
+                        $qText = $entry->question->question ?? 'Untitled';
+                        // Highlight special headers
+                        $isRed = false;
+                        if (stripos($qText, 'Self-esteem') !== false || stripos($qText, 'Reverse') !== false || stripos($qText, 'Basic Needs Satisfaction') !== false) {
+                            $isRed = true;
+                        }
+                    @endphp
+                    <th style="border: 1px solid #000; 
+                        {{ $isRed ? 'color: red; font-weight: bold;' : '' }}
+                        writing-mode: vertical-rl; 
+                        transform: rotate(180deg); 
+                        vertical-align: bottom; 
+                        padding: 2px 0; 
+                        min-width: 20px;">
+                        {{ $qText }}
+                    </th>
+                @endforeach
+                <th style="border: 1px solid #000; background: #ffe;">{{ $surveyTitle }} Total</th>
             @endforeach
         </tr>
     </thead>
     <tbody>
-        @foreach ($UserSurveys as $index => $entry)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $entry->group_id ?? 'N/A' }}</td>
-                <td>{{ $entry->group->name ?? 'N/A' }}</td>
-                <td>{{ $entry->users_id ?? 'N/A' }}</td>
-                <td>{{ $entry->evaluatee_id ?? 'N/A' }}</td>
-                <td>{{ $entry->survey->title ?? 'N/A' }}</td>
-                <td>{{ $entry->surveyModel->title ?? 'N/A' }}</td>
-                <td>{{ $entry->question->question ?? 'N/A' }}</td>
-                <td>{{ $entry->types->name ?? 'N/A' }}</td>
-                <td>{{ $entry->option->name ?? 'N/A' }}</td>
-                <td>
-                    {{ is_array($entry->survey->applies_to)
-                        ? implode(', ', $entry->survey->applies_to)
-                        : ($entry->survey->applies_to ?? 'N/A') }}
-                </td>
-                <td>
-                    {{ $entry->question->reverse_score === 0
-                        ? 'Normal'
-                        : ($entry->question->reverse_score === 1 ? 'Reverse' : 'N/A') }}
-                </td>
-
-                @foreach ($typeNames as $typeName)
-                    <td>
-                        {{ $entry->types->name === $typeName
-                            ? ($entry->option->name ?? 0)
-                            : 0 }}
-                    </td>
-                @endforeach
-            </tr>
+        @foreach ($UserSurveys as $entry)
+            @php
+                $groupType = $entry->group->name ?? ' ';
+                $pairKey = $groupType . '-' . $entry->users_id . '-' . $entry->evaluatee_id;
+            @endphp
+            @if (!in_array($pairKey, $shownPairs))
+                @php $shownPairs[] = $pairKey; @endphp
+                <tr>
+                    <td style="border: 1px solid #000;">{{ $entry->date }}</td>
+                    <td style="border: 1px solid #000;">{{ $entry->group_id }}</td>
+                    <td style="border: 1px solid #000;">{{ $groupType }}</td>
+                    <td style="border: 1px solid #000;">{{ $entry->users_id ?? 'N/A' }}</td>
+                    {{-- <td style="border: 1px solid #000;">{{ $entry->userRelation->name ?? 'N/A' }}</td> --}}
+                    <td style="border: 1px solid #000;">{{ $entry->user->gender ?? 'N/A' }}</td>
+                    <td style="border: 1px solid #000;">{{ $entry->evaluatee_id ?? 'N/A' }}</td>
+                    {{-- <td style="border: 1px solid #000;">{{ $entry->evaluateeRelation->name ?? 'N/A' }}</td> --}}
+                    {{-- <td style="border: 1px solid #000;">{{ $entry->evaluatee->gender ?? 'N/A' }}</td> --}}
+                    @foreach ($groupedSurveys as $surveyTitle => $questions)
+                        @php $uniqueQuestions = $questions->unique('question_id'); @endphp
+                        <td style="border: 1px solid #000; background: #f9f9f9;"></td>
+                        @php $surveyRowTotal = 0; @endphp {{-- Initialize survey total for this row --}}
+                        @foreach ($uniqueQuestions as $questionEntry)
+                            @php
+                                $matched = $UserSurveys->first(function ($record) use ($entry, $questionEntry) {
+                                    return $record->group_id === $entry->group_id &&
+                                           $record->users_id === $entry->users_id &&
+                                           $record->evaluatee_id === $entry->evaluatee_id &&
+                                           $record->question_id === $questionEntry->question_id;
+                                });
+                                $optionName = $matched->option->name ?? '';
+                                $corredcr = $matched->option->name ?? 0;
+                                $surveyRowTotal += $corredcr; // Add to survey total
+                            @endphp
+                            <td style="border: 1px solid #000;">{{ $optionName }}</td>
+                        @endforeach
+                        <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">{{ $surveyRowTotal }}</td> {{-- Show survey total --}}
+                    @endforeach
+                </tr>
+            @endif
         @endforeach
-
-        {{-- Totals Row --}}
-        <tr>
-            <td colspan="12"><strong>Total Points by Type</strong></td>
-            @foreach ($typeNames as $typeName)
-                <td><strong>{{ $totalsByType[$typeName] }}</strong></td>
-            @endforeach
-        </tr>
     </tbody>
 </table>

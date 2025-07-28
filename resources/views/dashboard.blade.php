@@ -1,11 +1,66 @@
+
+
 <x-app-layout>
     {{--    <x-slot name="header">--}}
     {{--        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">--}}
     {{--            {{ __('Dashboard') }}--}}
     {{--        </h2>--}}
     {{--    </x-slot>--}}
-
-    <div class="p-3 max-w-7xl mx-auto space-y-4">
+  
+    <div x-data="{ showReportModal: false }" class="p-3 max-w-7xl mx-auto space-y-4">
+        <!-- Report Modal (Alpine.js version) - moved inside Alpine scope -->
+        <div
+            x-show="showReportModal"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+        >
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" fill="none"/>
+                            <path d="M9 12h6" stroke="currentColor" stroke-linecap="round"/>
+                        </svg>
+                        <h2 class="text-lg font-bold text-gray-800">Self Evaluation</h2>
+                    </div>
+                    <button @click="showReportModal = false" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+                @php
+                function getStatusText($value, $type = 'default') {
+                    if ($type === 'self-esteem') {
+                        return $value <= 0 ? ['You can be better', 'text-red-500'] : ['', ''];
+                    }
+                    if ($value >= 84) return ['Excellent', 'text-green-600'];
+                    if ($value >= 70) return ['Good', 'text-blue-600'];
+                    if ($value >= 40) return ['Average', 'text-yellow-600'];
+                    return ['Poor', 'text-red-500'];
+                }
+                $selfEsteem = $totalTypePoints['SELF'] ?? 0;
+                $competence = $totalTypePoints['COMPETENCE'] ?? 0;
+                $autonomy = $totalTypePoints['AUTONOMY'] ?? 0;
+                $relatedness = $totalTypePoints['RELATEDNESS'] ?? 0;
+                @endphp
+                <div class="px-6 py-4 space-y-2">
+                    <div class="flex justify-between items-center py-2 border-b">
+                        <span class="font-semibold text-gray-700">Self-Esteem: {{ $selfEsteem }}</span>
+                        <span class="font-medium {{ getStatusText($selfEsteem, 'self-esteem')[1] }}">{{ getStatusText($selfEsteem, 'self-esteem')[0] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b">
+                        <span class="font-semibold text-gray-700">Competence: {{ $competence }}</span>
+                        <span class="font-medium {{ getStatusText($competence)[1] }}">{{ getStatusText($competence)[0] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b">
+                        <span class="font-semibold text-gray-700">Autonomy: {{ $autonomy }}</span>
+                        <span class="font-medium {{ getStatusText($autonomy)[1] }}">{{ getStatusText($autonomy)[0] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="font-semibold text-gray-700">Relatedness: {{ $relatedness }}</span>
+                        <span class="font-medium {{ getStatusText($relatedness)[1] }}">{{ getStatusText($relatedness)[0] }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Buttons -->
         <div class="flex justify-between align-center">
             <div>
@@ -33,7 +88,7 @@
                         New Group
                     </x-secondary-button>
                 </a>
-
+                
             </div>
         </div>
 
@@ -53,6 +108,12 @@
         <div>
             <div class="bg-ml-color-lime border rounded-xl p-4 space-y-3">
                 <h2 class="text-xl mb-0"> {{ __("My Surveys") }} </h2>
+                <button
+                    @click="showReportModal = true"
+                    class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-sm px-4 py-2 hover:bg-blue-600 transition ml-2 mt-2"
+                >
+                    View Report
+                </button>
                 <p class="text-xs my-0">Date: {{ now() }} </p>
                 @php
                     // $userSurveys = auth()->user()->surveys; 
@@ -86,7 +147,6 @@
             </div>
         </div>
 
-        <!-- Groups -->
         @if(auth()->user()->groups()->exists())
             <div class="pb-10">
                 <div>
@@ -129,7 +189,18 @@
 
             
         @endphp
-                       <div style="background-color: {{ $group->color }};" class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
+    @php
+    if ($group->groupTypes->contains('id', 1) || $group->groupTypes->contains('name', 'Friend')) {
+        $groupColor = '#D0F0FD'; // Soft Sky Blue (Friend)
+    } elseif ($group->groupTypes->contains('id', 2) || $group->groupTypes->contains('name', 'Family')) {
+        $groupColor = '#FFE0F0'; // Light Pink Rose (Family)
+    } else {
+        $groupColor = $group->color ?? '#F2F2F2'; // Neutral Light Grey fallback
+    }
+@endphp
+
+
+                        <div style="background-color: {{ $groupColor }};" class="rounded-xl border border-gray-300 px-3 pt-2 pb-3">
             <div x-data="{ showCombinedModal_{{ $group->id }}: false }" class="mt-3">
                             <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}
 
@@ -327,4 +398,7 @@
             </div>
         @endif
     </div>
+
+<!-- Ensure Alpine.js is loaded -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </x-app-layout>
