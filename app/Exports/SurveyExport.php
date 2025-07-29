@@ -26,6 +26,10 @@ class SurveyExport implements FromView, WithEvents
             'users_surveys_rates.*',
             'users.name as user_name',
             'users.gender as user_gender',
+            'evaluatee.name as evaluatee_name',
+            'evaluatee.gender as evaluatee_gender',
+            'user_relations.name as evaluator_relation',
+            'evaluatee_relations.name as evaluatee_relation',
             'surveys.title as survey_title',
             'questions.question as question_text',
             'questions.reverse_score',
@@ -35,6 +39,17 @@ class SurveyExport implements FromView, WithEvents
             'types.name as type_name'
         ])
         ->join('users', 'users_surveys_rates.users_id', '=', 'users.id')
+        ->join('users as evaluatee', 'users_surveys_rates.evaluatee_id', '=', 'evaluatee.id')
+        ->leftJoin('user_relatives as user_rel', function($join) {
+            $join->on('users_surveys_rates.users_id', '=', 'user_rel.user_id')
+                 ->on('users_surveys_rates.evaluatee_id', '=', 'user_rel.relative_id');
+        })
+        ->leftJoin('user_relatives as evaluatee_rel', function($join) {
+            $join->on('users_surveys_rates.evaluatee_id', '=', 'evaluatee_rel.user_id')
+                 ->on('users_surveys_rates.users_id', '=', 'evaluatee_rel.relative_id');
+        })
+        ->leftJoin('relations as user_relations', 'user_rel.relation_id', '=', 'user_relations.id')
+        ->leftJoin('relations as evaluatee_relations', 'evaluatee_rel.relation_id', '=', 'evaluatee_relations.id')
         ->join('surveys', 'users_surveys_rates.survey_id', '=', 'surveys.id')
         ->join('questions', 'users_surveys_rates.question_id', '=', 'questions.id')
         ->join('question_options', 'users_surveys_rates.options_id', '=', 'question_options.id')
