@@ -7,11 +7,11 @@
     <thead>
         {{-- Row 1: Score Type --}}
         <tr>
-            <th colspan="9" style="vertical-align: middle; background: #fff; border: 1px solid #000; min-width: 40px;"></th>
+            <th colspan="5" style="vertical-align: middle; background: #fff; border: 1px solid #000; min-width: 40px;"></th>
             @foreach ($groupedSurveys as $surveyTitle => $questions)
                 @php $uniqueQuestions = $questions->unique('question_id'); @endphp
                 {{-- Blank cell for the survey title --}}
-                <th style="border: 1px solid #000; background: #eee;"></th>
+                <th style="border: 1    px solid #000; background: #eee;"></th>
                 {{-- Output a Score Type cell for each question --}}
                 @foreach ($uniqueQuestions as $entry)
                     @php $reverse = $entry->question->reverse_score ?? null; @endphp
@@ -26,15 +26,15 @@
 
         {{-- Row 2: Survey Titles + Question Texts --}}
         <tr>
-            <th style="border: 1px solid #000; min-width: 60px;">Date</th>
+            <!-- <th style="border: 1px solid #000; min-width: 60px;">Date</th> -->
             <th style="border: 1px solid #000;">Group ID</th>
             <th style="border: 1px solid #000;">Group Type</th>
             <th style="border: 1px solid #000;">Evaluator ID</th>
-            <th style="border: 1px solid #000;">Evaluator Role</th>
-            <th style="border: 1px solid #000;">Evaluator Gender</th>
+            {{-- <th style="border: 1px solid #000;">Evaluator Role</th>--}}
+            <th style="border: 1px solid #000;">Evaluator Gender</th> 
             <th style="border: 1px solid #000;">Evaluatee ID</th>
-            <th style="border: 1px solid #000;">Evaluatee Role</th>
-            <th style="border: 1px solid #000;">Evaluatee Gender</th>
+            {{-- <th style="border: 1px solid #000;">Evaluatee Role</th>
+            <th style="border: 1px solid #000;">Evaluatee Gender</th> --}}
             @foreach ($groupedSurveys as $surveyTitle => $questions)
                 @php $uniqueQuestions = $questions->unique('question_id'); @endphp
                 <th style="border: 1px solid #000; background: #eee; font-weight: bold;" >
@@ -73,7 +73,7 @@
             @if (!in_array($pairKey, $shownPairs))
                 @php $shownPairs[] = $pairKey; @endphp
                 <tr>
-                    <td style="border: 1px solid #000;">{{ $entry->date }}</td>
+                    <!-- <td style="border: 1px solid #000;">{{ $entry->date }}</td> -->
                     <td style="border: 1px solid #000;">{{ $entry->group_id }}</td>
                     <td style="border: 1px solid #000;">{{ $groupType }}</td>
                     <td style="border: 1px solid #000;">{{ $entry->users_id ?? 'N/A' }}</td>

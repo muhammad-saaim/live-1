@@ -27,6 +27,7 @@ Route::get('/', function () {
     }
     return view('auth.login');
 });
+Route::get('/dashboard/personality-report', [DashboardController::class, 'personalityReport'])->name('dashboard.personality.report');
 
 // Socialite login integration
 Route::get('/auth/{provider}/redirect', [ProviderController::class, 'redirect']);

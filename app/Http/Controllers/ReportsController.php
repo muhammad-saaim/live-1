@@ -42,13 +42,18 @@ class ReportsController extends Controller
     
         // Collect distinct surveys (so you're not looping over raw rating rows)
         $distinctSurveys = $userSurveyRates->pluck('survey')->filter()->unique('id')->values();
-    
-        $allGroupSurveyResults = getAllUserSurveyReports();
-        //  dd($allGroupSurveyResults);
-
+     $allGroupSurveyResults = getAllGroupsCombinedTypeReportsCombinedByGroupType();
+     $allreport=allreport();
+     $surveytypequestion=getAllSelfAwarenessQuestionsFlatByGroupType();
+//  dd($surveytypequestion);
+            //  dd($allGroupSurveyResults, $allreport);
+        //  dd($allreport);
         return view('reports.reports-index', [
             'UserSurveys' => $distinctSurveys,
-            'surveyAverages' => $surveyAverages
+            'surveyAverages' => $surveyAverages,
+            'allGroupSurveyResults' => $allGroupSurveyResults,
+            'allreport'=>$allreport,
+            'surveytypequestion'=>$surveytypequestion,
         ]);
     }
     

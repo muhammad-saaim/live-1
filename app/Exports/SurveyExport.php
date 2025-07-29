@@ -24,7 +24,7 @@ class SurveyExport implements FromView, WithEvents
 
     public function view(): View
     {
-        $UserSurveys = UsersSurveysRate::with(['user', 'survey', 'question', 'option', 'surveyModel','types','group','userRelation','evaluateeRelation'])
+        $UserSurveys = UsersSurveysRate::with(['user', 'survey', 'question', 'option', 'surveyModel','types','group'])
             ->when($this->survey_id, function ($query) {
                 $query->where('survey_id', $this->survey_id);
             })

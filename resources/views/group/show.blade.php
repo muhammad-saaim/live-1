@@ -65,11 +65,11 @@
                             <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}
 
                 <!-- Trigger Button -->
-            <button
+            {{-- <button
     @click="showCombinedModal_{{ $group->id }} = true"
     class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-[10px] px-2 py-1 hover:bg-blue-600 transition">
     Group Report
-</button>
+</button> --}}
 
 
 </h1>

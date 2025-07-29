@@ -66,27 +66,5 @@ public function types()
     );
 }
        
-    // public function userRelation()
-    // {
-    //     return $this->hasOneThrough(
-    //         \App\Models\Relation::class,
-    //         \App\Models\UserRelative::class,
-    //         'relative_id',
-    //         'id',
-    //         'users_id',
-    //         'relation_id'
-    //     );
-    // }
-        
-    // public function evaluateeRelation()
-    // {
-    //     return $this->hasOneThrough(
-    //         \App\Models\Relation::class,     // Final model (you want to get the relation name)
-    //         \App\Models\UserRelative::class, // Intermediate pivot table (user_relatives)
-    //         'relative_id',                   // user_relatives.relative_id == evaluatee_id
-    //         'id',                            // relations.id
-    //         'evaluatee_id',                  // local key on users_surveys_rates
-    //         'relation_id'                    // user_relatives.relation_id
-    //     );
-    // }
+    
 }

@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\User;
+use App\Models\Group;
+use App\Models\Survey;
 use App\Models\Relation;
 use App\Models\UserRelative;
-use App\Models\Group;
+use Illuminate\Support\Facades\DB;
 
 if (!function_exists('RandomSecurePassword')) {
     function RandomSecurePassword($lower = 5, $upper = 2, $digits = 2, $special_characters = 1): string
@@ -352,7 +354,7 @@ if (!function_exists('calculateSurveyTypetotalPoints')) {
 
         // 👇 Decide which type names to include based on group type
         if (in_array('family', $groupTypeNames)) {
-            $typeNames = ['INTROVERTS', 'EXTRAVERT', 'RELATIONSHIP', 'SELF-PERCEPTION'];
+            $typeNames = ['INTROVERTS', 'EXTRAVERT', 'RELATIONSHIP', 'SELF-PERCEPTION','SOCIAL', 'ACADEMIC'];
         } elseif (in_array('friend', $groupTypeNames)) {
             $typeNames = ['SOCIAL', 'ACADEMIC'];
         } else {
@@ -629,4 +631,586 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
         return $groupSurveyTypetotalPoints;
     }
 }
+
+if(!function_exists('allreport'))
+{
+    function allreport()
+    {
+        $authUserId = auth()->user()->id;
+
+        // Retrieve all individual surveys (applies_to containing 'Individual')
+        $individualSurveys = Survey::whereJsonContains('applies_to', 'Individual')->get();
+
+        // Get user's answers (rates)
+        $surveyRates = Survey::whereHas('usersSurveysRates', function ($query) use ($authUserId) {
+                $query->where('users_id', $authUserId)
+                    ->where('evaluatee_id', $authUserId);
+            })
+            ->with([
+                'usersSurveysRates' => function ($q) use ($authUserId) {
+                    $q->where('users_id', $authUserId)
+                    ->where('evaluatee_id', $authUserId)
+                    ->with('option'); // Load the selected option to get its points
+                }
+            ])
+            ->get();
+
+        // Sum points per survey and per type
+        $surveyPoints = [];
+        $typePoints = [
+            'SELF' => [],
+            'COMPETENCE' => [],
+            'AUTONOMY' => [],
+            'RELATEDNESS' => [],
+        ];
+        $totalTypePoints = [
+            'SELF' => 0,
+            'COMPETENCE' => 0,
+            'AUTONOMY' => 0,
+            'RELATEDNESS' => 0,
+        ];
+        // Get type IDs for each type name
+        $typeMap = \App\Models\Type::whereIn('name', ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS'])->pluck('id', 'name');
+        foreach ($surveyRates as $survey) {
+            $total = 0;
+            $typeTotals = [
+                'SELF' => 0,
+                'COMPETENCE' => 0,
+                'AUTONOMY' => 0,
+                'RELATEDNESS' => 0,
+            ];
+            foreach ($survey->usersSurveysRates as $rate) {
+                $point = optional($rate->option)->point ?? 0;
+                $total += $point;
+                $questionTypeId = optional($rate->question)->type_id;
+                foreach ($typeMap as $typeName => $typeId) {
+                    if ($questionTypeId == $typeId) {
+                        $typeTotals[$typeName] += $point;
+                        $totalTypePoints[$typeName] += $point; // <-- Add to total
+                    }
+                }
+            }
+            $surveyPoints[$survey->id] = $total;
+            foreach ($typeTotals as $typeName => $val) {
+                $typePoints[$typeName][$survey->id] = $val;
+            }
+        }
+
+        // dd($surveyPoints);
+        foreach ($individualSurveys as $survey) {
+            // Check if the survey is already assigned to the authenticated user
+            $isAssigned = DB::table('users_surveys')
+                ->where('user_id', $authUserId)
+                ->where('survey_id', $survey->id)
+                ->exists();
+
+            // If not assigned, assign it to the user
+            if (!$isAssigned) {
+                DB::table('users_surveys')->insert([
+                    'user_id' => $authUserId,
+                    'survey_id' => $survey->id,
+                    'is_completed' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        
+             return $totalTypePoints;
+    }
+}
+// if (!function_exists('getAllGroupsCombinedTypeReportsCombined')) {
+//     function getAllGroupsCombinedTypeReportsCombined()
+//     {
+//         $user = auth()->user();
+//         if (!$user) return [];
+
+//         $reports = [];
+//         foreach ($user->groups as $group) {
+//             $byType = calculateSurveyTypetotalPoints($group)['combined_totals_by_type'] ?? [];
+//             $combinedByType = [];
+//             foreach ($byType as $type => $totals) {
+//                 $combinedByType[$type] = [
+//                     'total_points' => ($totals['self']['total_points'] ?? 0) + ($totals['others']['total_points'] ?? 0),
+//                     'total_ratings' => ($totals['self']['total_ratings'] ?? 0) + ($totals['others']['total_ratings'] ?? 0),
+//                 ];
+//             }
+//             $reports[$group->id] = [
+//                 'group_name' => $group->name,
+//                 'by_type_combined' => $combinedByType,
+//             ];
+//         }
+//         return $reports;
+//     }
+// }
+if(!function_exists('allreport'))
+{
+    function allreport()
+    {
+        $authUserId = auth()->user()->id;
+
+        // Retrieve all individual surveys (applies_to containing 'Individual')
+        $individualSurveys = Survey::whereJsonContains('applies_to', 'Individual')->get();
+
+        // Get user's answers (rates)
+        $surveyRates = Survey::whereHas('usersSurveysRates', function ($query) use ($authUserId) {
+                $query->where('users_id', $authUserId)
+                    ->where('evaluatee_id', $authUserId);
+            })
+            ->with([
+                'usersSurveysRates' => function ($q) use ($authUserId) {
+                    $q->where('users_id', $authUserId)
+                    ->where('evaluatee_id', $authUserId)
+                    ->with('option'); // Load the selected option to get its points
+                }
+            ])
+            ->get();
+
+        // Sum points per survey and per type
+        $surveyPoints = [];
+        $typePoints = [
+            'SELF' => [],
+            'COMPETENCE' => [],
+            'AUTONOMY' => [],
+            'RELATEDNESS' => [],
+        ];
+        $totalTypePoints = [
+            'SELF' => 0,
+            'COMPETENCE' => 0,
+            'AUTONOMY' => 0,
+            'RELATEDNESS' => 0,
+        ];
+        // Get type IDs for each type name
+        $typeMap = \App\Models\Type::whereIn('name', ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS'])->pluck('id', 'name');
+        foreach ($surveyRates as $survey) {
+            $total = 0;
+            $typeTotals = [
+                'SELF' => 0,
+                'COMPETENCE' => 0,
+                'AUTONOMY' => 0,
+                'RELATEDNESS' => 0,
+            ];
+            foreach ($survey->usersSurveysRates as $rate) {
+                $point = optional($rate->option)->point ?? 0;
+                $total += $point;
+                $questionTypeId = optional($rate->question)->type_id;
+                foreach ($typeMap as $typeName => $typeId) {
+                    if ($questionTypeId == $typeId) {
+                        $typeTotals[$typeName] += $point;
+                        $totalTypePoints[$typeName] += $point; // <-- Add to total
+                    }
+                }
+            }
+            $surveyPoints[$survey->id] = $total;
+            foreach ($typeTotals as $typeName => $val) {
+                $typePoints[$typeName][$survey->id] = $val;
+            }
+        }
+
+        // dd($surveyPoints);
+        foreach ($individualSurveys as $survey) {
+            // Check if the survey is already assigned to the authenticated user
+            $isAssigned = DB::table('users_surveys')
+                ->where('user_id', $authUserId)
+                ->where('survey_id', $survey->id)
+                ->exists();
+
+            // If not assigned, assign it to the user
+            if (!$isAssigned) {
+                DB::table('users_surveys')->insert([
+                    'user_id' => $authUserId,
+                    'survey_id' => $survey->id,
+                    'is_completed' => false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        
+             return $totalTypePoints;
+    }
+}
+if (!function_exists('getAllGroupsCombinedTypeReportsCombined')) {
+    function getAllGroupsCombinedTypeReportsCombined()
+    {
+        $user = auth()->user();
+        if (!$user) return [];
+
+        $reports = [];
+        foreach ($user->groups as $group) {
+            $byType = calculateSurveyTypetotalPoints($group)['combined_totals_by_type'] ?? [];
+            $combinedByType = [];
+            foreach ($byType as $type => $totals) {
+                $combinedByType[$type] = [
+                    'total_points' => ($totals['self']['total_points'] ?? 0) + ($totals['others']['total_points'] ?? 0),
+                    'total_ratings' => ($totals['self']['total_ratings'] ?? 0) + ($totals['others']['total_ratings'] ?? 0),
+                ];
+            }
+            $reports[$group->id] = [
+                'group_name' => $group->name,
+                'by_type_combined' => $combinedByType,
+            ];
+        }
+        return $reports;
+    }
+}
+
+function getAllGroupsCombinedTypeReportsCombinedByGroupType()
+{
+    $user = auth()->user();
+    if (!$user) return [];
+
+    $result = [
+        'family' => [],
+        'friend' => [],
+    ];
+
+    foreach ($user->groups as $group) {
+        $groupTypeNames = $group->groupTypes->pluck('name')->map(fn($n) => strtolower($n))->toArray();
+        if (in_array('family', $groupTypeNames)) {
+            $groupType = 'family';
+            $allowedTypes = [
+                'INTROVERTS',
+                'Extravert',
+                'Relationship',
+                'Self-perception',
+                'SOCIAL',
+                'ACADEMIC'
+            ];
+        } elseif (in_array('friend', $groupTypeNames)) {
+            $groupType = 'friend';
+            $allowedTypes = [
+                'SOCIAL',
+                'ACADEMIC'
+            ];
+        } else {
+            continue; // skip groups that are neither family nor friend
+        }
+
+        $byType = calculateSurveyTypetotalPoints($group)['combined_totals_by_type'] ?? [];
+        foreach ($allowedTypes as $type) {
+            $totals = $byType[$type] ?? [
+                'self' => ['total_points' => 0, 'total_ratings' => 0],
+                'others' => ['total_points' => 0, 'total_ratings' => 0]
+            ];
+            if (!isset($result[$groupType][$type])) {
+                $result[$groupType][$type] = [
+                    'total_points' => 0,
+                    'total_ratings' => 0,
+                ];
+            }
+            $result[$groupType][$type]['total_points'] += ($totals['self']['total_points'] ?? 0) + ($totals['others']['total_points'] ?? 0);
+            $result[$groupType][$type]['total_ratings'] += ($totals['self']['total_ratings'] ?? 0) + ($totals['others']['total_ratings'] ?? 0);
+        }
+    }
+    // dd($groupTypeNames);
+    // dd($group->name, $group->groupTypes->pluck('name'));
+    // dd($result);
+    return $result;
+}
+
+
+if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
+    function getAllSelfAwarenessQuestionsFlatByGroupType()
+    {
+        $user = auth()->user();
+        if (!$user) return [];
+
+        $selfAwarenessTypeName = 'Self-awareness and motivation';
+
+        $typeIds = \App\Models\Type::where('name', $selfAwarenessTypeName)->pluck('id');
+
+        if ($typeIds->isEmpty()) {
+            $typeIds = \App\Models\SurveyModel::where('title', $selfAwarenessTypeName)->pluck('id');
+        }
+
+        if ($typeIds->isEmpty()) return [];
+
+        $result = [
+            'individual' => [
+                'questions' => [],
+                'self_total_points' => 0,
+                'self_total_ratings' => 0,
+            ],
+            'family' => [
+                'questions' => [],
+                'self_total_points' => 0,
+                'self_total_ratings' => 0,
+                'others_total_points' => 0,
+                'others_total_ratings' => 0,
+            ],
+            'friend' => [
+                'questions' => [],
+                'self_total_points' => 0,
+                'self_total_ratings' => 0,
+                'others_total_points' => 0,
+                'others_total_ratings' => 0,
+            ],
+        ];
+
+        // ✅ INDIVIDUAL: only self ratings
+        $individualSurveys = \App\Models\Survey::whereJsonContains('applies_to', 'Individual')->get();
+
+        // Debug: Log how many individual surveys we found
+        \Log::info("Found " . $individualSurveys->count() . " individual surveys");
+
+        foreach ($individualSurveys as $survey) {
+            $questions = \App\Models\Question::where('survey_id', $survey->id)
+                ->whereIn('type_id', $typeIds)
+                ->get();
+
+            // Debug: Log how many questions we found for this survey
+            \Log::info("Survey {$survey->id} ({$survey->title}): Found " . $questions->count() . " questions");
+
+            foreach ($questions as $question) {
+                // Debug: Log question fields to see what's available
+                \Log::info("Question {$question->id} fields: " . json_encode($question->toArray()));
+                
+                // Only get the latest self rating (where user rates themselves)
+                $rate = \App\Models\UsersSurveysRate::where([
+                        ['survey_id', $survey->id],
+                        ['question_id', $question->id],
+                        ['evaluatee_id', $user->id],
+                        ['users_id', $user->id], // Self rating only
+                    ])
+                    ->with('option')
+                    ->latest('id')
+                    ->first();
+
+                if ($rate && optional($rate->option)->point !== null) {
+                    $point = $rate->option->point;
+                    $result['individual']['self_total_points'] += $point;
+                    $result['individual']['self_total_ratings'] += 1;
+
+                    // Try different possible field names for question text
+                    $questionText = $question->text ?? $question->title ?? $question->question ?? $question->name ?? $question->content ?? $question->description ?? 'Question ' . $question->id;
+
+                    $result['individual']['questions'][] = [
+                        'question_id' => $question->id,
+                        'question_text' => $questionText,
+                        'user_answer' => $rate->option,
+                        'answer_point' => $point,
+                        'group_name' => 'Individual',
+                        'survey_title' => $survey->title ?? $survey->id,
+                        'question_total_points' => $point,
+                        'question_total_ratings' => 1,
+                        'rating_type' => 'self',
+                    ];
+
+                    // Debug: Log each question we're adding
+                    \Log::info("Added individual question: {$question->id} - {$questionText} (Point: {$point})");
+                } else {
+                    // Debug: Log questions that don't have ratings
+                    $questionText = $question->text ?? $question->title ?? $question->question ?? $question->name ?? $question->content ?? $question->description ?? 'Question ' . $question->id;
+                    \Log::info("No rating found for individual question: {$question->id} - {$questionText}");
+                }
+            }
+        }
+
+        // Debug: Log total individual questions before merging
+        \Log::info("Total individual questions before merging: " . count($result['individual']['questions']));
+
+        // ✅ GROUP SURVEYS: both self and others ratings
+        foreach ($user->groups as $group) {
+            $groupTypeNames = $group->groupTypes->pluck('name')->map(fn($n) => strtolower($n))->toArray();
+
+            if (in_array('family', $groupTypeNames)) {
+                $groupType = 'family';
+            } elseif (in_array('friend', $groupTypeNames)) {
+                $groupType = 'friend';
+            } else {
+                continue;
+            }
+
+            foreach ($group->defaultSurveys() as $survey) {
+                $questions = \App\Models\Question::where('survey_id', $survey->id)
+                    ->whereIn('type_id', $typeIds)
+                    ->get();
+
+                foreach ($questions as $question) {
+                    // Get the latest self rating (where user rates themselves)
+                    $selfRate = \App\Models\UsersSurveysRate::where([
+                            ['group_id', $group->id],
+                            ['survey_id', $survey->id],
+                            ['question_id', $question->id],
+                            ['evaluatee_id', $user->id],
+                            ['users_id', $user->id], // Self rating
+                        ])
+                        ->with('option')
+                        ->latest('id')
+                        ->first();
+
+                    // Get others ratings (where others rate the user)
+                    $othersRates = \App\Models\UsersSurveysRate::where([
+                            ['group_id', $group->id],
+                            ['survey_id', $survey->id],
+                            ['question_id', $question->id],
+                            ['evaluatee_id', $user->id],
+                            ['users_id', '!=', $user->id], // Others rating
+                        ])
+                        ->with(['option', 'user'])
+                        ->get();
+
+                    // Calculate self points and ratings for this question
+                    $selfQuestionPoints = 0;
+                    $selfQuestionRatings = 0;
+                    $selfUserAnswer = null;
+                    $selfAnswerPoint = null;
+
+                    if ($selfRate && optional($selfRate->option)->point !== null) {
+                        $selfQuestionPoints = $selfRate->option->point;
+                        $selfQuestionRatings = 1;
+                        $selfUserAnswer = $selfRate->option;
+                        $selfAnswerPoint = $selfQuestionPoints;
+                        $result[$groupType]['self_total_points'] += $selfQuestionPoints;
+                        $result[$groupType]['self_total_ratings'] += 1;
+                    }
+
+                    // Calculate others points and ratings for this question
+                    $othersQuestionPoints = 0;
+                    $othersQuestionRatings = 0;
+
+                    foreach ($othersRates as $rate) {
+                        $point = optional($rate->option)->point;
+                        if (!is_null($point)) {
+                            $othersQuestionPoints += $point;
+                            $othersQuestionRatings += 1;
+                            $result[$groupType]['others_total_points'] += $point;
+                            $result[$groupType]['others_total_ratings'] += 1;
+                        }
+                    }
+
+                    // Try different possible field names for question text
+                    $questionText = $question->text ?? $question->title ?? $question->question ?? $question->name ?? $question->content ?? $question->description ?? 'Question ' . $question->id;
+
+                    // Add question with both self and others data
+                    $result[$groupType]['questions'][] = [
+                        'question_id' => $question->id,
+                        'question_text' => $questionText,
+                        'group_name' => $group->name,
+                        'survey_title' => $survey->title ?? $survey->id,
+                        'self' => [
+                            'user_answer' => $selfUserAnswer,
+                            'answer_point' => $selfAnswerPoint,
+                            'question_points' => $selfQuestionPoints,
+                            'question_ratings' => $selfQuestionRatings,
+                        ],
+                        'others' => [
+                            'question_points' => $othersQuestionPoints,
+                            'question_ratings' => $othersQuestionRatings,
+                        ],
+                    ];
+                }
+            }
+        }
+
+        // Merge same questions across all groups
+        $mergedResult = [
+            'individual' => [
+                'questions' => [],
+                'self_total_points' => 0,
+                'self_total_ratings' => 0,
+            ],
+            'family' => [
+                'questions' => [],
+                'self_total_points' => 0,
+                'self_total_ratings' => 0,
+                'others_total_points' => 0,
+                'others_total_ratings' => 0,
+            ],
+            'friend' => [
+                'questions' => [],
+                'self_total_points' => 0,
+                'self_total_ratings' => 0,
+                'others_total_points' => 0,
+                'others_total_ratings' => 0,
+            ],
+        ];
+
+        // Merge individual questions
+        $individualQuestions = [];
+        foreach ($result['individual']['questions'] as $question) {
+            $questionId = $question['question_id'];
+            if (!isset($individualQuestions[$questionId])) {
+                $individualQuestions[$questionId] = [
+                    'question_id' => $questionId,
+                    'question_text' => $question['question_text'],
+                    'self_total_points' => 0,
+                    'self_total_ratings' => 0,
+                    'groups' => [],
+                    'surveys' => [],
+                ];
+            }
+            $individualQuestions[$questionId]['self_total_points'] += $question['answer_point'];
+            $individualQuestions[$questionId]['self_total_ratings'] += 1;
+            $individualQuestions[$questionId]['groups'][] = $question['group_name'];
+            $individualQuestions[$questionId]['surveys'][] = $question['survey_title'];
+        }
+
+        $mergedResult['individual']['questions'] = array_values($individualQuestions);
+        $mergedResult['individual']['self_total_points'] = $result['individual']['self_total_points'];
+        $mergedResult['individual']['self_total_ratings'] = $result['individual']['self_total_ratings'];
+
+        // Merge family and friend questions
+        foreach (['family', 'friend'] as $groupType) {
+            $groupQuestions = [];
+            $groupSelfTotalPoints = 0;
+            $groupSelfTotalRatings = 0;
+            $groupOthersTotalPoints = 0;
+            $groupOthersTotalRatings = 0;
+            
+            foreach ($result[$groupType]['questions'] as $question) {
+                $questionId = $question['question_id'];
+                if (!isset($groupQuestions[$questionId])) {
+                    $groupQuestions[$questionId] = [
+                        'question_id' => $questionId,
+                        'question_text' => $question['question_text'],
+                        'self_total_points' => 0,
+                        'self_total_ratings' => 0,
+                        'others_total_points' => 0,
+                        'others_total_ratings' => 0,
+                        'groups' => [],
+                        'surveys' => [],
+                    ];
+                }
+                
+                // Merge self data
+                $groupQuestions[$questionId]['self_total_points'] += $question['self']['question_points'];
+                $groupQuestions[$questionId]['self_total_ratings'] += $question['self']['question_ratings'];
+                
+                // Merge others data
+                $groupQuestions[$questionId]['others_total_points'] += $question['others']['question_points'];
+                $groupQuestions[$questionId]['others_total_ratings'] += $question['others']['question_ratings'];
+                
+                $groupQuestions[$questionId]['groups'][] = $question['group_name'];
+                $groupQuestions[$questionId]['surveys'][] = $question['survey_title'];
+            }
+
+            // Calculate totals from merged questions
+            foreach ($groupQuestions as $question) {
+                $groupSelfTotalPoints += $question['self_total_points'];
+                $groupSelfTotalRatings += $question['self_total_ratings'];
+                $groupOthersTotalPoints += $question['others_total_points'];
+                $groupOthersTotalRatings += $question['others_total_ratings'];
+            }
+
+            $mergedResult[$groupType]['questions'] = array_values($groupQuestions);
+            $mergedResult[$groupType]['self_total_points'] = $groupSelfTotalPoints;
+            $mergedResult[$groupType]['self_total_ratings'] = $groupSelfTotalRatings;
+            $mergedResult[$groupType]['others_total_points'] = $groupOthersTotalPoints;
+            $mergedResult[$groupType]['others_total_ratings'] = $groupOthersTotalRatings;
+        }
+
+        return $mergedResult;
+    }
+}
+
+
+
+
+
+
+
 

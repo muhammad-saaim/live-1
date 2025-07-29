@@ -16,7 +16,7 @@
 @php
     $modalId = 'group-report-modal-' . $survey_id;
 @endphp
-
+    {{-- {{dd($completedQuestion,$totalQuestion, $survey_id, $group, $total_points, $points_self, $points_competence, $points_autonomy, $points_relatedness, $groupSurveyTypePoints)}} --}}
 <div x-data="{ showModal: false, showGroupModal: false }" class="flex items-center justify-between w-full">
     <!-- Survey Title & Report Button -->
     <div class="w-1/6 text-left ml-2 flex-shrink-0">

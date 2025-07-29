@@ -9,7 +9,7 @@
   
     <div x-data="{ showReportModal: false }" class="p-3 max-w-7xl mx-auto space-y-4">
         <!-- Report Modal (Alpine.js version) - moved inside Alpine scope -->
-        <div
+        {{-- <div
             x-show="showReportModal"
             x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -31,10 +31,10 @@
                     if ($type === 'self-esteem') {
                         return $value <= 0 ? ['You can be better', 'text-red-500'] : ['', ''];
                     }
-                    if ($value >= 84) return ['Excellent', 'text-green-600'];
-                    if ($value >= 70) return ['Good', 'text-blue-600'];
-                    if ($value >= 40) return ['Average', 'text-yellow-600'];
-                    return ['Poor', 'text-red-500'];
+                        if ($value >= 84) return ['Excellent', 'text-green-600'];
+                        if ($value >= 70) return ['Good', 'text-blue-600'];
+                        if ($value >= 40) return ['Average', 'text-yellow-600'];
+                        return ['Poor', 'text-red-500'];
                 }
                 $selfEsteem = $totalTypePoints['SELF'] ?? 0;
                 $competence = $totalTypePoints['COMPETENCE'] ?? 0;
@@ -60,14 +60,35 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
         <!-- Buttons -->
         <div class="flex justify-between align-center">
             <div>
                 <h2 class="font-bold text-2xl"> {{__("WELCOME")}} </h2>
                 <p class="mb-3 text-l">Your report is preferring.</p>
+              <!-- Button to trigger modal -->
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#perceptionModal">
+    View Personality Report
+</button>
+@props(['allreport', 'allGroupSurveyResults'])
+
+<!-- Include the perception table component -->
+<x-perception-table 
+    :allreport="$allreport" 
+    :allGroupSurveyResults="$allGroupSurveyResults" 
+    :surveytypequestion="$surveytypequestion"
+/>
+
+
             </div>
             <div>
+             {{-- <!-- resources/views/components/perception-table.blade.php -->
+@props(['allreport', 'allGroupSurveyResults'])
+
+<div class="modal fade" id="perceptionModal" tabindex="-1" aria-labelledby="perceptionModalLabel" aria-hidden="true"> --}}
+    <!-- Button to trigger the modal -->
+
+
                 <x-primary-button>
                     <svg class="h-3 w-3 text-white me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="4"
                          stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -108,24 +129,24 @@
         <div>
             <div class="bg-ml-color-lime border rounded-xl p-4 space-y-3">
                 <h2 class="text-xl mb-0"> {{ __("My Surveys") }} </h2>
-                <button
+                {{-- <button
                     @click="showReportModal = true"
                     class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-sm px-4 py-2 hover:bg-blue-600 transition ml-2 mt-2"
                 >
                     View Report
-                </button>
+                </button> --}}
                 <p class="text-xs my-0">Date: {{ now() }} </p>
                 @php
                     // $userSurveys = auth()->user()->surveys; 
 
-                    $individualSurveys = \App\Models\Survey::where('is_active', true)
-                        ->whereJsonContains('applies_to', 'Individual')
-                        ->get();
-
+                     $individualSurveys = \App\Models\Survey::where('is_active', true)
+                         ->whereJsonContains('applies_to', 'Individual')
+                         ->get();
+                         
                     // $allSurveys = $userSurveys->merge($individualSurveys)->unique('id');
                 @endphp
-
-                @if($individualSurveys->isNotEmpty())
+   
+                 @if($individualSurveys->isNotEmpty())
                     @foreach($individualSurveys as $survey)
                         <x-dashboard-progressbar
                             completedQuestion="{{ auth()->user()->usersSurveysRates->where('survey_id', $survey->id)->where('users_id', auth()->id())->where('evaluatee_id', auth()->id())->whereNull('group_id')->count()  }}"
@@ -142,8 +163,7 @@
                     @endforeach
                 @else
                     <p>{{ __("No surveys assigned.") }}</p>
-                @endif
-
+                @endif 
             </div>
         </div>
 
@@ -191,9 +211,9 @@
         @endphp
     @php
     if ($group->groupTypes->contains('id', 1) || $group->groupTypes->contains('name', 'Friend')) {
-        $groupColor = '#D0F0FD'; // Soft Sky Blue (Friend)
+        $groupColor = 'rgb(235 242 216 / var(--tw-bg-opacity))'; // Soft Sky Blue (Friend)
     } elseif ($group->groupTypes->contains('id', 2) || $group->groupTypes->contains('name', 'Family')) {
-        $groupColor = '#FFE0F0'; // Light Pink Rose (Family)
+        $groupColor = '#D1D5D'; // Light Pink Rose (Family)
     } else {
         $groupColor = $group->color ?? '#F2F2F2'; // Neutral Light Grey fallback
     }
@@ -205,11 +225,11 @@
                             <h1 class="font-semibold text-lg mb-2">{{ $group->name ?? __('Group Name') }}
 
                 <!-- Trigger Button -->
-              <button
+              {{-- <button
     @click="showCombinedModal_{{ $group->id }} = true"
     class="inline-flex items-center bg-blue-500 text-white border border-blue-600 rounded text-[10px] px-2 py-1 hover:bg-blue-600 transition">
     Group Report
-</button>
+</button> --}}
 
 
 </h1>

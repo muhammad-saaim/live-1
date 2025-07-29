@@ -23,12 +23,14 @@ class DashboardController extends Controller
         // Get user's answers (rates)
         $surveyRates = Survey::whereHas('usersSurveysRates', function ($query) use ($authUserId) {
                 $query->where('users_id', $authUserId)
-                    ->where('evaluatee_id', $authUserId);
+                    ->where('evaluatee_id', $authUserId)
+                    ->whereNull('group_id');
             })
             ->with([
                 'usersSurveysRates' => function ($q) use ($authUserId) {
                     $q->where('users_id', $authUserId)
                     ->where('evaluatee_id', $authUserId)
+                    ->whereNull('group_id')
                     ->with('option'); // Load the selected option to get its points
                 }
             ])
@@ -41,12 +43,6 @@ class DashboardController extends Controller
             'COMPETENCE' => [],
             'AUTONOMY' => [],
             'RELATEDNESS' => [],
-        ];
-        $totalTypePoints = [
-            'SELF' => 0,
-            'COMPETENCE' => 0,
-            'AUTONOMY' => 0,
-            'RELATEDNESS' => 0,
         ];
         // Get type IDs for each type name
         $typeMap = \App\Models\Type::whereIn('name', ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS'])->pluck('id', 'name');
@@ -65,7 +61,6 @@ class DashboardController extends Controller
                 foreach ($typeMap as $typeName => $typeId) {
                     if ($questionTypeId == $typeId) {
                         $typeTotals[$typeName] += $point;
-                        $totalTypePoints[$typeName] += $point; // <-- Add to total
                     }
                 }
             }
@@ -94,10 +89,21 @@ class DashboardController extends Controller
                 ]);
             }
         }
-        //  dd($surveyPoints,$totalTypePoints);
+        // dd($surveyPoints, $typePoints);
+  $allGroupSurveyResults = getAllGroupsCombinedTypeReportsCombinedByGroupType();
+    $allreport = allreport();
+    $surveytypequestion = getAllSelfAwarenessQuestionsFlatByGroupType();
+       return view('dashboard', compact(
+    'surveyPoints',
+    'typePoints',
+    'allGroupSurveyResults',
+    'allreport',
+    'surveytypequestion'
+));
 
-        return view('dashboard', compact('surveyPoints', 'typePoints', 'totalTypePoints'));
     }
+
+
 
 
 }
