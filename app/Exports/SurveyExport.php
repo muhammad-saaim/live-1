@@ -2,8 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\User;
-use App\Models\UserRelative;
 use App\Models\UsersSurveysRate;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -24,43 +22,47 @@ class SurveyExport implements FromView, WithEvents
 
     public function view(): View
     {
-        $UserSurveys = UsersSurveysRate::with(['user', 'survey', 'question', 'option', 'surveyModel','types','group'])
-            ->when($this->survey_id, function ($query) {
-                $query->where('survey_id', $this->survey_id);
-            })
-            ->get()
-            ->filter(function ($rate) {
-                return $rate->survey && $rate->user && $rate->question && $rate->option;
-            })
-            ->values();
+        $UserSurveys = UsersSurveysRate::select([
+            'users_surveys_rates.*',
+            'users.name as user_name',
+            'users.gender as user_gender',
+            'surveys.title as survey_title',
+            'questions.question as question_text',
+            'questions.reverse_score',
+            'question_options.name as option_name',
+            'survey_models.title as survey_model_title',
+            'groups.name as group_name',
+            'types.name as type_name'
+        ])
+        ->join('users', 'users_surveys_rates.users_id', '=', 'users.id')
+        ->join('surveys', 'users_surveys_rates.survey_id', '=', 'surveys.id')
+        ->join('questions', 'users_surveys_rates.question_id', '=', 'questions.id')
+        ->join('question_options', 'users_surveys_rates.options_id', '=', 'question_options.id')
+        ->join('survey_models', 'surveys.model_id', '=', 'survey_models.id')
+        ->join('groups', 'users_surveys_rates.group_id', '=', 'groups.id')
+        ->leftJoin('types', 'questions.type_id', '=', 'types.id')
+        ->when($this->survey_id, function ($query) {
+            $query->where('users_surveys_rates.survey_id', $this->survey_id);
+        })
+        ->get();
 
         return view('reports.export', [
             'UserSurveys' => $UserSurveys
         ]);
     }
-    
 
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $highestColumn = $sheet->getHighestColumn();
+                $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
 
-  public function registerEvents(): array
-{
-    return [
-        AfterSheet::class => function (AfterSheet $event) {
-            $sheet = $event->sheet->getDelegate();
-
-            // Get highest column (e.g., 'AD', 'BA', etc.)
-            $highestColumn = $sheet->getHighestColumn();
-            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
-
-            // Loop through all columns from 1 to highest
-            for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $columnLetter = Coordinate::stringFromColumnIndex($col);
-
-                // Apply 90-degree rotation to both row 1 and row 2
-                // $sheet->getStyle($columnLetter . '1')->getAlignment()->setTextRotation(90);
-                $sheet->getStyle($columnLetter . '2')->getAlignment()->setTextRotation(90);
-            }
-        },
-    ];
-}
-
+                // Apply rotation to all columns at once
+                $range = 'A2:' . $highestColumn . '2';
+                $sheet->getStyle($range)->getAlignment()->setTextRotation(90);
+            },
+        ];
+    }
 }
