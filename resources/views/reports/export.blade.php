@@ -7,7 +7,7 @@
     <thead>
         {{-- Row 1: Score Type --}}
         <tr>
-            <th colspan="6" style="vertical-align: middle; background: #fff; border: 1px solid #000; min-width: 40px;"></th>
+            <th colspan="6" style="vertical-align: middle; background: #fff; border: 1px solid #000;  min-width: 40px;"></th>
             @foreach ($groupedSurveys as $surveyTitle => $questions)
                 @php $uniqueQuestions = $questions->unique('question_id'); @endphp
                 <th style="border: 1px solid #000; background: #eee;"></th>
@@ -33,7 +33,7 @@
             <th style="border: 1px solid #000;">Evaluatee Gender</th>
             @foreach ($groupedSurveys as $surveyTitle => $questions)
                 @php $uniqueQuestions = $questions->unique('question_id'); @endphp
-                <th style="border: 1px solid #000; background: #eee; font-weight: bold;" >
+                <th style="border: 1px solid #000; color:red; background: #eee; font-weight: bold;" >
                     {{ $surveyTitle }}
                 </th>
                 @foreach ($uniqueQuestions as $entry)
@@ -54,7 +54,9 @@
                         {{ $qText }}
                     </th>
                 @endforeach
-                <th style="border: 1px solid #000; background: #ffe;">{{ $surveyTitle }} Total</th>
+<th style="border: 1px solid #000; background: #ffe;">
+    <strong>{{ $surveyTitle }} Total</strong>
+</th>
             @endforeach
         </tr>
     </thead>
