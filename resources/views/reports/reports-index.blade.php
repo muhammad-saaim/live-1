@@ -234,55 +234,70 @@
 
             $getQuality = function ($ratings, $points) {
                 if (($points ?? 0) == 0) return [0, 'Poor'];
-                $avg = round(($ratings / $points) * 100);
+$avg = ($points / ($ratings * 5)) * 100;
                 $quality = $avg >= 84 ? 'Perfect' : ($avg >= 70 ? 'Very Good' : ($avg >= 40 ? 'Good' : 'Poor'));
                 return [$avg, $quality];
             };
         @endphp
 
         @foreach ($allKeys as $trait)
-            @php
-                // Family result - check if data exists and has valid values
-                $familyData = $allGroupSurveyResults['family'][$trait] ?? null;
-                [$familyAvg, $familyQuality] = $familyData && 
-                    isset($familyData['total_ratings']) && 
-                    isset($familyData['total_points']) && 
-                    $familyData['total_points'] > 0
-                    ? $getQuality($familyData['total_ratings'], $familyData['total_points'])
-                    : [null, null];
+    @php
+        // Family result - check if data exists and has valid values
+        $familyData = $allGroupSurveyResults['family'][$trait] ?? null;
+        [$familyAvg, $familyQuality] = $familyData &&
+            isset($familyData['total_ratings']) &&
+            isset($familyData['total_points']) &&
+            $familyData['total_ratings'] > 0
+            ? $getQuality($familyData['total_ratings'], $familyData['total_points'])
+            : [null, null];
 
-                // Friend result - check if data exists and has valid values
-                $friendData = $allGroupSurveyResults['friend'][$trait] ?? null;
-                [$friendAvg, $friendQuality] = $friendData && 
-                    isset($friendData['total_ratings']) && 
-                    isset($friendData['total_points']) && 
-                    $friendData['total_points'] > 0
-                    ? $getQuality($friendData['total_ratings'], $friendData['total_points'])
-                    : [null, null];
+        // Friend result - check if data exists and has valid values
+        $friendData = $allGroupSurveyResults['friend'][$trait] ?? null;
+        [$friendAvg, $friendQuality] = $friendData &&
+            isset($friendData['total_ratings']) &&
+            isset($friendData['total_points']) &&
+            $friendData['total_ratings'] > 0
+            ? $getQuality($friendData['total_ratings'], $friendData['total_points'])
+            : [null, null];
 
-                // Combined average - only include valid averages
-                $averages = array_filter([$familyAvg, $friendAvg], fn($v) => is_numeric($v) && $v > 0);
-                $combinedAvg = count($averages) ? round(array_sum($averages) / count($averages)) : null;
+        // Combine ratings and points directly (correct way to calculate overall percentage)
+        $totalPoints = 0;
+        $totalRatings = 0;
 
-                $overallQuality = $combinedAvg !== null
-                    ? ($combinedAvg >= 84 ? 'Perfect' : ($combinedAvg >= 70 ? ' Very Good' : ($combinedAvg >= 40 ? 'Good' : 'Poor')))
-                    : null;
-            @endphp
+        if ($familyData && is_numeric($familyData['total_points']) && is_numeric($familyData['total_ratings'])) {
+            $totalPoints += $familyData['total_points'];
+            $totalRatings += $familyData['total_ratings'];
+        }
 
-            <tr style="background-color: #d9f2fc;">
-                <td>{{ ucfirst(strtolower($trait)) }}</td>
-                <td>
-                    @if ($combinedAvg !== null)
-                        {{ $combinedAvg }} ({{ $overallQuality }})
-                    @else
-                        -
-                    @endif
-                </td>
-                <td>-</td>
-                <td>{{ $familyQuality ? "$familyAvg ($familyQuality)" : '-' }}</td>
-                <td>{{ $friendQuality ? "$friendAvg ($friendQuality)" : '-' }}</td>
-            </tr>
-        @endforeach
+        if ($friendData && is_numeric($friendData['total_points']) && is_numeric($friendData['total_ratings'])) {
+            $totalPoints += $friendData['total_points'];
+            $totalRatings += $friendData['total_ratings'];
+        }
+
+        if ($totalRatings > 0) {
+            $combinedAvg = round(($totalPoints / ($totalRatings * 5)) * 100);
+            $overallQuality = $combinedAvg >= 84 ? 'Perfect' : ($combinedAvg >= 70 ? 'Very Good' : ($combinedAvg >= 40 ? 'Good' : 'Poor'));
+        } else {
+            $combinedAvg = null;
+            $overallQuality = null;
+        }
+    @endphp
+
+    <tr style="background-color: #d9f2fc;">
+        <td>{{ ucfirst(strtolower($trait)) }}</td>
+        <td>
+            @if ($combinedAvg !== null)
+                {{ $combinedAvg }}% ({{ $overallQuality }})
+            @else
+                -
+            @endif
+        </td>
+        <td>-</td>
+        <td>{{ $familyQuality ? "$familyAvg% ($familyQuality)" : '-' }}</td>
+        <td>{{ $friendQuality ? "$friendAvg% ($friendQuality)" : '-' }}</td>
+    </tr>
+@endforeach
+
     </tbody>
 </table>
 
