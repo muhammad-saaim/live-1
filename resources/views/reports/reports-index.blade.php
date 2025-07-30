@@ -199,21 +199,31 @@
             ];
         @endphp
 
-        @foreach ($selfMetrics as $key => $label)
-            @php
-                $value = $allreport[$key] ?? '';
-                $quality = is_numeric($value)
-                    ? ($value >= 84 ? 'Very Good' : ($value >= 70 ? 'Good' : ($value >= 40 ? 'Average' : 'Poor')))
-                    : 'N/A';
-            @endphp
-            <tr style="background-color: #fffec0;">
-                <td>{{ $label }}</td>
-                <td>{{ is_numeric($value) ? "$value ($quality)" : '-' }}</td>
-                <td>{{ is_numeric($value) ? "$value ($quality)" : '-' }}</td>
-                <td>-</td>
-                <td>-</td>
-            </tr>
-        @endforeach
+       @foreach ($selfMetrics as $key => $label)
+    @php
+        $points = $allreport['points'][$key] ?? 0;
+        $ratings = $allreport['ratings'][$key] ?? 0;
+            //  dd($points, $ratings);
+        // Calculate percentage only if ratings > 0
+        $percentage = ($ratings > 0) ? round(($points / ($ratings * 4)) * 100, 2) : 0;
+
+        // Assign quality based on percentage
+        $quality = match (true) {
+            $percentage >= 84 => ' Perfect',
+            $percentage >= 70 => 'Very Good',
+            $percentage >= 40 => 'Good',
+            default => 'Poor',
+        };
+    @endphp
+    <tr style="background-color: #fffec0;">
+        <td>{{ $label }}</td>
+        <td>{{ "$percentage% ($quality)" }}</td>
+        <td>{{ "$percentage% ($quality)" }}</td>
+        <td>-</td>
+        <td>-</td>
+    </tr>
+@endforeach
+
 
         {{-- Group Metrics --}}
         @php
@@ -225,7 +235,7 @@
             $getQuality = function ($ratings, $points) {
                 if (($points ?? 0) == 0) return [0, 'Poor'];
                 $avg = round(($ratings / $points) * 100);
-                $quality = $avg >= 84 ? 'Very Good' : ($avg >= 70 ? 'Good' : ($avg >= 40 ? 'Average' : 'Poor'));
+                $quality = $avg >= 84 ? 'Perfect' : ($avg >= 70 ? 'Very Good' : ($avg >= 40 ? 'Good' : 'Poor'));
                 return [$avg, $quality];
             };
         @endphp
@@ -255,7 +265,7 @@
                 $combinedAvg = count($averages) ? round(array_sum($averages) / count($averages)) : null;
 
                 $overallQuality = $combinedAvg !== null
-                    ? ($combinedAvg >= 84 ? 'Very Good' : ($combinedAvg >= 70 ? 'Good' : ($combinedAvg >= 40 ? 'Average' : 'Poor')))
+                    ? ($combinedAvg >= 84 ? 'Perfect' : ($combinedAvg >= 70 ? ' Very Good' : ($combinedAvg >= 40 ? 'Good' : 'Poor')))
                     : null;
             @endphp
 

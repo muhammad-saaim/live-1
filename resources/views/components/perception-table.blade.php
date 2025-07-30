@@ -37,18 +37,28 @@
                 ];
               @endphp
 
-              @foreach ($selfMetrics as $key => $label)
+                     @foreach ($selfMetrics as $key => $label)
     @php
-        $value = $allreport[$key] ?? '';
-        $quality = is_numeric($value)
-            ? ($value >= 84 ? 'Excellent' : ($value >= 70 ? 'Good' : ($value >= 40 ? 'Average' : 'Poor')))
-            : 'N/A';
+        $points = $allreport['points'][$key] ?? 0;
+        $ratings = $allreport['ratings'][$key] ?? 0;
+            //  dd($points, $ratings);
+        // Calculate percentage only if ratings > 0
+        $percentage = ($ratings > 0) ? round(($points / ($ratings * 4)) * 100, 2) : 0;
+
+        // Assign quality based on percentage
+        $quality = match (true) {
+            $percentage >= 84 => ' Perfect',
+            $percentage >= 70 => 'Very Good',
+            $percentage >= 40 => 'Good',
+            default => 'Poor',
+        };
     @endphp
     <tr style="background-color: #fffec0;">
         <td>{{ $label }}</td>
-        <td>{{ is_numeric($value) ? "$value ($quality)" : '' }}</td>
-        <td>{{ is_numeric($value) ? "$value ($quality)" : '' }}</td>
-       
+        <td>{{ "$percentage% ($quality)" }}</td>
+        <td>{{ "$percentage% ($quality)" }}</td>
+        <td>-</td>
+        <td>-</td>
     </tr>
 @endforeach
             </tbody>

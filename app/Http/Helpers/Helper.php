@@ -632,8 +632,7 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
     }
 }
 
-if(!function_exists('allreport'))
-{
+if (!function_exists('allreport')) {
     function allreport()
     {
         $authUserId = auth()->user()->id;
@@ -641,21 +640,21 @@ if(!function_exists('allreport'))
         // Retrieve all individual surveys (applies_to containing 'Individual')
         $individualSurveys = Survey::whereJsonContains('applies_to', 'Individual')->get();
 
-        // Get user's answers (rates)
+        // Get user's survey answers (self-ratings only)
         $surveyRates = Survey::whereHas('usersSurveysRates', function ($query) use ($authUserId) {
                 $query->where('users_id', $authUserId)
-                    ->where('evaluatee_id', $authUserId);
+                      ->where('evaluatee_id', $authUserId);
             })
             ->with([
                 'usersSurveysRates' => function ($q) use ($authUserId) {
                     $q->where('users_id', $authUserId)
-                    ->where('evaluatee_id', $authUserId)
-                    ->with('option'); // Load the selected option to get its points
+                      ->where('evaluatee_id', $authUserId)
+                      ->with(['option', 'question']); // Load option (for point) and question (for type_id)
                 }
             ])
             ->get();
 
-        // Sum points per survey and per type
+        // Initialize containers
         $surveyPoints = [];
         $typePoints = [
             'SELF' => [],
@@ -669,8 +668,18 @@ if(!function_exists('allreport'))
             'AUTONOMY' => 0,
             'RELATEDNESS' => 0,
         ];
+        $totalTypeRatings = [
+            'SELF' => 0,
+            'COMPETENCE' => 0,
+            'AUTONOMY' => 0,
+            'RELATEDNESS' => 0,
+        ];
+
         // Get type IDs for each type name
-        $typeMap = \App\Models\Type::whereIn('name', ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS'])->pluck('id', 'name');
+        $typeMap = \App\Models\Type::whereIn('name', ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS'])
+                    ->pluck('id', 'name');
+
+        // Loop through surveys and compute totals
         foreach ($surveyRates as $survey) {
             $total = 0;
             $typeTotals = [
@@ -679,32 +688,37 @@ if(!function_exists('allreport'))
                 'AUTONOMY' => 0,
                 'RELATEDNESS' => 0,
             ];
+
             foreach ($survey->usersSurveysRates as $rate) {
-                $point = optional($rate->option)->point ?? 0;
-                $total += $point;
+                $point = optional($rate->option)->point;
                 $questionTypeId = optional($rate->question)->type_id;
-                foreach ($typeMap as $typeName => $typeId) {
-                    if ($questionTypeId == $typeId) {
-                        $typeTotals[$typeName] += $point;
-                        $totalTypePoints[$typeName] += $point; // <-- Add to total
+
+                if (!is_null($point)) {
+                    $total += $point;
+
+                    foreach ($typeMap as $typeName => $typeId) {
+                        if ($questionTypeId == $typeId) {
+                            $typeTotals[$typeName] += $point;
+                            $totalTypePoints[$typeName] += $point;
+                            $totalTypeRatings[$typeName] += 1;
+                        }
                     }
                 }
             }
+
             $surveyPoints[$survey->id] = $total;
             foreach ($typeTotals as $typeName => $val) {
                 $typePoints[$typeName][$survey->id] = $val;
             }
         }
 
-        // dd($surveyPoints);
+        // Assign surveys to user if not already assigned
         foreach ($individualSurveys as $survey) {
-            // Check if the survey is already assigned to the authenticated user
             $isAssigned = DB::table('users_surveys')
                 ->where('user_id', $authUserId)
                 ->where('survey_id', $survey->id)
                 ->exists();
 
-            // If not assigned, assign it to the user
             if (!$isAssigned) {
                 DB::table('users_surveys')->insert([
                     'user_id' => $authUserId,
@@ -716,10 +730,16 @@ if(!function_exists('allreport'))
             }
         }
 
-        
-             return $totalTypePoints;
+        // Debug output or return
+        // dd($totalTypePoints, $totalTypeRatings);
+    //    dd($totalTypePoints, $totalTypeRatings);
+        return [
+            'points' => $totalTypePoints,
+            'ratings' => $totalTypeRatings,
+        ];
     }
 }
+
 // if (!function_exists('getAllGroupsCombinedTypeReportsCombined')) {
 //     function getAllGroupsCombinedTypeReportsCombined()
 //     {
@@ -828,7 +848,7 @@ if(!function_exists('allreport'))
             }
         }
 
-        
+        // dd($totalTypePoints);
              return $totalTypePoints;
     }
 }
