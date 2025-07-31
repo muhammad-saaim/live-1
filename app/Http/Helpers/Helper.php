@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Type;
 use App\Models\User;
 use App\Models\Group;
 use App\Models\Survey;
@@ -632,62 +633,46 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
     }
 }
 
-if (!function_exists('allreport')) {
+
+    if (!function_exists('allreport')) {
     function allreport()
     {
         $authUserId = auth()->user()->id;
 
-        // Retrieve all individual surveys (applies_to containing 'Individual')
         $individualSurveys = Survey::whereJsonContains('applies_to', 'Individual')->get();
 
-        // Get user's survey answers (self-ratings only)
         $surveyRates = Survey::whereHas('usersSurveysRates', function ($query) use ($authUserId) {
                 $query->where('users_id', $authUserId)
-                      ->where('evaluatee_id', $authUserId);
+                    ->where('evaluatee_id', $authUserId);
             })
             ->with([
                 'usersSurveysRates' => function ($q) use ($authUserId) {
                     $q->where('users_id', $authUserId)
                       ->where('evaluatee_id', $authUserId)
-                      ->with(['option', 'question']); // Load option (for point) and question (for type_id)
+                      ->with(['option', 'question']);
                 }
             ])
             ->get();
 
-        // Initialize containers
         $surveyPoints = [];
         $typePoints = [
-            'SELF' => [],
-            'COMPETENCE' => [],
-            'AUTONOMY' => [],
-            'RELATEDNESS' => [],
+            'SELF' => [], 'COMPETENCE' => [], 'AUTONOMY' => [], 'RELATEDNESS' => [],
+            'SOCIAL' => [], 'ACADEMIC' => [], 'INTROVERTS' => [], 'EXTRAVERT' => [],
+            'RELATIONSHIP' => [], 'SELF-PERCEPTION' => [],
         ];
-        $totalTypePoints = [
-            'SELF' => 0,
-            'COMPETENCE' => 0,
-            'AUTONOMY' => 0,
-            'RELATEDNESS' => 0,
-        ];
-        $totalTypeRatings = [
-            'SELF' => 0,
-            'COMPETENCE' => 0,
-            'AUTONOMY' => 0,
-            'RELATEDNESS' => 0,
-        ];
+        $totalTypePoints = array_fill_keys(array_keys($typePoints), 0);
+        $totalTypeRatings = array_fill_keys(array_keys($typePoints), 0);
+        $totalTypeMaxPoints = array_fill_keys(array_keys($typePoints), 0);
 
-        // Get type IDs for each type name
-        $typeMap = \App\Models\Type::whereIn('name', ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS'])
-                    ->pluck('id', 'name');
+        $typeMap = Type::whereIn('name', array_keys($typePoints))
+            ->get()
+            ->mapWithKeys(fn($type) => [strtoupper($type->name) => $type->id]);
 
-        // Loop through surveys and compute totals
         foreach ($surveyRates as $survey) {
             $total = 0;
-            $typeTotals = [
-                'SELF' => 0,
-                'COMPETENCE' => 0,
-                'AUTONOMY' => 0,
-                'RELATEDNESS' => 0,
-            ];
+            $typeTotals = array_fill_keys(array_keys($typePoints), 0);
+            $isRosenberg = strtolower(trim($survey->title)) === 'rosenberg';
+            $maxPoint = $isRosenberg ? 4 : 5;
 
             foreach ($survey->usersSurveysRates as $rate) {
                 $point = optional($rate->option)->point;
@@ -701,18 +686,20 @@ if (!function_exists('allreport')) {
                             $typeTotals[$typeName] += $point;
                             $totalTypePoints[$typeName] += $point;
                             $totalTypeRatings[$typeName] += 1;
+                            $totalTypeMaxPoints[$typeName] += $maxPoint;
                         }
                     }
                 }
             }
 
             $surveyPoints[$survey->id] = $total;
+
             foreach ($typeTotals as $typeName => $val) {
                 $typePoints[$typeName][$survey->id] = $val;
             }
         }
 
-        // Assign surveys to user if not already assigned
+        // Ensure user is assigned to all individual surveys
         foreach ($individualSurveys as $survey) {
             $isAssigned = DB::table('users_surveys')
                 ->where('user_id', $authUserId)
@@ -730,15 +717,75 @@ if (!function_exists('allreport')) {
             }
         }
 
-        // Debug output or return
-        // dd($totalTypePoints, $totalTypeRatings);
-    //    dd($totalTypePoints, $totalTypeRatings);
+        // Breakdown by survey
+        $surveyBreakdown = [];
+        foreach ($surveyRates as $survey) {
+            $surveyId = $survey->id;
+            $isRosenberg = strtolower(trim($survey->title)) === 'rosenberg';
+            $maxPoint = $isRosenberg ? 4 : 5;
+
+            $surveyBreakdown[$surveyId] = [
+                'title' => $survey->title ?? 'Untitled',
+                'type_points' => [],
+                'type_ratings' => [],
+                'type_percentages' => [],
+                'max_point_per_question' => $maxPoint,
+            ];
+
+            foreach (array_keys($typePoints) as $typeName) {
+                $points = $typePoints[$typeName][$surveyId] ?? 0;
+                $ratings = 0;
+
+                foreach ($survey->usersSurveysRates as $rate) {
+                    if (optional($rate->question)->type_id == ($typeMap[$typeName] ?? null)) {
+                        $ratings += 1;
+                    }
+                }
+
+                $possible = $ratings * $maxPoint;
+                $percentage = $possible > 0 ? round(($points / $possible) * 100, 2) : 0;
+
+                $surveyBreakdown[$surveyId]['type_points'][$typeName] = $points;
+                $surveyBreakdown[$surveyId]['type_ratings'][$typeName] = $ratings;
+                $surveyBreakdown[$surveyId]['type_percentages'][$typeName] = $percentage;
+            }
+        }
+
+        // Final overall percentages and statuses
+        $overallPercentages = [];
+        $overallStatuses = [];
+
+        foreach ($totalTypePoints as $type => $totalPoints) {
+            $maxPoints = $totalTypeMaxPoints[$type] ?? 0;
+            $percentage = $maxPoints > 0 ? round(($totalPoints / $maxPoints) * 100, 0) : 0;
+            $overallPercentages[$type] = $percentage;
+
+            // Status logic
+            if ($percentage >= 84) {
+                $status = 'Perfect';
+            } elseif ($percentage >= 60) {
+                $status = 'Very Good';
+            } elseif ($percentage >= 40) {
+                $status = 'Good';
+            } else {
+                $status = 'Poor';
+            }
+
+            $overallStatuses[$type] = $status;
+        }
+
         return [
-            'points' => $totalTypePoints,
-            'ratings' => $totalTypeRatings,
+            'total_points' => $totalTypePoints,
+            'total_ratings' => $totalTypeRatings,
+            'max_points' => $totalTypeMaxPoints,
+            'overall_percentages' => $overallPercentages,
+            'overall_statuses' => $overallStatuses,
+            'by_survey' => $surveyBreakdown,
         ];
     }
 }
+
+
 
 // if (!function_exists('getAllGroupsCombinedTypeReportsCombined')) {
 //     function getAllGroupsCombinedTypeReportsCombined()
@@ -864,6 +911,8 @@ if (!function_exists('getAllGroupsCombinedTypeReportsCombined')) {
             $combinedByType = [];
             foreach ($byType as $type => $totals) {
                 $combinedByType[$type] = [
+                    'self_points_total'=>($totals['self']['total_points'] ?? 0),
+                    'self_ratings_total'=>($totals['self']['total_ratings'] ?? 0),
                     'total_points' => ($totals['self']['total_points'] ?? 0) + ($totals['others']['total_points'] ?? 0),
                     'total_ratings' => ($totals['self']['total_ratings'] ?? 0) + ($totals['others']['total_ratings'] ?? 0),
                 ];
@@ -873,6 +922,7 @@ if (!function_exists('getAllGroupsCombinedTypeReportsCombined')) {
                 'by_type_combined' => $combinedByType,
             ];
         }
+        // dd($reports);
         return $reports;
     }
 }
@@ -889,6 +939,7 @@ function getAllGroupsCombinedTypeReportsCombinedByGroupType()
 
     foreach ($user->groups as $group) {
         $groupTypeNames = $group->groupTypes->pluck('name')->map(fn($n) => strtolower($n))->toArray();
+
         if (in_array('family', $groupTypeNames)) {
             $groupType = 'family';
             $allowedTypes = [
@@ -910,27 +961,43 @@ function getAllGroupsCombinedTypeReportsCombinedByGroupType()
         }
 
         $byType = calculateSurveyTypetotalPoints($group)['combined_totals_by_type'] ?? [];
+
         foreach ($allowedTypes as $type) {
             $totals = $byType[$type] ?? [
                 'self' => ['total_points' => 0, 'total_ratings' => 0],
                 'others' => ['total_points' => 0, 'total_ratings' => 0]
             ];
+
+            // Ensure the type entry exists
             if (!isset($result[$groupType][$type])) {
                 $result[$groupType][$type] = [
                     'total_points' => 0,
                     'total_ratings' => 0,
+                    'self_points_total' => 0,
+                    'self_ratings_total' => 0,
+                    'others_points_total' => 0,
+                    'others_ratings_total' => 0,
+                    'combined_points_total' => 0,
+                    'combined_ratings_total' => 0,
                 ];
             }
+
+            // Add self totals
+            $result[$groupType][$type]['self_points_total'] += $totals['self']['total_points'] ?? 0;
+            $result[$groupType][$type]['self_ratings_total'] += $totals['self']['total_ratings'] ?? 0;
+
+            // Add others totals
+            $result[$groupType][$type]['others_points_total'] += $totals['others']['total_points'] ?? 0;
+            $result[$groupType][$type]['others_ratings_total'] += $totals['others']['total_ratings'] ?? 0;
+
+            // Optionally include combined total
             $result[$groupType][$type]['total_points'] += ($totals['self']['total_points'] ?? 0) + ($totals['others']['total_points'] ?? 0);
             $result[$groupType][$type]['total_ratings'] += ($totals['self']['total_ratings'] ?? 0) + ($totals['others']['total_ratings'] ?? 0);
         }
     }
-    // dd($groupTypeNames);
-    // dd($group->name, $group->groupTypes->pluck('name'));
-    // dd($result);
+        //  dd($result);
     return $result;
 }
-
 
 if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
     function getAllSelfAwarenessQuestionsFlatByGroupType()
@@ -1222,7 +1289,7 @@ if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
             $mergedResult[$groupType]['others_total_points'] = $groupOthersTotalPoints;
             $mergedResult[$groupType]['others_total_ratings'] = $groupOthersTotalRatings;
         }
-
+            //    dd($mergedResult);
         return $mergedResult;
     }
 }

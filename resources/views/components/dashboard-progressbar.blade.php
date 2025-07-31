@@ -24,7 +24,7 @@
             
             <!-- Individual Report Button -->
             @if($total_points > 0)
-            <button type="button"
+            {{-- <button type="button"
                 style="padding:2px 5px"
                 class="inline-flex items-center border border-blue-500 text-blue-600 rounded text-xs transition hover:bg-blue-50 hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200 shadow-sm ml-1"
                 @click="showModal = true">
@@ -34,7 +34,7 @@
                         d="M9 17v-2a4 4 0 014-4h3m4 4v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
                 </svg>
                 Report
-            </button>
+            </button> --}}
             @endif
 
             @php
@@ -54,7 +54,7 @@
             @endphp
             <!-- Group Report Button -->
             @if($showGroupReportButton)
-            <button type="button"
+            {{-- <button type="button"
                 style="padding:2px 5px"
                 class="inline-flex items-center border border-green-500 text-green-600 rounded text-xs transition hover:bg-green-50 hover:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-200 shadow-sm ml-1"
                 @click="showGroupModal = true">
@@ -64,7 +64,7 @@
                         d="M9 17v-2a4 4 0 014-4h3m4 4v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
                 </svg>
                 Report
-            </button>
+            </button> --}}
             @endif
 
         </label>

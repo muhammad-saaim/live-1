@@ -44,9 +44,11 @@ class ReportsController extends Controller
         $distinctSurveys = $userSurveyRates->pluck('survey')->filter()->unique('id')->values();
      $allGroupSurveyResults = getAllGroupsCombinedTypeReportsCombinedByGroupType();
      $allreport=allreport();
+    //   dd($allGroupSurveyResults);
+        // Get all self-awareness questions flat by group type
      $surveytypequestion=getAllSelfAwarenessQuestionsFlatByGroupType();
 //  dd($surveytypequestion);
-            //  dd($allGroupSurveyResults, $allreport);
+            //   dd($allGroupSurveyResults, $allreport);
         //  dd($allreport);
         return view('reports.reports-index', [
             'UserSurveys' => $distinctSurveys,

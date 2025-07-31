@@ -175,138 +175,118 @@
 
         <p><strong>Sonuç:</strong> Bay/Ms. Smith, kusursuz mentorluk becerileri ve geniş iş deneyimiyle öne çıkan biridir. Empati, iletişim ve motivasyon konularında son derece başarılı olan Smith, danışanlarının başarılarını artırmak için etkili bir rehberdir. Devam eden destek ve gelişimle, Smith’in mentorluk hizmetlerinin daha da etkili hale geleceğine inanıyoruz.</p> --}}
 
-<table class="table table-bordered text-center" style="border-collapse: collapse; font-size: 12px;">
-    <thead>
+<table class="table table-bordered table-striped table-hover align-middle mb-4 shadow-sm rounded-3 perception-table">
+    <thead class="table-primary">
         <tr>
-            <th rowspan="2">Survey names</th>
-            <th colspan="4">Personality Analysis</th>
-        </tr>
-        <tr>
-            <th>Overall</th>
-            <th>Self-Evaluation</th>
-            <th>Family members</th>
-            <th>Friends</th>
+            <th rowspan="2" class="align-middle">Survey names</th>
+            <th rowspan="2" class="align-middle">Overall %</th>
+            <th rowspan="2" class="align-middle">Self-Evaluation</th>
+            <th class="align-middle text-center">Family members</th>
+            <th class="align-middle text-center">Friends (5 friends should evaluate)</th>
         </tr>
     </thead>
     <tbody>
-        {{-- Individual Self Metrics --}}
         @php
-            $selfMetrics = [
+    // Determine if friend data should be shown — only once
+    $showFriendData = false;
+    foreach (auth()->user()->groups as $group) {
+        if (
+            $group->groupTypes->contains('name', 'Friend') &&
+            $group->users()->count() >= 5
+        ) {
+            $showFriendData = true;
+            break; // no need to keep checking
+        }
+    }
+@endphp
+
+        @php
+            $traits = [
                 'SELF' => 'Self-esteem',
                 'COMPETENCE' => 'Competence',
                 'AUTONOMY' => 'Autonomy',
                 'RELATEDNESS' => 'Relatedness',
+                'SELF-PERCEPTION' => 'Self-perception',
+                'RELATIONSHIP' => 'Relationship',
+                'INTROVERTS' => 'Introvert',
+                'EXTRAVERT' => 'Extravert',
+                'ACADEMIC' => 'Academic',
+                'SOCIAL' => 'Social',
             ];
+
+            function formatPercent($points, $ratings, $maxPoint = 5) {
+                return ($ratings > 0) ? round(($points / ($ratings * $maxPoint)) * 100, 0) : null;
+            }
+
+            function quality($percent) {
+                return match (true) {
+                    $percent >= 84 => 'Perfect',
+                    $percent >= 70 => 'Very good',
+                    $percent >= 40 => 'Good',
+                    default => 'Poor',
+                };
+            }
+
+            // lowercase key maps for group data
+            $familyMap = collect($allGroupSurveyResults['family'] ?? [])->mapWithKeys(fn($v, $k) => [strtolower($k) => $v]);
+            $friendMap = collect($allGroupSurveyResults['friend'] ?? [])->mapWithKeys(fn($v, $k) => [strtolower($k) => $v]);
         @endphp
 
-       @foreach ($selfMetrics as $key => $label)
-    @php
-        $points = $allreport['points'][$key] ?? 0;
-        $ratings = $allreport['ratings'][$key] ?? 0;
-            //  dd($points, $ratings);
-        // Calculate percentage only if ratings > 0
-        $percentage = ($ratings > 0) ? round(($points / ($ratings * 4)) * 100, 2) : 0;
+        @foreach ($traits as $key => $label)
+            @php
+                $lowerKey = strtolower($key);
 
-        // Assign quality based on percentage
-        $quality = match (true) {
-            $percentage >= 84 => ' Perfect',
-            $percentage >= 70 => 'Very Good',
-            $percentage >= 40 => 'Good',
-            default => 'Poor',
-        };
-    @endphp
-    <tr style="background-color: #fffec0;">
-        <td>{{ $label }}</td>
-        <td>{{ "$percentage% ($quality)" }}</td>
-        <td>{{ "$percentage% ($quality)" }}</td>
-        <td>-</td>
-        <td>-</td>
-    </tr>
-@endforeach
+                // Determine maxPoint based on Rosenberg
+                $isRosenberg = $lowerKey === 'self'; // adjust if Rosenberg key differs
+                $maxPoint = $isRosenberg ? 4 : 5;
 
+                // Self Evaluation
+                $selfPoints = $allreport['total_points'][$key] ?? 0;
+                $selfRatings = $allreport['total_ratings'][$key] ?? 0;
+                $selfPercent = formatPercent($selfPoints, $selfRatings, $maxPoint);
+                $selfText = $selfPercent !== null ? quality($selfPercent) . ', ' . $selfPercent : ' ';
 
-        {{-- Group Metrics --}}
-        @php
-            $allKeys = collect([
-                ...array_keys($allGroupSurveyResults['family'] ?? []),
-                ...array_keys($allGroupSurveyResults['friend'] ?? [])
-            ])->unique();
+                // Family Evaluation
+                $famData = $familyMap[$lowerKey] ?? null;
+                $famPercent = $famData ? formatPercent($famData['total_points'], $famData['total_ratings'], $maxPoint) : null;
+                $famText = $famPercent !== null ? quality($famPercent) . ', ' . $famPercent : ' ';
 
-            $getQuality = function ($ratings, $points) {
-                if (($points ?? 0) == 0) return [0, 'Poor'];
-$avg = ($points / ($ratings * 5)) * 100;
-                $quality = $avg >= 84 ? 'Perfect' : ($avg >= 70 ? 'Very Good' : ($avg >= 40 ? 'Good' : 'Poor'));
-                return [$avg, $quality];
-            };
-        @endphp
+                // Friend Evaluation
+                $friendData = $friendMap[$lowerKey] ?? null;
+                $friendPercent = $friendData ? formatPercent($friendData['total_points'], $friendData['total_ratings'], $maxPoint) : null;
+                $friendText = $friendPercent !== null ? quality($friendPercent) . ', ' . $friendPercent : ' ';
 
-        @foreach ($allKeys as $trait)
-    @php
-        // Family result - check if data exists and has valid values
-        $familyData = $allGroupSurveyResults['family'][$trait] ?? null;
-        [$familyAvg, $familyQuality] = $familyData &&
-            isset($familyData['total_ratings']) &&
-            isset($familyData['total_points']) &&
-            $familyData['total_ratings'] > 0
-            ? $getQuality($familyData['total_ratings'], $familyData['total_points'])
-            : [null, null];
+                // Overall Combined
+                $totalPoints = $selfPoints + ($famData['total_points'] ?? 0) + ($friendData['total_points'] ?? 0);
+                $totalRatings = $selfRatings + ($famData['total_ratings'] ?? 0) + ($friendData['total_ratings'] ?? 0);
+                $overallPercent = formatPercent($totalPoints, $totalRatings, $maxPoint);
+                $overallText = $overallPercent !== null ? quality($overallPercent) . ', ' . $overallPercent : ' ';
 
-        // Friend result - check if data exists and has valid values
-        $friendData = $allGroupSurveyResults['friend'][$trait] ?? null;
-        [$friendAvg, $friendQuality] = $friendData &&
-            isset($friendData['total_ratings']) &&
-            isset($friendData['total_points']) &&
-            $friendData['total_ratings'] > 0
-            ? $getQuality($friendData['total_ratings'], $friendData['total_points'])
-            : [null, null];
+                // Highlight important traits
+                $highlight = in_array($key, ['SELF', 'COMPETENCE', 'AUTONOMY', 'RELATEDNESS']) ? 'background-color: #fffec0;' : '';
+            @endphp
 
-        // Combine ratings and points directly (correct way to calculate overall percentage)
-        $totalPoints = 0;
-        $totalRatings = 0;
-
-        if ($familyData && is_numeric($familyData['total_points']) && is_numeric($familyData['total_ratings'])) {
-            $totalPoints += $familyData['total_points'];
-            $totalRatings += $familyData['total_ratings'];
-        }
-
-        if ($friendData && is_numeric($friendData['total_points']) && is_numeric($friendData['total_ratings'])) {
-            $totalPoints += $friendData['total_points'];
-            $totalRatings += $friendData['total_ratings'];
-        }
-
-        if ($totalRatings > 0) {
-            $combinedAvg = round(($totalPoints / ($totalRatings * 5)) * 100);
-            $overallQuality = $combinedAvg >= 84 ? 'Perfect' : ($combinedAvg >= 70 ? 'Very Good' : ($combinedAvg >= 40 ? 'Good' : 'Poor'));
-        } else {
-            $combinedAvg = null;
-            $overallQuality = null;
-        }
-    @endphp
-
-    <tr style="background-color: #d9f2fc;">
-        <td>{{ ucfirst(strtolower($trait)) }}</td>
-        <td>
-            @if ($combinedAvg !== null)
-                {{ $combinedAvg }}% ({{ $overallQuality }})
-            @else
-                -
-            @endif
-        </td>
-        <td>-</td>
-        <td>{{ $familyQuality ? "$familyAvg% ($familyQuality)" : '-' }}</td>
-        <td>{{ $friendQuality ? "$friendAvg% ($friendQuality)" : '-' }}</td>
-    </tr>
-@endforeach
-
+            <tr style="{{ $highlight }}">
+                <td>{{ $label }}</td>
+                <td>{{ $overallText }}</td>
+                <td>{{ $selfText }}</td>
+                <td>{{ $famText }}</td>
+                @if ($showFriendData)
+                <td>{{ $friendText }}</td>
+        @endif
+            </tr>
+            
+        @endforeach
     </tbody>
 </table>
+
 
 <style>
     table {
         border-collapse: collapse;
         width: 100%;
         font-family: Calibri, sans-serif;
-    }
+    } 
 
     caption {
         font-size: 20px;
@@ -381,7 +361,7 @@ $avg = ($points / ($ratings * 5)) * 100;
                 $selfQuestion = collect($individual['questions'])->firstWhere('question_text', $text);
                 $selfPercentage = null;
                 if ($selfQuestion && $selfQuestion['self_total_points'] > 0) {
-                    $selfPercentage = round(($selfQuestion['self_total_ratings'] / $selfQuestion['self_total_points']) * 100);
+                    $selfPercentage = round(($selfQuestion['self_total_points'] / ($selfQuestion['self_total_ratings']*5)) * 100);
                 }
 
                 // Get family data with validation
@@ -398,7 +378,7 @@ $avg = ($points / ($ratings * 5)) * 100;
     $totalFamilyRatings = $famQuestion['others_total_ratings'] + $famQuestion['self_total_ratings'];
 
     if ($totalFamilyPoints > 0) {
-        $famPercentage = round(($totalFamilyRatings / $totalFamilyPoints) * 100);
+        $famPercentage = round(($totalFamilyPoints /($totalFamilyRatings * 5) ) * 100);
     } else {
         $famPercentage = null;
     }
@@ -418,7 +398,7 @@ $avg = ($points / ($ratings * 5)) * 100;
     $totalFriendRatings = $frndQuestion['others_total_ratings'] + $frndQuestion['self_total_ratings'];
 
     if ($totalFriendPoints > 0) {
-        $frndPercentage = round(($totalFriendRatings / $totalFriendPoints) * 100);
+        $frndPercentage = round(($totalFriendPoints / ($totalFriendRatings * 5)) * 100);
     } else {
         $frndPercentage = null;
     }
@@ -440,8 +420,7 @@ $avg = ($points / ($ratings * 5)) * 100;
                 };
 
                 // Calculate average for overall
-                $validPercentages = array_filter([$selfPercentage, $famPercentage, $frndPercentage], function($val) { return $val !== null; });
-                $avgPercentage = count($validPercentages) > 0 ? round(array_sum($validPercentages) / count($validPercentages)) : null;
+                 $avgPercentage= (($selfQuestion['self_total_points'] + $totalFamilyPoints + $totalFriendPoints) / (($selfQuestion['self_total_ratings'] + $totalFamilyRatings + $totalFriendRatings)*5)) * 100;
             @endphp
 
             <tr>

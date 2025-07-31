@@ -51,9 +51,9 @@
         @endphp
          @php
     if ($group->groupTypes->contains('id', 1) || $group->groupTypes->contains('name', 'Friend')) {
-        $groupColor = '#D0F0FD'; // Soft Sky Blue (Friend)
+        $groupColor = 'rgb(235 242 216 / var(--tw-bg-opacity))'; // Soft Sky Blue (Friend)
     } elseif ($group->groupTypes->contains('id', 2) || $group->groupTypes->contains('name', 'Family')) {
-        $groupColor = '#FFE0F0'; // Light Pink Rose (Family)
+        $groupColor = '#D1D5D'; // Light Pink Rose (Family)
     } else {
         $groupColor = $group->color ?? '#F2F2F2'; // Neutral Light Grey fallback
     }
@@ -208,10 +208,10 @@
                                 <x-group-progressbar :num="$othersPercentage" :othersStatus="$othersStatus" :othersColor="$othersColor">Others ({{ $othersCompletedQuestions }}/{{ $totalQuestions }})</x-group-progressbar>
                             </div>
 @php
-                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
+                    // $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
                     @endphp
 
-                    @if ($group->users()->count() >= $minimumUsers)
+                    {{-- @if ($group->users()->count() >= $minimumUsers) --}}
                             <div class="space-y-3 mt-3 p-2">
                                 @foreach($group->defaultSurveys() as $survey)
                                     <div class="flex items-center justify-between space-x-2">
@@ -233,7 +233,7 @@
                                     </div>
                                 @endforeach
                             </div>
-                                @endif
+                                {{-- @endif --}}
                             <div class="pt-3 flex space-x-2">
                                 <!-- Edit Group Button -->
                                 @if (Auth::id() === $group->group_admin)

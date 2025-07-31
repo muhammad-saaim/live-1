@@ -376,9 +376,9 @@
                                     :othersColor="$othersColor">Others </x-group-progressbar>
                                    </div>
 @php
-                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
+                    // $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
                     @endphp
-                                        @if ($group->users()->count() >= $minimumUsers)
+                                        {{-- @if ($group->users()->count() >= $minimumUsers) --}}
 
                         <div class="space-y-3 mt-3 p-2">
                             @foreach($group->defaultSurveys() as $survey)
@@ -401,7 +401,7 @@
                                 </div>
                             @endforeach
                         </div>
-                          @endif
+                          {{-- @endif --}}
                        
                             <div class="pt-3">
                                 <a href="{{ route('group.show',$group->id) }}">
