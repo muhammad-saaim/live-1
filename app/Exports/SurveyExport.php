@@ -34,6 +34,7 @@ class SurveyExport implements FromView, WithEvents
         'questions.question as question_text',
         'questions.reverse_score',
         'question_options.name as option_name',
+        'question_options.point as point',
         'survey_models.title as survey_model_title',
         'groups.name as group_name',
         'types.name as type_name'
