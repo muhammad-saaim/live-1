@@ -953,6 +953,14 @@ function getAllGroupsCombinedTypeReportsCombinedByGroupType()
         } elseif (in_array('friend', $groupTypeNames)) {
             $groupType = 'friend';
             $allowedTypes = [
+                'SELF',
+                'COMPETENCE',
+                'AUTONOMY',
+                'RELATEDNESS',
+                'SELF-PERCEPTION',
+                'RELATIONSHIP',
+                'INTROVERTS',
+                'EXTRAVERT',
                 'SOCIAL',
                 'ACADEMIC'
             ];

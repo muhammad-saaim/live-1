@@ -55,25 +55,28 @@ class SurveyRateController extends Controller
             })
             ->get();
 
-        // Find questions where self-evaluation is missing
-        $selfUnanswered = array_diff(
-            $questionIds,
-            $allRates->where('evaluatee_id', $user->id)->pluck('question_id')->toArray()
-        );
-
-        // Find questions where any group member is not rated
-        $groupUnanswered = [];
-        foreach ($questionIds as $qid) {
-            foreach ($groupUserIds as $gid) {
-                if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
-                    $groupUnanswered[] = $qid;
-                    break; // Only need to know at least one group member is missing
+        // Check for unanswered questions based on context
+        if ($request->group_id) {
+            // Group context: only check group evaluation (self-evaluation disabled)
+            $groupUnanswered = [];
+            foreach ($questionIds as $qid) {
+                foreach ($groupUserIds as $gid) {
+                    if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
+                        $groupUnanswered[] = $qid;
+                        break; // Only need to know at least one group member is missing
+                    }
                 }
             }
+            $unansweredQuestionIds = array_unique($groupUnanswered);
+        } else {
+            // Individual context: check self-evaluation
+            $selfUnanswered = array_diff(
+                $questionIds,
+                $allRates->where('evaluatee_id', $user->id)->pluck('question_id')->toArray()
+            );
+            $unansweredQuestionIds = array_unique($selfUnanswered);
         }
-
-        // Union of both
-        $unansweredQuestionIds = array_unique(array_merge($selfUnanswered, $groupUnanswered));
+        
         $unansweredQuestions = $questions->whereIn('id', $unansweredQuestionIds);
 
         // Get the answered survey rates to show the user's responses
@@ -88,8 +91,14 @@ class SurveyRateController extends Controller
             ->whereIn('question_id', $questions->pluck('id'))
             ->get();
 
-        // Get previous self-evaluation answers keyed by question_id
-        $selfAnswers = $allRates->where('evaluatee_id', $user->id)->keyBy('question_id');
+        // Get self-answers based on context
+        if ($request->group_id) {
+            // Group context: no self answers needed
+            $selfAnswers = collect();
+        } else {
+            // Individual context: get self answers
+            $selfAnswers = $allRates->where('evaluatee_id', $user->id)->keyBy('question_id');
+        }
 
         if ($unansweredQuestions->isEmpty()) {
             if ($request->group_id) {
@@ -162,6 +171,14 @@ class SurveyRateController extends Controller
 
         $user = auth()->user();
 
+        // Prevent self-evaluation only in group context
+        if ($request->group_id && $request->evaluatee_id == $user->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Self-evaluation is disabled in group context. Please evaluate other group members only.'
+            ], 403);
+        }
+
         // Check if this rating already exists
         $exists = UsersSurveysRate::where([
             'users_id' => $user->id,
@@ -213,14 +230,6 @@ class SurveyRateController extends Controller
         // Get all question IDs for this survey
         $questionIds = Question::where('survey_id', $request->survey_id)->pluck('id')->toArray();
 
-        // Get all group user IDs except the current user
-        $groupUsers = [];
-        if ($request->group_id) {
-            $group = \App\Models\Group::find($request->group_id);
-            $groupUsers = $group ? $group->users : [];
-        }
-        $groupUserIds = collect($groupUsers)->pluck('id')->filter(fn($id) => $id != $user->id)->toArray();
-
         // Get all rates by the current user for this survey
         $allRates = UsersSurveysRate::where('survey_id', $request->survey_id)
             ->where('users_id', $user->id)
@@ -231,27 +240,40 @@ class SurveyRateController extends Controller
             })
             ->get();
 
-        // Find questions where self-evaluation is missing
-        $selfUnanswered = array_diff(
-            $questionIds,
-            $allRates->where('evaluatee_id', $user->id)->pluck('question_id')->toArray()
-        );
+        if ($request->group_id) {
+            // Group context: only check group evaluation (self-evaluation disabled)
+            $groupUsers = [];
+            $group = \App\Models\Group::find($request->group_id);
+            $groupUsers = $group ? $group->users : [];
+            $groupUserIds = collect($groupUsers)->pluck('id')->filter(fn($id) => $id != $user->id)->toArray();
 
-        // Find questions where any group member is not rated
-        $groupUnanswered = [];
-        foreach ($questionIds as $qid) {
-            foreach ($groupUserIds as $gid) {
-                if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
-                    $groupUnanswered[] = $qid;
-                    break;
+            $groupUnanswered = [];
+            foreach ($questionIds as $qid) {
+                foreach ($groupUserIds as $gid) {
+                    if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
+                        $groupUnanswered[] = $qid;
+                        break;
+                    }
                 }
             }
-        }
 
-        // If there are no unanswered self or group questions, mark as completed
-        if (empty($selfUnanswered) && empty($groupUnanswered)) {
-            $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
-            return response()->json(['status' => 'success', 'message' => 'All questions completed. Thank you!']);
+            // If there are no unanswered group questions, mark as completed
+            if (empty($groupUnanswered)) {
+                $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
+                return response()->json(['status' => 'success', 'message' => 'All questions completed. Thank you!']);
+            }
+        } else {
+            // Individual context: check self-evaluation
+            $selfUnanswered = array_diff(
+                $questionIds,
+                $allRates->where('evaluatee_id', $user->id)->pluck('question_id')->toArray()
+            );
+
+            // If there are no unanswered self questions, mark as completed
+            if (empty($selfUnanswered)) {
+                $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
+                return response()->json(['status' => 'success', 'message' => 'All questions completed. Thank you!']);
+            }
         }
         // --- End new logic ---
 
@@ -302,7 +324,7 @@ class SurveyRateController extends Controller
 
             // Create new rating
             UsersSurveysRate::create([
-                'users_id' => $user->id,
+                 'users_id' => $user->id,
                 'evaluatee_id' => $request->evaluatee_id, 
                 'question_id' => $request->question_id,
                 'options_id' => $request->options_id,

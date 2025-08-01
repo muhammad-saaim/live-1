@@ -9,13 +9,12 @@
     <div class="p-3 max-w-7xl mx-auto space-y-4">
         <div class="col-md-8">
             <div class="d-flex justify-content-between w-100 p-2">
-<button class="btn btn-danger" onclick="window.location.href='{{ route('dashboard.index') }}'">
-    Leave the Survey
-</button>
+<a href="/dashboard" class="btn btn-danger">Leave the Survey</a>
 
                 <div class="btn-group d-none" role="group" aria-label="Toggle View">
                     <!-- Check if coming from group (group_id present) to determine which tab to open -->
                     @if($request->has('group_id') || isset($groupUsers) && count($groupUsers) > 0)
+                        <!-- Group context: show group evaluation, disable self-evaluation -->
                         <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off" checked>
                         <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
 
@@ -155,9 +154,9 @@
                             @foreach ($groupUsers as $user)  
                             <div class="p-3 max-w-7xl mx-auto" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
                                 <div class="mb-3 text-md text-red-500">
-                                    @if($user->id == Auth::id())
-                                        <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }} (Self)</p>
-                                    @else
+                                    @if($user->id !== Auth::id())
+                                        {{-- <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }} (Self)</p>
+                                    @else --}}
                                         <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
                                     @endif
                                 </div>
@@ -168,6 +167,7 @@
                         <!-- Options Column -->
                         <div class="col-6 py-4 max-w-7xl space-y-6 border" style="border: 1px solid rgb(184, 184, 184) !important; border-radius:30px;">
                             @foreach ($groupUsers as $user)  
+                            @if($user->id !== Auth::id())
                             <div class="flex justify-center items-center relative max-w-xl">
                                 <div class="flex justify-center items-center px-4 gap-5" >
                                     @php
@@ -197,6 +197,7 @@
                                 <div style="display: flex; justify-content: center;">
                                     <hr style="border: 1px solid rgb(184, 184, 184); width: 90%;">
                                 </div> 
+                            @endif
                             @endif
                             @endforeach
                         </div>

@@ -188,16 +188,7 @@
     <tbody>
         @php
     // Determine if friend data should be shown — only once
-    $showFriendData = false;
-    foreach (auth()->user()->groups as $group) {
-        if (
-            $group->groupTypes->contains('name', 'Friend') &&
-            $group->users()->count() >= 5
-        ) {
-            $showFriendData = true;
-            break; // no need to keep checking
-        }
-    }
+  
 @endphp
 
         @php
@@ -271,7 +262,7 @@
                 <td>{{ $overallText }}</td>
                 <td>{{ $selfText }}</td>
                 <td>{{ $famText }}</td>
-                @if ($showFriendData)
+                @if ($friendData['total_ratings'] >= 5)
                 <td>{{ $friendText }}</td>
         @endif
             </tr>
@@ -406,17 +397,17 @@
 
 
                 $getStatus = function($percentage) {
-                    if ($percentage === null) return '-';
+                    if ($percentage === null) return ''  ;
                     if ($percentage >= 84) return 'Perfect';
                     elseif ($percentage >= 60) return 'Very Good';
                     elseif ($percentage >= 40) return 'Good';
                     elseif ($percentage > 0) return 'Poor';
-                    return '-';
+                    return ''  ;
                 };
 
                 $format = function($percentage) use ($getStatus) {
-                    if ($percentage === null) return '-';
-                    return $getStatus($percentage) . ', ' . $percentage . '%';
+                    if ($percentage === null) return ''  ;
+                    return $getStatus($percentage) . ', ' . $percentage . ' ';
                 };
 
                 // Calculate average for overall
@@ -425,7 +416,7 @@
 
             <tr>
                 <td>{{ $text ?: 'Question ' . $question['question_id'] }}</td>
-                <td>{{ $avgPercentage ? $getStatus($avgPercentage) . ', ' . $avgPercentage . '%' : '-' }}</td>
+                <td>{{ $avgPercentage ? $getStatus($avgPercentage) . ', ' . $avgPercentage . ' ' : ''   }}</td>
                 <td>{{ $format($selfPercentage) }}</td>
                 <td>{{ $format($famPercentage) }}</td>
                 <td>{{ $format($frndPercentage) }}</td>

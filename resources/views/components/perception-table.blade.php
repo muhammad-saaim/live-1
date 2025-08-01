@@ -22,10 +22,10 @@
       </tr>
         <tr>
             <th rowspan="2" class="align-middle">Survey names</th>
-            <th rowspan="2" class="align-middle">Overall %</th>
+            <th rowspan="2" class="align-middle">Overall   </th>
             <th rowspan="2" class="align-middle">Self-Evaluation</th>
-            <th class="align-middle text-center">Family members</th>
-            <th class="align-middle text-center">Friends (5 friends should evaluate)</th>
+            {{-- <th class="align-middle text-center">Family members</th>
+            <th class="align-middle text-center">Friends (5 friends should evaluate)</th> --}}
         </tr>
     </thead>
     <tbody>
@@ -99,8 +99,8 @@
                 <td>{{ $label }}</td>
                 <td>{{ $overallText }}</td>
                 <td>{{ $selfText }}</td>
-                <td></td>
-                <td></td>
+                {{-- <td></td>
+                <td></td> --}}
             </tr>
         @endforeach
     </tbody>
@@ -127,9 +127,12 @@
 <div class="table-responsive">
   <table class="table table-bordered table-striped table-hover align-middle mb-4 shadow-sm rounded-3 perception-table">
     <thead class="table-primary">
-        <tr>
+            <tr>
+<th colspan="5" style="text-align: center; font-size: 24px; font-weight: bold;">
+  How I am Perceived
+</th>
+      <tr>
             <th rowspan="2">Questions</th>
-            <th colspan="4">How I am Perceived</th>
         </tr>
         <tr>
             <th>Overall</th>
@@ -183,7 +186,7 @@
                     };
                 };
 
-                $format = fn($percentage) => $percentage === null ? '-' : $getStatus($percentage) . ', ' . $percentage . '%';
+                $format = fn($percentage) => $percentage === null ? '-' : $getStatus($percentage) . ', ' . $percentage . '  ';
 
                 $selfPoints = $selfQuestion['self_total_points'] ?? 0;
                 $selfRatings = $selfQuestion['self_total_ratings'] ?? 0;
@@ -195,7 +198,7 @@
 
             <tr>
                 <td>{{ $text ?: 'Question ' . $question['question_id'] }}</td>
-                <td>{{ $avgPercentage ? $getStatus($avgPercentage) . ', ' . $avgPercentage . '%' : '-' }}</td>
+                <td>{{ $avgPercentage ? $getStatus($avgPercentage) . ', ' . $avgPercentage . '  ' : '-' }}</td>
                 <td>{{ $format($selfPercentage) }}</td>
                 {{-- <td>{{ $format($famPercentage) }}</td>
                 <td>{{ $format($frndPercentage) }}</td> --}}

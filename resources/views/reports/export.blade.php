@@ -77,53 +77,27 @@
                     <td style="border: 1px solid #000;">{{ $entry->evaluatee_id ?? 'N/A' }}</td>
                     <!-- <td style="border: 1px solid #000;">{{ $entry->evaluatee_relation ?? 'N/A' }}</td> -->
                     <td style="border: 1px solid #000;">{{ $entry->evaluatee_gender ?? 'N/A' }}</td>
-                   @php
-    $questionTypes = $groupedSurveys->flatMap(fn($q) => $q->pluck('question_type'))->unique();
-@endphp
-
-@foreach ($questionTypes as $type)
-    <tr>
-        <th colspan="100%" style="background-color: #ddeeff; text-align:center; font-size:18px;">
-            {{ ucfirst($type) }} Questions
-        </th>
-    </tr>
-
-    @foreach ($groupedSurveys as $surveyTitle => $questions)
-        @php
-            $filteredQuestions = $questions->filter(fn($q) => $q->question_type === $type);
-        @endphp
-
-        @if ($filteredQuestions->isNotEmpty())
-            <tr>
-                <td style="border: 1px solid #000; background: #f0f0f0;">{{ $surveyTitle }}</td>
-
-                @php $surveyRowTotal = 0; @endphp
-
-                @foreach ($filteredQuestions as $questionEntry)
-                    @php
-                        $matched = $UserSurveys->first(function ($record) use ($entry, $questionEntry) {
-                            return $record->group_id === $entry->group_id &&
-                                   $record->users_id === $entry->users_id &&
-                                   $record->evaluatee_id === $entry->evaluatee_id &&
-                                   $record->question_id === $questionEntry->question_id;
-                        });
-
-                        $optionName = $matched->option_name ?? '';
-                        $score = is_numeric($matched->option_name ?? null) ? (int)$matched->option_name : 0;
-                        $surveyRowTotal += $score;
-                    @endphp
-
-                    <td style="border: 1px solid #000;">{{ $optionName }}</td>
-                @endforeach
-
-                <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">
-                    {{ $surveyRowTotal }}
-                </td>
-            </tr>
-        @endif
-    @endforeach
-@endforeach
-
+                    @foreach ($groupedSurveys as $surveyTitle => $questions)
+                        @php $uniqueQuestions = $questions->unique('question_id'); @endphp
+                        <td style="border: 1px solid #000; background: #f9f9f9;"></td>
+                        @php $surveyRowTotal = 0; @endphp
+                        @foreach ($uniqueQuestions as $questionEntry)
+                            @php
+                                $matched = $UserSurveys->first(function ($record) use ($entry, $questionEntry) {
+                                    return $record->group_id === $entry->group_id &&
+                                           $record->users_id === $entry->users_id &&
+                                           $record->evaluatee_id === $entry->evaluatee_id &&
+                                           $record->question_id === $questionEntry->question_id;
+                                });
+                                $optionName = $matched->option_name ?? '';
+                                $corredcr = $matched->option_name ?? 0;
+                                $surveyRowTotal += $corredcr;
+                            @endphp
+                            <td style="border: 1px solid #000;">{{ $optionName }}</td>
+                        @endforeach
+                        <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">{{ $surveyRowTotal }}</td>
+                    @endforeach
+                </tr>
             @endif
         @endforeach
     </tbody>
