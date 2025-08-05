@@ -150,7 +150,7 @@
                 <form id="group-evaluation-form">
                     <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5 d-flex">
                         <!-- Usernames Column -->
-                        <div class="col-4 d-flex flex-column justify-start" style="margin-top: 1.5rem;">
+                        <div class="col-4 d-flex flex-column justify-start" style="margin-top: -4.5rem;">
                             @foreach ($groupUsers as $user)  
                             <div class="p-3 max-w-7xl mx-auto" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
                                 <div class="mb-3 text-md text-red-500">
@@ -271,53 +271,54 @@
             selectedCircle.classList.remove('bg-white', 'border-gray-300');
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set up event listeners for all radio button labels (self-evaluation only)
-            document.querySelectorAll('input[name="answer"]').forEach(radioInput => {
-                radioInput.addEventListener('change', function() {
-                    updateSelectedOption(radioInput);
-                    // Auto-submit for self-evaluation
-                    const questionId = document.getElementById("question-id").value;
-                    const surveyId = document.getElementById("survey-id").value;
-                    const optionId = radioInput.value;
-                    const evaluateeId = document.getElementById("evaluatee-id").value;
-                    const messageContainer = document.getElementById("message-container");
-                    const groupId = "{{ $request->group_id ?? '' }}";
-                    fetch("{{ route('survey.submitAnswer') }}", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                        },
-                        body: JSON.stringify({
-                            survey_id: surveyId,
-                            question_id: questionId,
-                            options_id: optionId,
-                            evaluatee_id: evaluateeId,
-                            group_id: groupId
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === "success") {
-                            messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${data.message}</div>`;
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1000);
-                        } else {
-                            messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${data.message}</div>`;
-                        }
-                    })
-                    .catch(error => console.error("Error:", error));
-                });
-            });
+      document.addEventListener('DOMContentLoaded', function() {
+    // Set up event listeners for all radio button labels (self-evaluation only)
+    document.querySelectorAll('input[name="answer"]').forEach(radioInput => {
+        radioInput.addEventListener('change', function() {
+            updateSelectedOption(radioInput);
 
-            // Initialize any pre-selected option for self-evaluation
-            const selectedRadio = document.querySelector('input[name="answer"]:checked');
-            if (selectedRadio) {
-                updateSelectedOption(selectedRadio);
-            }
+            const questionId = document.getElementById("question-id").value;
+            const surveyId = document.getElementById("survey-id").value;
+            const optionId = radioInput.value;
+            const evaluateeId = document.getElementById("evaluatee-id").value;
+            const messageContainer = document.getElementById("message-container");
+            const groupId = document.getElementById("group-id")?.value || ''; // or pass it inline if needed
+
+            fetch("/survey/submit-answer", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+                },
+                body: JSON.stringify({
+                    survey_id: surveyId,
+                    question_id: questionId,
+                    options_id: optionId,
+                    evaluatee_id: evaluateeId,
+                    group_id: groupId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${data.message}</div>`;
+                    setTimeout(() => {
+                        location.reload(); // or call loadNextQuestion() if you want to load dynamically
+                    }, 1000);
+                } else {
+                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${data.message}</div>`;
+                }
+            })
+            .catch(error => console.error("Error:", error));
         });
+    });
+
+    // Initialize any pre-selected option for self-evaluation
+    const selectedRadio = document.querySelector('input[name="answer"]:checked');
+    if (selectedRadio) {
+        updateSelectedOption(selectedRadio);
+    }
+});
 
         // Self Evaluation
         document.addEventListener("DOMContentLoaded", function() {
@@ -620,10 +621,34 @@
                                 }
                                 
                                 if (failed === 0) {
-                                    messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${message.trim()}</div>`;
-                                    setTimeout(() => location.reload(), 1000);
+                                    messageContainer.innerHTML = `<div class=\"bg-green-500 text-white p-3 rounded\">${message.trim()}</div>`;
+                                    // Fetch next group question via AJAX
+                                    fetch("{{ route('survey.nextQuestion') }}", {
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                                        },
+                                        body: JSON.stringify({
+                                            survey_id: document.querySelector('input[name=\"survey_id\"]').value,
+                                            group_id: "{{ $request->group_id ?? '' }}"
+                                        })
+                                    })
+                                    .then(response => response.json())
+                                    .then(nextData => {
+                                        if (nextData.question && nextData.options) {
+                                            // You may want to re-render the group question UI here
+                                            // For now, just reload the page section
+                                            // location.reload(); // Optionally, replace this with dynamic DOM update for group
+                                        } else {
+                                            document.getElementById("group-container").innerHTML = '<p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>';
+                                        }
+                                    })
+                                    .catch(() => {
+                                        document.getElementById("group-container").innerHTML = '<p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>';
+                                    });
                                 } else {
-                                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${message.trim()}</div>`;
+                                    messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${message.trim()}</div>`;
                                 }
                             }
                         })
@@ -641,5 +666,7 @@
         });
 
     </script>
+ 
+
 
 </x-app-layout>

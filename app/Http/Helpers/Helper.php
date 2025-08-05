@@ -733,7 +733,7 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
             ];
 
             foreach (array_keys($typePoints) as $typeName) {
-                $points = $typePoints[$typeName][$surveyId] ?? 0;
+                $points = $typePoints[$typeName][$survey->id] ?? 0;
                 $ratings = 0;
 
                 foreach ($survey->usersSurveysRates as $rate) {
@@ -1011,17 +1011,12 @@ if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
     function getAllSelfAwarenessQuestionsFlatByGroupType()
     {
         $user = auth()->user();
+        // dd($user);
         if (!$user) return [];
 
-        $selfAwarenessTypeName = 'Self-awareness and motivation';
-
-        $typeIds = \App\Models\Type::where('name', $selfAwarenessTypeName)->pluck('id');
-
-        if ($typeIds->isEmpty()) {
-            $typeIds = \App\Models\SurveyModel::where('title', $selfAwarenessTypeName)->pluck('id');
-        }
-
-        if ($typeIds->isEmpty()) return [];
+        $selfAwarenessModelName = 'Self-awareness and motivation';
+        $modelIds = \App\Models\SurveyModel::where('title', $selfAwarenessModelName)->pluck('id');
+        if ($modelIds->isEmpty()) return [];
 
         $result = [
             'individual' => [
@@ -1046,15 +1041,15 @@ if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
         ];
 
         // ✅ INDIVIDUAL: only self ratings
-        $individualSurveys = \App\Models\Survey::whereJsonContains('applies_to', 'Individual')->get();
+        $individualSurveys = \App\Models\Survey::whereJsonContains('applies_to', 'Individual')
+            ->whereIn('model_id', $modelIds)
+            ->get();
 
         // Debug: Log how many individual surveys we found
         \Log::info("Found " . $individualSurveys->count() . " individual surveys");
 
         foreach ($individualSurveys as $survey) {
-            $questions = \App\Models\Question::where('survey_id', $survey->id)
-                ->whereIn('type_id', $typeIds)
-                ->get();
+            $questions = \App\Models\Question::where('survey_id', $survey->id)->get();
 
             // Debug: Log how many questions we found for this survey
             \Log::info("Survey {$survey->id} ({$survey->title}): Found " . $questions->count() . " questions");
@@ -1120,9 +1115,11 @@ if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
             }
 
             foreach ($group->defaultSurveys() as $survey) {
-                $questions = \App\Models\Question::where('survey_id', $survey->id)
-                    ->whereIn('type_id', $typeIds)
-                    ->get();
+                // Only include surveys of the "Self-awareness and motivation" model
+                if (!in_array($survey->model_id, $modelIds->toArray())) {
+                    continue;
+                }
+                $questions = \App\Models\Question::where('survey_id', $survey->id)->get();
 
                 foreach ($questions as $question) {
                     // Get the latest self rating (where user rates themselves)
@@ -1201,7 +1198,7 @@ if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
             }
         }
 
-        // Merge same questions across all groups
+        // Merge same questions across all groups to show total survey questions
         $mergedResult = [
             'individual' => [
                 'questions' => [],
@@ -1297,7 +1294,7 @@ if (!function_exists('getAllSelfAwarenessQuestionsFlatByGroupType')) {
             $mergedResult[$groupType]['others_total_points'] = $groupOthersTotalPoints;
             $mergedResult[$groupType]['others_total_ratings'] = $groupOthersTotalRatings;
         }
-            //    dd($mergedResult);
+// dd($mergedResult);
         return $mergedResult;
     }
 }

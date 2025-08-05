@@ -58,14 +58,14 @@ class SurveyRateController extends Controller
         // Check for unanswered questions based on context
         if ($request->group_id) {
             // Group context: only check group evaluation (self-evaluation disabled)
-            $groupUnanswered = [];
-            foreach ($questionIds as $qid) {
-                foreach ($groupUserIds as $gid) {
-                    if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
-                        $groupUnanswered[] = $qid;
-                        break; // Only need to know at least one group member is missing
-                    }
+        $groupUnanswered = [];
+        foreach ($questionIds as $qid) {
+            foreach ($groupUserIds as $gid) {
+                if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
+                    $groupUnanswered[] = $qid;
+                    break; // Only need to know at least one group member is missing
                 }
+            }
             }
             $unansweredQuestionIds = array_unique($groupUnanswered);
         } else {
@@ -97,7 +97,7 @@ class SurveyRateController extends Controller
             $selfAnswers = collect();
         } else {
             // Individual context: get self answers
-            $selfAnswers = $allRates->where('evaluatee_id', $user->id)->keyBy('question_id');
+        $selfAnswers = $allRates->where('evaluatee_id', $user->id)->keyBy('question_id');
         }
 
         if ($unansweredQuestions->isEmpty()) {
@@ -247,15 +247,15 @@ class SurveyRateController extends Controller
             $groupUsers = $group ? $group->users : [];
             $groupUserIds = collect($groupUsers)->pluck('id')->filter(fn($id) => $id != $user->id)->toArray();
 
-            $groupUnanswered = [];
-            foreach ($questionIds as $qid) {
-                foreach ($groupUserIds as $gid) {
-                    if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
-                        $groupUnanswered[] = $qid;
-                        break;
-                    }
+        $groupUnanswered = [];
+        foreach ($questionIds as $qid) {
+            foreach ($groupUserIds as $gid) {
+                if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
+                    $groupUnanswered[] = $qid;
+                    break;
                 }
             }
+        }
 
             // If there are no unanswered group questions, mark as completed
             if (empty($groupUnanswered)) {
@@ -271,8 +271,8 @@ class SurveyRateController extends Controller
 
             // If there are no unanswered self questions, mark as completed
             if (empty($selfUnanswered)) {
-                $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
-                return response()->json(['status' => 'success', 'message' => 'All questions completed. Thank you!']);
+            $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
+            return response()->json(['status' => 'success', 'message' => 'All questions completed. Thank you!']);
             }
         }
         // --- End new logic ---

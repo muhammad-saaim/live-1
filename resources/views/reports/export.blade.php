@@ -76,6 +76,11 @@
                 <th style="border: 1px solid #000; background: #ffe;">
                     <strong>{{ $surveyTitle }} Total</strong>
                 </th>
+                @if ($cleanTitle === 'basic psychological needs')
+                    <th style="border: 1px solid #000; background: #ffe; font-weight: bold;">Autonomy Total</th>
+                    <th style="border: 1px solid #000; background: #ffe; font-weight: bold;">Relatedness Total</th>
+                    <th style="border: 1px solid #000; background: #ffe; font-weight: bold;">Competence Total</th>
+                @endif
             @endforeach
         </tr>
     </thead>
@@ -149,10 +154,10 @@
                             <td style="border: 1px solid #000;">{{ $optionName }}</td>
                                                  @endforeach
                          @if ($cleanTitle === 'basic psychological needs')
-                             <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">
-                                 Total: {{ $surveyRowTotal }}<br>
-                                 <small>AUTONOMY: {{ $autonomyTotal }} | RELATEDNESS: {{ $relatednessTotal }} | COMPETENCY: {{ $competenceTotal }}</small>
-                             </td>
+                             <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">{{ $surveyRowTotal }}</td>
+                             <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">{{ $autonomyTotal }}</td>
+                             <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">{{ $relatednessTotal }}</td>
+                             <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">{{ $competenceTotal }}</td>
                          @else
                              <td style="border: 1px solid #000; background: #ffe; font-weight: bold;">{{ $surveyRowTotal }}</td>
                          @endif

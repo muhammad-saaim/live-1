@@ -24,8 +24,8 @@
             <th rowspan="2" class="align-middle">Survey names</th>
             <th rowspan="2" class="align-middle">Overall   </th>
             <th rowspan="2" class="align-middle">Self-Evaluation</th>
-            {{-- <th class="align-middle text-center">Family members</th>
-            <th class="align-middle text-center">Friends (5 friends should evaluate)</th> --}}
+            <th class="align-middle text-center">Family members</th>
+            <th class="align-middle text-center">Friends (5 friends should evaluate)</th>
         </tr>
     </thead>
     <tbody>
@@ -99,8 +99,8 @@
                 <td>{{ $label }}</td>
                 <td>{{ $overallText }}</td>
                 <td>{{ $selfText }}</td>
-                {{-- <td></td>
-                <td></td> --}}
+                <td></td>
+                <td></td>
             </tr>
         @endforeach
     </tbody>
@@ -137,8 +137,8 @@
         <tr>
             <th>Overall</th>
             <th>Self-Evaluation</th>
-            {{-- <th>Family members</th>
-            <th>Friends</th> --}}
+            <th>Family members</th>
+            <th>Friends</th>
         </tr>
     </thead>
     <tbody>
@@ -200,8 +200,8 @@
                 <td>{{ $text ?: 'Question ' . $question['question_id'] }}</td>
                 <td>{{ $avgPercentage ? $getStatus($avgPercentage) . ', ' . $avgPercentage . '  ' : '-' }}</td>
                 <td>{{ $format($selfPercentage) }}</td>
-                {{-- <td>{{ $format($famPercentage) }}</td>
-                <td>{{ $format($frndPercentage) }}</td> --}}
+                <td></td>
+                <td></td>
             </tr>
         @endforeach
     </tbody>

@@ -177,19 +177,20 @@
 
 <table class="table table-bordered table-striped table-hover align-middle mb-4 shadow-sm rounded-3 perception-table">
     <thead class="table-primary">
+          <tr>
+<th colspan="5" style="text-align: center; font-size: 24px; font-weight: bold;">
+  Personality Analysis
+</th>
         <tr>
             <th rowspan="2" class="align-middle">Survey names</th>
             <th rowspan="2" class="align-middle">Overall %</th>
-            <th rowspan="2" class="align-middle">Self-Evaluation</th>
-            <th class="align-middle text-center">Family members</th>
-            <th class="align-middle text-center">Friends (5 friends should evaluate)</th>
+            <th rowspan="2" class="align-middle">Self-Evaluation %</th>
+            <th class="align-middle text-center">Family members %</th>
+            <th class="align-middle text-center">Friends % (5 friends should evaluate)</th>
         </tr>
     </thead>
     <tbody>
-        @php
-    // Determine if friend data should be shown — only once
-  
-@endphp
+      
 
         @php
             $traits = [
@@ -332,15 +333,18 @@
 
 <table>
     <thead>
+           <tr>
+<th colspan="5" style="text-align: center; font-size: 24px; font-weight: bold;">
+  How I am Perceived
+</th>
         <tr>
             <th rowspan="2">Questions</th>
-            <th colspan="4">How I am Perceived</th>
         </tr>
         <tr>
-            <th>Overall</th>
-            <th>Self-Evaluation</th>
-            <th>Family members</th>
-            <th>Friends</th>
+            <th>Overall %</th>
+            <th>Self-Evaluation %</th>
+            <th>Family members %</th>
+            <th>Friends %</th>
         </tr>
     </thead>
     <tbody>
@@ -358,6 +362,8 @@
                 // Get family data with validation
                 $famQuestion = collect($family['questions'])->firstWhere('question_text', $text);
                 $famPercentage = null;
+                $totalFamilyPoints=0;
+                $totalFamilyRatings=0;
                 if (
     $famQuestion &&
     isset($famQuestion['others_total_points']) &&
@@ -377,6 +383,8 @@
 
                 // Get friend data - ONLY use others data (not self data)
                 $frndQuestion = collect($friend['questions'])->firstWhere('question_text', $text);
+                $totalFriendPoints=0;
+                $totalFriendRatings=0;
                 $frndPercentage = null;
                 if (
     $frndQuestion &&
@@ -411,7 +419,7 @@
                 };
 
                 // Calculate average for overall
-                 $avgPercentage= (($selfQuestion['self_total_points'] + $totalFamilyPoints + $totalFriendPoints) / (($selfQuestion['self_total_ratings'] + $totalFamilyRatings + $totalFriendRatings)*5)) * 100;
+$avgPercentage = round((($selfQuestion['self_total_points'] + $totalFamilyPoints + $totalFriendPoints) / (($selfQuestion['self_total_ratings'] + $totalFamilyRatings + $totalFriendRatings) * 5)) * 100, 0);
             @endphp
 
             <tr>

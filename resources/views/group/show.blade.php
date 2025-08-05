@@ -211,7 +211,7 @@
                     // $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
                     @endphp
 
-                    {{-- @if ($group->users()->count() >= $minimumUsers) --}}
+                    {{-- @if ($group->users()->count() >= $minimumUsers) --}} 
                             <div class="space-y-3 mt-3 p-2">
                                 @foreach($group->defaultSurveys() as $survey)
                                     <div class="flex items-center justify-between space-x-2">
@@ -525,8 +525,7 @@
                     </div>
 
                     @php
-                    $minimumUsers = $group->groupTypes->contains('name', 'Family') ? 2 : 6;
-                    @endphp
+$minimumUsers = $group->groupTypes->contains('name', 'Family') ? 1 : 1;                    @endphp
 
                     @if ($group->users()->count() >= $minimumUsers)
                     <div class="bg-ml-color-lime border rounded-xl p-4 space-y-3">
