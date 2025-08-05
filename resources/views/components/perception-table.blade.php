@@ -22,10 +22,10 @@
       </tr>
         <tr>
             <th rowspan="2" class="align-middle">Survey names</th>
-            <th rowspan="2" class="align-middle">Overall   </th>
-            <th rowspan="2" class="align-middle">Self-Evaluation</th>
-            <th class="align-middle text-center">Family members</th>
-            <th class="align-middle text-center">Friends (5 friends should evaluate)</th>
+            <th rowspan="2" class="align-middle">Overall %  </th>
+            <th rowspan="2" class="align-middle">Self-Evaluation %</th>
+            <th class="align-middle text-center">Family members %</th>
+            <th class="align-middle text-center">Friends % (5 friends should evaluate)</th>
         </tr>
     </thead>
     <tbody>
@@ -135,10 +135,10 @@
             <th rowspan="2">Questions</th>
         </tr>
         <tr>
-            <th>Overall</th>
-            <th>Self-Evaluation</th>
-            <th>Family members</th>
-            <th>Friends</th>
+            <th>Overall %</th>
+            <th>Self-Evaluation %</th>
+            <th>Family members %</th>
+            <th>Friends %</th>
         </tr>
     </thead>
     <tbody>
