@@ -645,13 +645,14 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
                 $query->where('users_id', $authUserId)
                     ->where('evaluatee_id', $authUserId);
             })
-            ->with([
-                'usersSurveysRates' => function ($q) use ($authUserId) {
-                    $q->where('users_id', $authUserId)
-                      ->where('evaluatee_id', $authUserId)
-                      ->with(['option', 'question']);
-                }
-            ])
+           ->with([
+    'usersSurveysRates' => function ($q) use ($authUserId) {
+        $q->where('users_id', $authUserId)
+          ->where('evaluatee_id', $authUserId)
+          ->with(['option', 'question']);
+    },
+    'model' // 👈 Add this to load related survey model data
+])
             ->get();
 
         $surveyPoints = [];
@@ -667,12 +668,17 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
         $typeMap = Type::whereIn('name', array_keys($typePoints))
             ->get()
             ->mapWithKeys(fn($type) => [strtoupper($type->name) => $type->id]);
-
+        //  dd($typeMap);
         foreach ($surveyRates as $survey) {
             $total = 0;
             $typeTotals = array_fill_keys(array_keys($typePoints), 0);
-            $isRosenberg = strtolower(trim($survey->title)) === 'rosenberg';
+    $isRosenberg = strcasecmp(trim(optional($survey->model)->title), 'rosenberg') === 0;
+// dd($survey->model);
+// dd($isRosenberg);
             $maxPoint = $isRosenberg ? 4 : 5;
+            // dd($maxPoint);
+            // dd($survey);
+            // dd($survey->model->title, strtolower(trim($survey->model->title ?? '')));
 
             foreach ($survey->usersSurveysRates as $rate) {
                 $point = optional($rate->option)->point;
@@ -693,7 +699,6 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
             }
 
             $surveyPoints[$survey->id] = $total;
-
             foreach ($typeTotals as $typeName => $val) {
                 $typePoints[$typeName][$survey->id] = $val;
             }
@@ -720,17 +725,26 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
         // Breakdown by survey
         $surveyBreakdown = [];
         foreach ($surveyRates as $survey) {
+                //   dd($surveyRates);
             $surveyId = $survey->id;
-            $isRosenberg = strtolower(trim($survey->title)) === 'rosenberg';
+$isRosenberg = strcasecmp(trim(optional($survey->model)->title), 'rosenberg') === 0;
             $maxPoint = $isRosenberg ? 4 : 5;
 
+            
             $surveyBreakdown[$surveyId] = [
                 'title' => $survey->title ?? 'Untitled',
                 'type_points' => [],
                 'type_ratings' => [],
                 'type_percentages' => [],
                 'max_point_per_question' => $maxPoint,
-            ];
+            
+            'survey_model' => [
+        'id' => optional($survey->model)->id,
+        'title' => optional($survey->model)->title,
+        'description' => optional($survey->model)->description,
+        'is_active' => optional($survey->model)->is_active,
+        'created_at' => optional($survey->model)->created_at,
+    ]];
 
             foreach (array_keys($typePoints) as $typeName) {
                 $points = $typePoints[$typeName][$survey->id] ?? 0;
@@ -773,7 +787,7 @@ if (!function_exists('calculateallSurveyTypetotalPoints')) {
 
             $overallStatuses[$type] = $status;
         }
-
+        //   dd($totalTypePoints, $surveyBreakdown);
         return [
             'total_points' => $totalTypePoints,
             'total_ratings' => $totalTypeRatings,
@@ -833,7 +847,7 @@ if(!function_exists('allreport'))
                 }
             ])
             ->get();
-
+           
         // Sum points per survey and per type
         $surveyPoints = [];
         $typePoints = [

@@ -101,10 +101,4 @@ Route::fallback(function () {
     return redirect()->route('login')->with('error', 'Page not found. Please log in.');
 });
 
-/*
-php artisan cache:clear
-php artisan route:clear
-php artisan config:clear
-php artisan view:clear
-php artisan optimize:clear
-*/
+Route::post('/survey/next-question', [SurveyRateController::class, 'getNextQuestion'])->name('survey.nextQuestion');

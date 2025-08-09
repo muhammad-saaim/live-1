@@ -69,7 +69,7 @@ class GroupController extends Controller
         if (isset($validatedData['subgroup_types'])) {
             $group->groupTypes()->attach($validatedData['subgroup_types']);
         }
-
+                  
         return redirect()->route('group.show',$group)->with('success', 'Group created successfully.');
     }
 
@@ -138,7 +138,7 @@ class GroupController extends Controller
         }
 
         $groupSurveyTypePoints = calculateSurveyTypePoints($group);
-
+ 
         return view('group.show', compact('group', 'relations', 'allUsers', 'groupSurveyTypePoints'));
     }
 

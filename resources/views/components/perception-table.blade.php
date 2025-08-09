@@ -43,18 +43,21 @@
                 'SOCIAL' => 'Social',
             ];
 
-            function formatPercent($points, $ratings, $maxPoint = 5) {
-                return ($ratings > 0) ? round(($points / ($ratings * $maxPoint)) * 100, 0) : null;
-            }
-
-            function quality($percent) {
-                return match (true) {
-                    $percent >= 84 => 'Perfect',
-                    $percent >= 70 => 'Very good',
-                    $percent >= 40 => 'Good',
-                    default => 'Poor',
-                };
-            }
+            if (!function_exists('formatPercent')) {
+    function formatPercent($points, $ratings, $maxPoint ) {
+        return ($ratings > 0) ? round(($points / ($ratings * $maxPoint)) * 100, 0) : null;
+    }
+}
+           if (!function_exists('quality')) {
+    function quality($percent) {
+        return match (true) {
+            $percent >= 84 => 'Perfect',
+            $percent >= 70 => 'Very good',
+            $percent >= 40 => 'Good',
+            default => 'Poor',
+        };
+    }
+}
 
             // lowercase key maps for group data
             $familyMap = collect($allGroupSurveyResults['family'] ?? [])->mapWithKeys(fn($v, $k) => [strtolower($k) => $v]);
@@ -63,11 +66,10 @@
 
         @foreach ($traits as $key => $label)
             @php
-                $lowerKey = strtolower($key);
-
-                // Determine maxPoint based on Rosenberg
-                $isRosenberg = $lowerKey === 'self'; // adjust if Rosenberg key differs
-                $maxPoint = $isRosenberg ? 4 : 5;
+            // dd($allreport);
+            //  dd($allreport['by_survey']['']['max_point_per_question'] ?? 5);
+                   $lowerKey = strtolower($key);
+$maxPoint = $allreport['by_survey']['max_point_per_question'] ?? 5;
 
                 // Self Evaluation
                 $selfPoints = $allreport['total_points'][$key] ?? 0;
@@ -176,17 +178,17 @@
                 }
 
                 $getStatus = function($percentage) {
-                    if ($percentage === null) return '-';
+                    if ($percentage === null) return '';
                     return match (true) {
                         $percentage >= 84 => 'Perfect',
                         $percentage >= 60 => 'Very Good',
                         $percentage >= 40 => 'Good',
                         $percentage > 0 => 'Poor',
-                        default => '-',
+                        default => '',
                     };
                 };
 
-                $format = fn($percentage) => $percentage === null ? '-' : $getStatus($percentage) . ', ' . $percentage . '  ';
+                $format = fn($percentage) => $percentage === null ? '' : $getStatus($percentage) . ', ' . $percentage . '  ';
 
                 $selfPoints = $selfQuestion['self_total_points'] ?? 0;
                 $selfRatings = $selfQuestion['self_total_ratings'] ?? 0;
@@ -198,7 +200,7 @@
 
             <tr>
                 <td>{{ $text ?: 'Question ' . $question['question_id'] }}</td>
-                <td>{{ $avgPercentage ? $getStatus($avgPercentage) . ', ' . $avgPercentage . '  ' : '-' }}</td>
+                <td>{{ $avgPercentage ? $getStatus($avgPercentage) . ', ' . $avgPercentage . '  ' : '' }}</td>
                 <td>{{ $format($selfPercentage) }}</td>
                 <td></td>
                 <td></td>

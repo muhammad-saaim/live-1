@@ -14,7 +14,8 @@ class SurveyRateController extends Controller
 {
     public function rate(Request $request)
     {
-        
+
+        // dd($request);
         $request->validate([
             'survey_id' => 'required|exists:surveys,id',
             'group_id' => 'nullable',
@@ -112,27 +113,34 @@ class SurveyRateController extends Controller
     }
 
     public function getNextQuestion(Request $request)
-    {
-        
-        $survey = Survey::find($request->survey_id);
+{
+    \Log::info('Request Data:', $request->all());
+
+    \Log::info("✅ getNextQuestion is being called");
+
+    try {
+        $survey = Survey::findOrFail($request->survey_id);
         $questions = $survey->questions;
 
-        // Find the next unanswered question
-        $unansweredQuestion = $questions->whereNotIn('id', auth()->user()->surveys()
-            ->wherePivot('is_completed', 1)
-            ->pluck('question_id'))
-            ->first();
+        $answeredQuestionIds = \App\Models\UsersSurveysRate::where('users_id', auth()->id())
+            ->where('survey_id', $survey->id)
+            ->pluck('question_id');
+
+        $unansweredQuestion = $questions->whereNotIn('id', $answeredQuestionIds)->first();
 
         if (!$unansweredQuestion) {
             return response()->json(['message' => 'All questions are completed.'], 404);
         }
 
-
         return response()->json([
             'question' => $unansweredQuestion->question,
             'options' => $unansweredQuestion->options
         ]);
+    } catch (\Exception $e) {
+        \Log::error('Next Question Error: ' . $e->getMessage());
+        return response()->json(['error' => 'Server Error'], 500);
     }
+}
 
     public function getPreviousQuestion(Request $request)
     {
@@ -278,16 +286,36 @@ class SurveyRateController extends Controller
         // --- End new logic ---
 
         if (!$nextQuestion) {
-            // (Old logic, now only fallback)
-            // $user->surveys()->updateExistingPivot($request->survey_id, ['is_completed' => 1]);
-            return response()->json(['status' => 'success', 'message' => 'Answer saved. Loading next question...']);
+            // No more questions left
+            return response()->json([
+                'status' => 'success',
+                'message' => 'All questions completed. Thank you!',
+                'next_question' => null
+            ]);
         }
 
-        return response()->json(['status' => 'success', 'message' => 'Answer saved. Loading next question...']);
+        // Prepare next question object
+        $options = $nextQuestion->options->map(function($option) {
+            return [
+                'id' => $option->id,
+                'name' => $option->name
+            ];
+        })->toArray();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
+            'next_question' => [
+                'id' => $nextQuestion->id,
+                'question' => $nextQuestion->question,
+                'options' => $options
+            ]
+        ]);
+
     }
 
     public function submitGroupAnswer(Request $request)
-    {
+    { 
         try {
             $request->validate([
                 'question_id' => 'required|exists:questions,id',
@@ -381,11 +409,21 @@ class SurveyRateController extends Controller
                 ]);
             }
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
-                'question_completed' => false
-            ]);
+            // return response()->json([
+            //     'status' => 'success',
+            //     'message' => 'Answer submitted for user ID ' . $request->evaluatee_id,
+            //     'question_completed' => false
+            // ]);
+            
+return response()->json([
+    'status' => 'success',
+    'url' => route('rate.survey'), // will redirect to this GET route
+    'data' => [
+        'group_id' => $request->group_id,
+        'survey_id' => $request->survey_id,
+    ]
+]);
+
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

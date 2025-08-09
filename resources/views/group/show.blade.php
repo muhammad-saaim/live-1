@@ -1,4 +1,15 @@
 <x-app-layout>
+     @if(session('success'))
+            <div class="bg-green-500 text-white p-3 rounded">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="bg-red-500 text-white p-3 rounded">
+                {{ session('error') }}
+            </div>
+        @endif
     <div class="py-2">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -182,15 +193,19 @@
                                     $selfPercentage = $totalQuestions > 0 ? round(($completedQuestions / $totalQuestions) * 100, 1) : 0;
 
                                     // For others' completion rate
-                                    $othersCompletedQuestions = 0;
+                                    // Others completed questions: unique question_ids rated for any other user
+                                    $questionIdsRated = [];
                                     foreach ($allSurveys as $survey) {
-                                        $othersCompletedQuestions += $survey->usersSurveysRates()
+                                        $ratedQuestions = $survey->usersSurveysRates()
                                             ->where('users_id', auth()->id())
                                             ->where('evaluatee_id', '!=', auth()->id())
-                                            ->where('group_id', $group->id) // Filter by group ID
-                                            ->count();
+                                            ->where('group_id', $group->id)
+                                            ->pluck('question_id')
+                                            ->unique()
+                                            ->toArray();
+                                        $questionIdsRated = array_merge($questionIdsRated, $ratedQuestions);
                                     }
-
+                                    $othersCompletedQuestions = count(array_unique($questionIdsRated));
                                     $othersPercentage = $totalQuestions > 0 ? round(($othersCompletedQuestions / $totalQuestions) * 100, 1) : 0;
                                if (!function_exists('getStatus')) {
                     function getStatus($percentage) {

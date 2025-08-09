@@ -273,45 +273,105 @@
 
       document.addEventListener('DOMContentLoaded', function() {
     // Set up event listeners for all radio button labels (self-evaluation only)
-    document.querySelectorAll('input[name="answer"]').forEach(radioInput => {
-        radioInput.addEventListener('change', function() {
-            updateSelectedOption(radioInput);
-
-            const questionId = document.getElementById("question-id").value;
-            const surveyId = document.getElementById("survey-id").value;
-            const optionId = radioInput.value;
-            const evaluateeId = document.getElementById("evaluatee-id").value;
-            const messageContainer = document.getElementById("message-container");
-            const groupId = document.getElementById("group-id")?.value || ''; // or pass it inline if needed
-
-            fetch("/survey/submit-answer", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-                },
-                body: JSON.stringify({
-                    survey_id: surveyId,
-                    question_id: questionId,
-                    options_id: optionId,
-                    evaluatee_id: evaluateeId,
-                    group_id: groupId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${data.message}</div>`;
-                    setTimeout(() => {
-                        location.reload(); // or call loadNextQuestion() if you want to load dynamically
-                    }, 1000);
-                } else {
-                    messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${data.message}</div>`;
-                }
-            })
-            .catch(error => console.error("Error:", error));
+    function renderSelfQuestion(questionObj, currentIndex, totalCount) {
+        // Update question text and ID
+        document.getElementById("question-text").textContent = questionObj.question;
+        document.getElementById("question-id").value = questionObj.id;
+        // Update question status tracker
+        if (typeof currentIndex !== 'undefined' && typeof totalCount !== 'undefined') {
+            document.getElementById("status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${currentIndex} of ${totalCount}</p>`;
+        }
+        // Render options row with Disagree/Agree labels
+        const optionsRow = document.createElement('div');
+        optionsRow.className = 'flex justify-center items-center mt-5 gap-4 px-4';
+        // Disagree label
+        const disagreeDiv = document.createElement('div');
+        disagreeDiv.className = 'flex items-center text-sm text-red-500';
+        disagreeDiv.innerHTML = '<p>Disagree</p>';
+        optionsRow.appendChild(disagreeDiv);
+        // Options radio buttons
+        const radiosDiv = document.createElement('div');
+        radiosDiv.className = 'flex items-center relative max-w-xl';
+        const radiosInner = document.createElement('div');
+        radiosInner.className = 'flex justify-center items-center px-4';
+        radiosInner.style.gap = '35px';
+        (questionObj.options || []).forEach(option => {
+            radiosInner.innerHTML += `
+                <label for="option-${option.id}" class="cursor-pointer flex justify-center">
+                    <input type="radio" name="answer" value="${option.id}"
+                        id="option-${option.id}" class="hidden peer">
+                    <div style="width: 60px; height: 60px;"
+                        class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
+                        ${option.name}
+                    </div>
+                </label>
+            `;
         });
-    });
+        radiosDiv.appendChild(radiosInner);
+        optionsRow.appendChild(radiosDiv);
+        // Agree label
+        const agreeDiv = document.createElement('div');
+        agreeDiv.className = 'flex items-center text-sm text-green-500';
+        agreeDiv.innerHTML = '<p>Agree</p>';
+        optionsRow.appendChild(agreeDiv);
+        // Replace the options-container content
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = '';
+        optionsContainer.appendChild(optionsRow);
+        // Bind event listeners ONCE to new radios
+        document.querySelectorAll('input[name="answer"]').forEach(radioInput => {
+            radioInput.addEventListener('change', function() {
+                updateSelectedOption(radioInput);
+                // Submit answer via AJAX
+                const questionId = document.getElementById("question-id").value;
+                const surveyId = document.getElementById("survey-id").value;
+                const optionId = radioInput.value;
+                const evaluateeId = document.getElementById("evaluatee-id").value;
+                const messageContainer = document.getElementById("message-container");
+                const groupId = document.getElementById("group-id")?.value || '';
+                fetch("/survey/submit-answer", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+                    },
+                    body: JSON.stringify({
+                        survey_id: surveyId,
+                        question_id: questionId,
+                        options_id: optionId,
+                        evaluatee_id: evaluateeId,
+                        group_id: groupId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${data.message}</div>`;
+                        if (data.next_question) {
+                            // If backend provides current/total, use them; else increment
+                            let nextIndex = currentIndex + 1;
+                            renderSelfQuestion(data.next_question, nextIndex, totalCount);
+                        } else {
+                            document.getElementById("question-container").innerHTML = '<p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>';
+                        }
+                    } else {
+                        messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">${data.message}</div>`;
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            });
+        });
+    }
+    // Initial bind for first question
+    const totalQuestions = parseInt(document.getElementById("status-container")?.textContent.match(/of\s+(\d+)/)?.[1] || '1', 10);
+    renderSelfQuestion({
+        question: document.getElementById("question-text").textContent,
+        id: document.getElementById("question-id").value,
+        options: Array.from(document.querySelectorAll('input[name="answer"]')).map(radio => ({
+            id: radio.value,
+            name: radio.nextElementSibling.textContent
+        }))
+    }, 1, totalQuestions);
 
     // Initialize any pre-selected option for self-evaluation
     const selectedRadio = document.querySelector('input[name="answer"]:checked');
@@ -456,6 +516,13 @@
                     const optionId = this.value;
                     const evaluateeId = this.name.match(/\[(\d+)\]/)[1];
                     const groupId = "{{ $request->group_id ?? '' }}";
+                    console.log('[AJAX] Submitting group answer', {
+                        question_id: questionId,
+                        survey_id: surveyId,
+                        evaluatee_id: evaluateeId,
+                        options_id: optionId,
+                        group_id: groupId
+                    });
                     fetch("{{ route('survey.submitGroupAnswer') }}", {
                         method: "POST",
                         headers: {
@@ -482,16 +549,43 @@
                         }
                         throw new Error('Server returned non-JSON response');
                     })
+   
                     .then(data => {
                         if (data.status === "success" || data.skipped) {
                             messageContainer.innerHTML = `<div class=\"bg-green-500 text-white p-3 rounded\">${data.message || 'Rating submitted.'}</div>`;
-                            setTimeout(() => location.reload(), 1200);
+
+                            // ✅ REDIRECT VIA FORM
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = "{{ route('rate.survey') }}";
+
+                            const csrfInput = document.createElement('input');
+                            csrfInput.type = 'hidden';
+                            csrfInput.name = '_token';
+                            csrfInput.value = "{{ csrf_token() }}";
+                            form.appendChild(csrfInput);
+
+                            const surveyInput = document.createElement('input');
+                            surveyInput.type = 'hidden';
+                            surveyInput.name = 'survey_id';
+                            surveyInput.value = surveyId;
+                            form.appendChild(surveyInput);
+
+                            const groupInput = document.createElement('input');
+                            groupInput.type = 'hidden';
+                            groupInput.name = 'group_id';
+                            groupInput.value = groupId;
+                            form.appendChild(groupInput);
+
+                            document.body.appendChild(form);
+                            form.submit();
                         } else {
                             messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${data.message}</div>`;
                         }
                     })
+
                     .catch(err => {
-                        console.error("Error:", err);
+                        console.error("[AJAX] Error submitting group answer:", err);
                         const errorMessage = err.message || 'An error occurred. Please try again.';
                         messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${errorMessage}</div>`;
                     });
@@ -623,30 +717,27 @@
                                 if (failed === 0) {
                                     messageContainer.innerHTML = `<div class=\"bg-green-500 text-white p-3 rounded\">${message.trim()}</div>`;
                                     // Fetch next group question via AJAX
-                                    fetch("{{ route('survey.nextQuestion') }}", {
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json",
-                                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                                        },
-                                        body: JSON.stringify({
+                                  fetch("/survey/next-question", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+    },
+ body: JSON.stringify({
                                             survey_id: document.querySelector('input[name=\"survey_id\"]').value,
                                             group_id: "{{ $request->group_id ?? '' }}"
-                                        })
-                                    })
-                                    .then(response => response.json())
-                                    .then(nextData => {
-                                        if (nextData.question && nextData.options) {
-                                            // You may want to re-render the group question UI here
-                                            // For now, just reload the page section
-                                            // location.reload(); // Optionally, replace this with dynamic DOM update for group
-                                        } else {
-                                            document.getElementById("group-container").innerHTML = '<p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>';
-                                        }
-                                    })
-                                    .catch(() => {
-                                        document.getElementById("group-container").innerHTML = '<p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>';
-                                    });
+                                        })})
+.then(response => {
+    if (!response.ok) throw new Error("Network response was not ok");
+    return response.json();
+})
+.then(data => {
+    console.log("Got data", data);
+})
+.catch(error => {
+    console.error("Fetch error:", error);
+});
+
                                 } else {
                                     messageContainer.innerHTML = `<div class=\"bg-red-500 text-white p-3 rounded\">${message.trim()}</div>`;
                                 }

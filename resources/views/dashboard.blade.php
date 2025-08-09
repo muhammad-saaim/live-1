@@ -281,7 +281,6 @@
                 $selfPoints = $data['self']['total_points'] ?? 0;
                 $selfRatings = $data['self']['total_ratings'] ?? 0;
                 $selfMax = $selfRatings * 5;
-                // dd($selfMax);
                 $self_Percent = $selfMax > 0 ? number_format(($selfPoints / $selfMax) * 100, 1) : 0;
                  
                 $othersPoints = $data['others']['total_points'] ?? 0;
@@ -347,17 +346,22 @@
     $selfPercentage = $totalQuestions > 0 ? round(($completedQuestions / $totalQuestions) * 100, 1) : 0;
 
     // For others' completion rate
-    $othersCompletedQuestions = 0;
+    // Calculate number of other users in the group (excluding current user)
+    $otherUsersCount = $group->users()->where('users.id', '!=', auth()->id())->count();
+    // Others completed questions: unique question_ids rated for any other user
+    $questionIdsRated = [];
     foreach ($allSurveys as $survey) {
-        $othersCompletedQuestions += $survey->usersSurveysRates()
+        $ratedQuestions = $survey->usersSurveysRates()
             ->where('users_id', auth()->id())
             ->where('evaluatee_id', '!=', auth()->id())
-            ->where('group_id', $group->id) // Filter by group ID
-            ->count();
+            ->where('group_id', $group->id)
+            ->pluck('question_id')
+            ->unique()
+            ->toArray();
+        $questionIdsRated = array_merge($questionIdsRated, $ratedQuestions);
     }
-
+    $othersCompletedQuestions = count(array_unique($questionIdsRated));
     $othersPercentage = $totalQuestions > 0 ? round(($othersCompletedQuestions / $totalQuestions) * 100, 1) : 0;
-
     if (!function_exists('getStatus')) {
         function getStatus($percentage) {
             if ($percentage >= 84) return ['Perfect', 'text-green-600'];
