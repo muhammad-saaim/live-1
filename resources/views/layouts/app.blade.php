@@ -20,6 +20,8 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col" style="font-family: 'Fredoka', sans-serif;">
 <div class="flex-grow bg-gray-100 dark:bg-gray-900 flex flex-col">

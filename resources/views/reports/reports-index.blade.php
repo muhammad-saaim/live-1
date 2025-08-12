@@ -279,16 +279,17 @@
               }
           }
 
-          if (!function_exists('quality')) {
-              function quality($percent) {
-                  return match (true) {
-                      $percent >= 84 => 'Perfect',
-                      $percent >= 70 => 'Very good',
-                      $percent >= 40 => 'Good',
-                      default => 'Poor',
-                  };
-              }
-          }
+         if (!function_exists('quality')) {
+    function quality($percent) {
+        return match (true) {
+            $percent >= 84 => 'Perfect',
+            $percent >= 70 && $percent < 84 => 'Very good',
+            $percent >= 40 && $percent < 70 => 'Good',
+            default => 'Poor',
+        };
+    }
+}
+
 // dd($allreport);
 
           $familyMap = collect($allGroupSurveyResults['family'] ?? [])->mapWithKeys(fn($v, $k) => [strtolower($k) => $v]);
@@ -403,15 +404,16 @@
             }
 
             $getStatus = function($percentage) {
-                if ($percentage === null) return '';
-                return match (true) {
-                    $percentage >= 84 => 'Perfect',
-                    $percentage >= 60 => 'Very Good',
-                    $percentage >= 40 => 'Good',
-                    $percentage > 0 => 'Poor',
-                    default => '',
-                };
-            };
+    if ($percentage === null) return '';
+    return match (true) {
+        $percentage >= 84 => 'Perfect',
+        $percentage >= 70 && $percentage < 84 => 'Very Good',
+        $percentage >= 40 && $percentage < 70 => 'Good',
+        $percentage < 40 && $percentage >= 0 => 'Poor',
+        default => '',
+    };
+};
+
 
             $format = fn($percentage) => $percentage === null ? '' : $getStatus($percentage) . ', ' . $percentage . '  ';
 
@@ -475,9 +477,45 @@
     <button class="btn" style="background-color: #8CB368; color: white;">
         Mentor to Share
     </button>
+    
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <canvas id="perceptionChart" height="400"></canvas>
+<script>
+    const chartData = {
+        labels: @json($labels),
+        datasets: @json($datasets)
+    };
+
+    const ctx = document.getElementById('perceptionChart');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'How I am perceived' }
+            },
+            scales: {
+                x: {
+                    position: 'top',
+                    min: 0,
+                    max: 100,
+                    ticks: { stepSize: 10 }
+                },
+                y: {
+                    categoryPercentage: 0.4, // reduce row height
+                    barPercentage: 0.4        // reduce bar height
+                }
+            }
+        }
+    });
+</script>
     </div>
 
     <script>
@@ -507,8 +545,8 @@
   
   
   
-      
-      
+     
+
 </x-app-layout>
 
 

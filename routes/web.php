@@ -50,13 +50,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/rate-survey', [SurveyRateController::class, 'rate'])->name('rate.survey');
     Route::post('/survey/next-question', [SurveyRateController::class, 'getNextQuestion'])->name('survey.nextQuestion');
+    Route::post('/survey/get-next-question', [SurveyRateController::class, 'getNextQuestion'])->name('survey.getNextQuestion');
+    Route::post('/survey/get-next-rated-question', [SurveyRateController::class, 'getNextRatedQuestion'])->name('survey.getNextRatedQuestion');
+    Route::post('/survey/get-unrated-questions', [SurveyRateController::class, 'getUnratedQuestions'])->name('survey.getUnratedQuestions');
     Route::post('/survey/save-answer', [SurveyRateController::class, 'saveAnswer'])->name('survey.saveAnswer');
     Route::get('/survey/previous-question', [SurveyRateController::class, 'getPreviousQuestion'])->name('survey.previousQuestion');
     Route::post('/survey/submit-answer', [SurveyRateController::class, 'submitAnswer'])->name('survey.submitAnswer');
     Route::post('/survey/submit-group-answer', [SurveyRateController::class, 'submitGroupAnswer'])->name('survey.submitGroupAnswer');
     Route::post('/survey/check-existing-ratings', [SurveyRateController::class, 'checkExistingRatings'])->name('survey.checkExistingRatings');
+    Route::post('/survey/check-all-users-rated', [SurveyRateController::class, 'checkAllUsersRated'])->name('survey.checkAllUsersRated');
     Route::post('survey/ShowSurvey', [SurveyRateController::class, 'ShowSurvey'])->name('survey.ShowSurvey');
 
+     Route::get('/survey/previous-question/{id}', function ($id) {
+        $question = \App\Models\Question::with('options')->find($id);
+        if ($question) {
+            return response()->json(['status' => 'success', 'question' => $question]);
+        }
+        return response()->json(['status' => 'error', 'message' => 'Question not found'], 404);
+    });
 
     Route::resource('group',GroupController::class);
 
@@ -100,5 +111,5 @@ require __DIR__.'/auth.php';
 Route::fallback(function () {
     return redirect()->route('login')->with('error', 'Page not found. Please log in.');
 });
-
 Route::post('/survey/next-question', [SurveyRateController::class, 'getNextQuestion'])->name('survey.nextQuestion');
+

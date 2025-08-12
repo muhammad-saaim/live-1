@@ -47,18 +47,151 @@ class ReportsController extends Controller
     //   dd($allGroupSurveyResults);
         // Get all self-awareness questions flat by group type
      $surveytypequestion=getAllSelfAwarenessQuestionsFlatByGroupType();
-//  dd($surveytypequestion);
-            //   dd($allGroupSurveyResults, $allreport);
-        //  dd($allreport);
+//   dd($surveytypequestion);
+            //    dd($allGroupSurveyResults, $allreport);
+        //   dd($allreport);
+             // Step 1: Extract labels from individual questions (assume all groups have same questions)
+    $labels = collect($surveytypequestion['individual']['questions'])
+                ->pluck('question_text')
+                ->toArray();
+       
+    // Step 2: Build datasets
+    $datasets = [];
+
+// Overall Rating (Self + Others from all groups)
+$datasets[] = [
+    'label' => 'Overall',
+    'data' => collect($surveytypequestion['individual']['questions'])->map(function ($q, $index) use ($surveytypequestion) {
+
+        $getValue = function ($type, $index, $field) use ($surveytypequestion) {
+            return isset($surveytypequestion[$type]['questions'][$index][$field])
+                ? $surveytypequestion[$type]['questions'][$index][$field]
+                : 0;
+        };
+
+        $totalRatings =
+            $getValue('individual', $index, 'self_total_ratings') +
+            $getValue('family', $index, 'self_total_ratings') +
+            $getValue('family', $index, 'others_total_ratings') +
+            $getValue('friend', $index, 'self_total_ratings') +
+            $getValue('friend', $index, 'others_total_ratings');
+
+        $totalPoints =
+            $getValue('individual', $index, 'self_total_points') +
+            $getValue('family', $index, 'self_total_points') +
+            $getValue('family', $index, 'others_total_points') +
+            $getValue('friend', $index, 'self_total_points') +
+            $getValue('friend', $index, 'others_total_points');
+
+        return $totalRatings > 0
+            ? round(($totalPoints / ($totalRatings * 5)) * 100, 0)
+            : 0;
+    })->toArray(),
+    'backgroundColor' => '#9b59b6'
+];
+
+
+
+    // Individual (Self-Evaluation)
+    $datasets[] = [
+        'label' => 'Self-Evaluation',
+        'data' => collect($surveytypequestion['individual']['questions'])->map(function ($q) {
+            return $q['self_total_ratings'] > 0
+                ? round(($q['self_total_points'] / ($q['self_total_ratings'] * 5)) * 100, 2)
+                : 0;
+        })->toArray(),
+        'backgroundColor' => '#1abc9c'
+    ];
+
+    // Family (Others + Self)
+$datasets[] = [
+    'label' => 'Family Members',
+    'data' => collect($surveytypequestion['family']['questions'])->map(function ($q) {
+        $totalPoints = ($q['others_total_points'] ?? 0) + ($q['self_total_points'] ?? 0);
+        $totalRatings = ($q['others_total_ratings'] ?? 0) + ($q['self_total_ratings'] ?? 0);
+
+        return $totalRatings > 0
+            ? round(($totalPoints / ($totalRatings * 5)) * 100, 2)
+            : 0;
+    })->toArray(),
+    'backgroundColor' => '#f39c12'
+];
+
+// Friends (Others + Self)
+$datasets[] = [
+    'label' => 'Friends',
+    'data' => collect($surveytypequestion['friend']['questions'])->map(function ($q) {
+        $totalPoints = ($q['others_total_points'] ?? 0) + ($q['self_total_points'] ?? 0);
+        $totalRatings = ($q['others_total_ratings'] ?? 0) + ($q['self_total_ratings'] ?? 0);
+
+        return $totalRatings > 0
+            ? round(($totalPoints / ($totalRatings * 5)) * 100, 2)
+            : 0;
+    })->toArray(),
+    'backgroundColor' => '#e74c3c'
+];
+
         return view('reports.reports-index', [
             'UserSurveys' => $distinctSurveys,
             'surveyAverages' => $surveyAverages,
             'allGroupSurveyResults' => $allGroupSurveyResults,
             'allreport'=>$allreport,
             'surveytypequestion'=>$surveytypequestion,
+             'labels' => $labels,
+        'datasets' => $datasets
         ]);
     }
     
+    public function showChart()
+{
+
+
+    // Step 1: Extract labels from individual questions (assume all groups have same questions)
+    $labels = collect($surveytypequestion['individual']['questions'])
+                ->pluck('question_text')
+                ->toArray();
+
+    // Step 2: Build datasets
+    $datasets = [];
+
+    // Individual (Self-Evaluation)
+    $datasets[] = [
+        'label' => 'Self-Evaluation',
+        'data' => collect($surveytypequestion['individual']['questions'])->map(function ($q) {
+            return $q['self_total_ratings'] > 0
+                ? round(($q['self_total_points'] / ($q['self_total_ratings'] * 5)) * 100, 2)
+                : 0;
+        })->toArray(),
+        'backgroundColor' => '#1abc9c'
+    ];
+
+    // Family (Others)
+    $datasets[] = [
+        'label' => 'Family Members',
+        'data' => collect($surveytypequestion['family']['questions'])->map(function ($q) {
+            return $q['others_total_ratings'] > 0
+                ? round(($q['others_total_points'] / ($q['others_total_ratings'] * 5)) * 100, 2)
+                : 0;
+        })->toArray(),
+        'backgroundColor' => '#f39c12'
+    ];
+
+    // Friends (Others)
+    $datasets[] = [
+        'label' => 'Friends',
+        'data' => collect($surveytypequestion['friend']['questions'])->map(function ($q) {
+            return $q['others_total_ratings'] > 0
+                ? round(($q['others_total_points'] / ($q['others_total_ratings'] * 5)) * 100, 2)
+                : 0;
+        })->toArray(),
+        'backgroundColor' => '#e74c3c'
+    ];
+
+    return view('reports.reports-index', [
+       
+    ]);
+}
+
 
     public function downloadPdf(Request $request)
     {

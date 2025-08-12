@@ -775,15 +775,16 @@ $isRosenberg = strcasecmp(trim(optional($survey->model)->title), 'rosenberg') ==
             $overallPercentages[$type] = $percentage;
 
             // Status logic
-            if ($percentage >= 84) {
-                $status = 'Perfect';
-            } elseif ($percentage >= 60) {
-                $status = 'Very Good';
-            } elseif ($percentage >= 40) {
-                $status = 'Good';
-            } else {
-                $status = 'Poor';
-            }
+           if ($percentage >= 84) {
+    $status = 'Perfect';
+} elseif ($percentage >= 70 && $percentage < 84) {
+    $status = 'Very Good';
+} elseif ($percentage >= 40 && $percentage < 70) {
+    $status = 'Good';
+} else {
+    $status = 'Poor';
+}
+
 
             $overallStatuses[$type] = $status;
         }

@@ -52,12 +52,13 @@
     function quality($percent) {
         return match (true) {
             $percent >= 84 => 'Perfect',
-            $percent >= 70 => 'Very good',
-            $percent >= 40 => 'Good',
+            $percent >= 70 && $percent < 84 => 'Very good',
+            $percent >= 40 && $percent < 70 => 'Good',
             default => 'Poor',
         };
     }
 }
+
 
             // lowercase key maps for group data
             $familyMap = collect($allGroupSurveyResults['family'] ?? [])->mapWithKeys(fn($v, $k) => [strtolower($k) => $v]);
@@ -177,16 +178,16 @@ $maxPoint = $allreport['by_survey']['max_point_per_question'] ?? 5;
                     }
                 }
 
-                $getStatus = function($percentage) {
-                    if ($percentage === null) return '';
-                    return match (true) {
-                        $percentage >= 84 => 'Perfect',
-                        $percentage >= 60 => 'Very Good',
-                        $percentage >= 40 => 'Good',
-                        $percentage > 0 => 'Poor',
-                        default => '',
-                    };
-                };
+              $getStatus = function($percentage) {
+    if ($percentage === null) return '';
+    return match (true) {
+        $percentage >= 84 => 'Perfect',
+        $percentage >= 70 && $percentage < 84 => 'Very Good',
+        $percentage >= 40 && $percentage < 70 => 'Good',
+        $percentage < 40 && $percentage >= 0 => 'Poor',
+        default => '',
+    };
+};
 
                 $format = fn($percentage) => $percentage === null ? '' : $getStatus($percentage) . ', ' . $percentage . '  ';
 
