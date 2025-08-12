@@ -435,6 +435,42 @@
       @endforeach
     </tbody>
   </table>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <canvas id="perceptionChart" height="400"></canvas>
+<script>
+    const chartData = {
+        labels: @json($labels),
+        datasets: @json($datasets)
+    };
+
+    const ctx = document.getElementById('perceptionChart');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'How I am perceived' }
+            },
+            scales: {
+                x: {
+                    position: 'top',
+                    min: 0,
+                    max: 100,
+                    ticks: { stepSize: 10 }
+                },
+                y: {
+                    categoryPercentage: 0.4, // reduce row height
+                    barPercentage: 0.4        // reduce bar height
+                }
+            }
+        }
+    });
+</script>
 </div>
 
 {{-- Add this debugging section after line 324 --}}
@@ -480,42 +516,7 @@
     
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <canvas id="perceptionChart" height="400"></canvas>
-<script>
-    const chartData = {
-        labels: @json($labels),
-        datasets: @json($datasets)
-    };
-
-    const ctx = document.getElementById('perceptionChart');
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: chartData,
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            plugins: {
-                legend: { position: 'top' },
-                title: { display: true, text: 'How I am perceived' }
-            },
-            scales: {
-                x: {
-                    position: 'top',
-                    min: 0,
-                    max: 100,
-                    ticks: { stepSize: 10 }
-                },
-                y: {
-                    categoryPercentage: 0.4, // reduce row height
-                    barPercentage: 0.4        // reduce bar height
-                }
-            }
-        }
-    });
-</script>
     </div>
 
     <script>
