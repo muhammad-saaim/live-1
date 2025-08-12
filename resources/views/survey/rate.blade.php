@@ -150,7 +150,7 @@
                 <form id="group-evaluation-form">
                     <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5 d-flex">
                         <!-- Usernames Column -->
-                        <div class="col-4 d-flex flex-column justify-start" style="margin-top: -4.5rem;">
+                        <div class="col-3 d-flex flex-column justify-start" style="margin-top: -4.5rem;">
                             @foreach ($groupUsers as $user)  
                             <div class="p-3 max-w-7xl mx-auto" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
                                 <div class="mb-3 text-md text-red-500">
