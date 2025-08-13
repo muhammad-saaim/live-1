@@ -490,15 +490,23 @@
    <div class="action float-end m-2 d-flex gap-2">
     <!-- Excel download (only for bar view) -->
     <form action="{{ route('survey.export') }}" method="GET" id="excelForm" style="display: none;">
-        <input type="hidden" name="type" value="bar">
-           @if(Auth::user()->hasRole('admin'))
+    <input type="hidden" name="type" value="bar">
+    <input type="hidden" name="survey_id" value="{{ $survey->id }}">
+    
+    @if(Auth::user()->hasRole('admin'))
+        <div class="dropdown">
+            <button class="btn dropdown-toggle" type="button" style="background-color: #8CB368; color: white;" data-bs-toggle="dropdown">
+                Download Excel
+            </button>
+            <div class="dropdown-menu p-3" style="min-width: 250px;">
+                <label>Select Start Date:</label>
+                <input type="date" class="form-control mb-2" name="start_date" required>
+                <button type="submit" class="btn btn-success w-100">Download</button>
+            </div>
+        </div>
+    @endif
+</form>
 
-        <button type="submit" class="btn" style="background-color: #8CB368; color: white;">
-            Download Excel
-        </button>
-        @endif
-
-    </form>
     <!-- Excel download (only for text view) -->
     <form action="{{ route('survey.export') }}" method="GET" id="excelFormText">
         <input type="hidden" name="type" value="text">

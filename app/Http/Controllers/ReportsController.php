@@ -235,13 +235,23 @@ $datasets[] = [
         return $pdf->download('report.pdf');
     }
 
-    public function exportSurveyExcel(Request $request)
-    {
-        // Validate the request to ensure 'id' is provided
-    $survey_id = $request->input('id');
-        $user = Auth::user();
-        return Excel::download(new SurveyExport($user,$survey_id), 'survey-report.xlsx');
-    
+   public function exportSurveyExcel(Request $request)
+{   
+   $request->validate([
+        'survey_id' => 'required|integer',
+        'start_date' => 'required|date',
+    ]);
 
+    $survey_id = $request->survey_id;
+    $startDate = $request->start_date;
+    $endDate = now()->format('Y-m-d'); // today's date
+      
+    $user = Auth::user();
+
+    return Excel::download(
+        new SurveyExport($user,  $survey_id,$startDate, $endDate),
+        'survey-report.xlsx'
+    );
 }
+
 }
