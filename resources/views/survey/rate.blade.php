@@ -29,6 +29,12 @@
     .disaggree-label p {
         margin-left: 15px;
     }
+     .disaggree-label  {
+        margin-left: 15px;
+    }
+        .agree-label  {
+        margin-right: 15px;
+    }
 
     .agree-label p {
         margin-right: 15px;
@@ -450,7 +456,7 @@ margin-top: -0.1rem !important;    }
                 <form id="group-evaluation-form">
                     <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5 d-flex">
                         <!-- Usernames Column -->
-                        <div class="col-3 d-flex flex-column justify-start usernames-column" style="margin-top: -4.5rem;" usernames-column>
+                        <div class="col-3 d-flex flex-column justify-start usernames-column" style="margin-top: -4.5rem;" >
                             @foreach ($groupUsers as $user)  
                             <div class="p-3 max-w-7xl mx-auto usernames-inner" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
                                 <div class="mb-3 text-md text-red-500">
@@ -768,13 +774,13 @@ margin-top: -0.1rem !important;    }
                         optionsContainer.innerHTML = `
     <div class="flex justify-between items-center w-full max-w-lg mx-auto">
         <!-- Disagree Label -->
-        <span class="text-red-500 font-extralight" style="margin-right: 4rem;">Disagree</span>
+        <span class="text-red-500 font-extralight disaggree-label" style="margin-right: 1rem;">Disagree</span>
 
         <!-- Options wrapper -->
-        <div class="flex gap-6" id="rating-buttons"></div>
+        <div class="flex gap-6 options-gap" id="rating-buttons"></div>
 
         <!-- Agree Label -->
-        <span class="text-green-500 font-extralight" style="margin-left: 4rem;">Agree</span>
+        <span class="text-green-500 font-extralight agree-label" style="margin-left: 1rem;">Agree</span>
     </div>
 `;
 
@@ -993,8 +999,8 @@ data.question.options.forEach(option => {
             
             // Usernames Column
             const usernamesColumn = document.createElement('div');
-            usernamesColumn.className = 'col-4 d-flex flex-column justify-start';
-            usernamesColumn.style.marginTop = '-4.5rem';
+            usernamesColumn.className = 'col-4 d-flex flex-column justify-start usernames-column';
+            usernamesColumn.style.marginTop = '0rem';
             
             groupUsers.forEach((user, index) => {
                 const userDiv = document.createElement('div');
@@ -1256,7 +1262,7 @@ data.question.options.forEach(option => {
                 console.log('Initializing pre-selected option:', radio);
                 updateGroupSelectedOption(radio);
             });
-
+ 
             // Previous button functionality for group evaluation
             previousButton.addEventListener("click", function() {
                 const questionId = document.querySelector("#group-container input[name='question_id']").value;
@@ -1348,7 +1354,7 @@ data.question.options.forEach(option => {
                             if (data.question) {
                                 // Render the next rated question
                                 renderGroupQuestion(data.question, data.current_index, data.total_count);
-                                messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">Next rated question loaded.</div>`;
+                                // messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">Next rated question loaded.</div>`;
                             } else {
                                 // No more rated questions found, fetch unrated questions
                                 fetchGroupUnratedQuestions();
@@ -1455,7 +1461,7 @@ data.question.options.forEach(option => {
                     })
                     .catch(error => {
                         console.error("Error fetching unrated questions:", error);
-                        messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">Error loading next question. Please try again.</div>`;
+                        // messageContainer.innerHTML = `<div class="bg-red-500 text-white p-3 rounded">Error loading next question. Please try again.</div>`;
                     });
                 }
 
@@ -1561,7 +1567,7 @@ data.question.options.forEach(option => {
                                             console.log('Check all users rated response after submission:', data);
                                             
                                             if (data.all_rated) {
-                                                console.log('All users rated, fetching next question...');
+                                                // console.log('All users rated, fetching next question...');
                                                 // All users are now rated, find next rated question
                                                 fetch("/survey/get-next-rated-question", {
     method: "POST",
@@ -1582,7 +1588,7 @@ data.question.options.forEach(option => {
                                                     if (data.question) {
                                                         // Render the next rated question
                                                         renderGroupQuestion(data.question, data.current_index, data.total_count);
-                                                        messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">Next rated question loaded.</div>`;
+                                                        // messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">Next rated question loaded.</div>`;
                                                     } else {
                                                         // No more rated questions found, fetch unrated questions
                                                         console.log('No more rated questions, fetching unrated questions...');
