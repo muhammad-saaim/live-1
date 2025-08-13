@@ -6,6 +6,306 @@
             color: white !important;
         }
     </style>
+    <style>
+        
+/* =========================
+   Mobile (Extra Small ≤576px)
+   ========================= */
+   @media (max-width: 540px) {
+ #guidance-options {
+        gap: 5px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+      .options-gap{
+        gap:5px!important;
+      }
+    .rounded-full {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .disaggree-label p {
+        margin-left: 15px;
+    }
+
+    .agree-label p {
+        margin-right: 15px;
+    }
+
+    .text-sm {
+        font-size: 0.75rem !important;
+    }
+
+    #options-container,
+    .options-container {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        gap: 0 !important;
+    }
+
+    .gap-4 {
+        gap: 0 !important;
+    }
+
+    .gap-5 {
+        gap: 2.5rem !important;
+    }
+
+    .usernames-column {
+        padding-right: 26px;
+        margin-top: 1rem !important;
+    }
+
+    .col-6 {
+        flex: 0 0 auto;
+        width: 81%;
+    }
+
+    .usernames-inner {
+        margin-top: 1rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .mx-auto {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .p-3 {
+        padding: 0.3rem !important;
+    }
+
+    .col-3 {
+        flex: 0 0 auto;
+        width: 17%;
+    }
+   }
+@media (max-width: 520px) {
+    #guidance-options {
+        gap: 5px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .rounded-full {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .disaggree-label p {
+        margin-left: 15px;
+    }
+
+    .agree-label p {
+        margin-right: 15px;
+    }
+
+    .text-sm {
+        font-size: 0.75rem !important;
+    }
+
+    #options-container,
+    .options-container {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        gap: 0 !important;
+    }
+
+    .gap-4 {
+        gap: 0 !important;
+    }
+
+    .gap-5 {
+        gap: 0.5rem !important;
+    }
+
+    .usernames-column {
+        padding-right: 26px;
+        margin-top: 1rem !important;
+    }
+
+    .col-6 {
+        flex: 0 0 auto;
+        width: 81%;
+    }
+
+    .usernames-inner {
+        margin-top: 1rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .mx-auto {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .p-3 {
+        padding: 0.3rem !important;
+    }
+
+    .col-3 {
+        flex: 0 0 auto;
+        width: 17%;
+    }
+}
+
+/* =========================
+   Tablet (Small to Medium: 577px–991px)
+   ========================= */
+@media (min-width: 577px) and (max-width: 991px) {
+    #guidance-options {
+        gap: 10px !important;
+    }
+
+    .rounded-full {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .text-sm {
+        font-size: 0.85rem !important;
+    }
+
+    .col-6 {
+        width: 75% !important;
+    }
+
+    .col-3 {
+        width: 20% !important;
+    }
+}
+
+/* =========================
+   Laptop / Desktop (≥992px)
+   ========================= */
+/* =========================
+   Universal Base (Fluid scaling)
+   ========================= */
+/* #guidance-options {
+    gap: clamp(5px, 2vw, 20px) !important;
+    padding-left: clamp(0px, 1vw, 20px) !important;
+    padding-right: clamp(0px, 1vw, 20px) !important;
+} */
+
+/* .rounded-full {
+    width: clamp(28px, 4vw, 40px) !important;
+    height: clamp(28px, 4vw, 40px) !important;
+} */
+
+/* .text-sm {
+    font-size: clamp(0.75rem, 1vw, 0.95rem) !important;
+} */
+
+/* #options-container,
+.options-container {
+    padding-left: clamp(0px, 1vw, 20px) !important;
+    padding-right: clamp(0px, 1vw, 20px) !important;
+    gap: clamp(0.3rem, 1vw, 1rem) !important;
+} */
+
+/* .gap-4,
+.gap-5 {
+    gap: clamp(0.3rem, 1vw, 1.2rem) !important;
+} */
+
+/* .usernames-column { */
+    /* padding-right: clamp(10px, 2vw, 26px);
+    margin-top: 1rem !important;
+}
+
+.col-6 {
+    flex: 0 0 auto;
+    width: clamp(70%, 80%, 81%);
+}
+
+.col-3 {
+    flex: 0 0 auto;
+    width: clamp(15%, 18%, 20%);
+}
+
+.usernames-inner {
+    margin-top: 1rem !important;
+    margin-bottom: 0 !important;
+} */
+
+/* .mx-auto {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.p-3 {
+    padding: clamp(0.3rem, 1vw, 1rem) !important;
+} */
+
+/* =========================
+   Small Mobile (≤576px)
+   ========================= */
+/* @media (max-width: 576px) {
+    .disaggree-label p {
+        margin-left: 15px;
+    }
+
+    .agree-label p {
+        margin-right: 15px;
+    }
+} */
+
+/* =========================
+   Tablet Portrait (577px–768px)
+   ========================= */
+@media (min-width: 476px) and (max-width: 768px) {
+    #guidance-options {
+        gap: 1.5rem !important; /* bigger gap for tablets */
+    }
+    .options-container {
+        gap: 1.5rem !important;
+    }
+    .col-6 {
+        width: 78% !important;
+    }
+    .col-3 {
+        width: 18% !important;
+    }
+}
+
+/* =========================
+   Tablet Landscape & Small Laptops (769px–1199px)
+   ========================= */
+@media (min-width: 768px) and (max-width: 997px) {
+    #guidance-options {
+        gap: 3rem !important; /* spacing between guidance items */
+    }
+    .options-container {
+        gap: 2.5rem !important; /* reduced from 32rem */
+        align-items: center; /* keeps everything aligned vertically */
+    }
+    .col-6 {
+        width: 60% !important;
+    }
+    .col-3 {
+        width: 20% !important;
+    }
+
+    /* Ensure usernames align properly */
+    .usernames-column {
+        padding-right: 20px !important;
+margin-top: -0.1rem !important;    }
+    .usernames-inner {
+        margin-top: 0rem !important;
+        margin-bottom: 0 !important;
+    }
+}
+
+@media (max-width: 1180px) {
+  .col-6 {
+        width: 65% !important;
+    }
+
+}
+
+    </style>
     <div class="p-3 max-w-7xl mx-auto space-y-4">
         <div class="col-md-8">
             <div class="d-flex justify-content-between w-100 p-2">
@@ -50,7 +350,7 @@
                 <form id="question-form">
                     <div id="options-container" class="flex justify-center items-center mt-5 gap-4 px-4">
                         <!-- Disagree label -->
-                        <div class="flex items-center text-sm text-red-500">
+                        <div class="flex items-center text-sm text-red-500 disaggree-label">
                             <p>Disagree</p>
                         </div>
 
@@ -82,7 +382,7 @@
                         </div>
 
                         <!-- Agree label -->
-                        <div class="flex items-center text-sm text-green-500">
+                        <div class="flex items-center text-sm text-green-500 agree-label">
                             <p>Agree</p>
                         </div>
                     </div>
@@ -118,12 +418,12 @@
                 <hr class="border-t-2 border-black my-4">
                 <div id="options-container" class="flex justify-center items-center mt-5 gap-4 px-4">
                     <!-- Disagree label -->
-                    <div class="flex items-center text-sm text-red-500">
+                    <div class="flex items-center text-sm text-red-500 disaggree-label">
                         <p>Disagree</p>
                     </div>
                     <!-- Options container with line -->
                     <div class=" flex items-center relative max-w-xl">
-                        <div id="guidance-options" class="flex justify-center items-center px-4" style="gap:35px">
+                        <div id="guidance-options" class="flex justify-center items-center px-4 options-gap" style="gap:35px">
                             @foreach ($unansweredQuestions->first()->options as $index => $option)
                                 {{-- @if ($index >= 0 ) <!-- Adjust range as needed for guidance options --> --}}
                                     <div class="flex flex-col items-center opacity-60 select-none">
@@ -141,7 +441,7 @@
                         </div>
                     </div>
                     <!-- Agree label -->
-                    <div class="flex items-center text-sm text-green-500">
+                    <div class="flex items-center text-sm text-green-500 agree-label">
                         <p>Agree</p>
                     </div>
                 </div>
@@ -150,9 +450,9 @@
                 <form id="group-evaluation-form">
                     <div id="group-options" class="p-3 max-w-7xl mx-auto space-y-6 mt-5 d-flex">
                         <!-- Usernames Column -->
-                        <div class="col-3 d-flex flex-column justify-start" style="margin-top: -4.5rem;">
+                        <div class="col-3 d-flex flex-column justify-start usernames-column" style="margin-top: -4.5rem;" usernames-column>
                             @foreach ($groupUsers as $user)  
-                            <div class="p-3 max-w-7xl mx-auto" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
+                            <div class="p-3 max-w-7xl mx-auto usernames-inner" style="margin-top: 1.85rem; margin-bottom:0.43rem;">
                                 <div class="mb-3 text-md text-red-500">
                                     @if($user->id !== Auth::id())
                                         {{-- <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }} (Self)</p>
@@ -168,7 +468,7 @@
                         <div class="col-6 py-4 max-w-7xl space-y-6 border" style="border: 1px solid rgb(184, 184, 184) !important; border-radius:30px;">
                             @foreach ($groupUsers as $user)  
                             @if($user->id !== Auth::id())
-                            <div class="flex justify-center items-center relative max-w-xl">
+                            <div class="flex justify-center items-center relative max-w-xl options-container">
                                 <div class="flex justify-center items-center px-4 gap-5" >
                                     @php
                                         $previousRating = $usersurvey->where('evaluatee_id', $user->id)
@@ -303,7 +603,7 @@
         const radiosDiv = document.createElement('div');
         radiosDiv.className = 'flex items-center relative max-w-xl';
         const radiosInner = document.createElement('div');
-        radiosInner.className = 'flex justify-center items-center px-4';
+        radiosInner.className = 'flex justify-center items-center px-4 options-gap';
         radiosInner.style.gap = '35px';
         (questionObj.options || []).forEach(option => {
             // Check if this option was previously rated

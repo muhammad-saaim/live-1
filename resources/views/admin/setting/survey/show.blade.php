@@ -72,6 +72,7 @@
                             <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
+                                  <th scope="col" class="px-6 py-3">Id</th>
                                     <th scope="col" class="px-6 py-3">Question</th>
                                     <th scope="col" class="px-6 py-3">Type</th>
                                     <th scope="col" class="px-6 py-3">Points</th>
@@ -80,8 +81,12 @@
                                 </tr>
                                 </thead>
                                 <tbody>
+                                    @php
+    $i=1;
+@endphp
                                 @forelse($survey->questions as $question)
                                     <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white"> {{ $i++ }}</td>
                                         <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                             {{ $question->question }}
                                         </td>
