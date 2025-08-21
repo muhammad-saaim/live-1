@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use App\Http\Requests\ProfileUpdateRequest;
 
 class AccountController extends Controller
 {
@@ -26,17 +27,35 @@ class AccountController extends Controller
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+{
+    $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+    // Fill validated fields (name, email, etc.)
+    $user->fill($request->validated());
+
+    // Reset email verification if email changed
+    if ($user->isDirty('email')) {
+        $user->email_verified_at = null;
+    }
+
+    // Handle profile image upload
+    if ($request->hasFile('image')) {
+        // Optional: delete old image if exists
+        if ($user->image && Storage::disk('public')->exists($user->image)) {
+            Storage::disk('public')->delete($user->image);
         }
 
-        $request->user()->save();
-
-        return Redirect::route('account.edit')->with('status', 'account-updated');
+        // Store new image
+        $path = $request->file('image')->store('profile_images', 'public');
+        $user->image = $path; // Save relative path in DB
     }
+
+    // Save user
+    $user->save();
+
+    return Redirect::route('account.edit')->with('status', 'account-updated');
+}
+
 
     /**
      * Delete the user's account.

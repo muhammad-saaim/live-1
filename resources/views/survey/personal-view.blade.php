@@ -1,12 +1,70 @@
 <x-app-layout>
     <style>
+       /* Make Tailwind peer-checked utilities effectively !important */
+.peer:checked + .peer-checked\:bg-green-500.peer-checked\:border-green-600.peer-checked\:text-white {
+  background-color: #15803d !important; /* green-500 */
+  border-color: #15803d !important;     /* green-600 */
+  color: #fff !important;
+}
+
+
+        .text-sm{
+            font-size: 0.675rem;
+        }
         .checkedoption {
             background-color: #8EEB64 !important;
             border: 2px solid #5cb031 !important;
             color: white !important;
         }
+        .active-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #22c55e !important;
+            color: #ffffff;
+            font-size: 10px;
+            line-height: 1;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        .personal-user.active .active-badge {
+            display: inline-block;
+        }
     </style>
     <style>
+        /* Disabled styles for group nav buttons */
+        #previous-group-button[disabled],
+        #next-group-button[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        /* Disabled styles for personal users strip nav */
+        #prev-user[disabled],
+        #next-user[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        /* Responsive personal view layout */
+        .personal-row { max-width: 960px; margin: 0 auto; }
+        .personal-question { flex: 0 0 100%; text-align: center; margin-bottom: 0.25rem; }
+        .personal-options { flex: 0 0 100%; justify-content: center; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .personal-scale { max-width: 960px; margin: 0 auto; display: flex; align-items: center; }
+        .personal-scale-spacer { flex: 0 0 0%; }
+        .personal-scale-inner { flex: 1 1 100%; }
+        @media (min-width: 768px) { /* md */
+            .personal-question { flex-basis: 35%; text-align: left; margin-bottom: 0; padding-right: 1rem; }
+            .personal-options { flex-basis: 65%; gap: 1.25rem; }
+            .personal-scale-spacer { flex-basis: 35%; }
+            .personal-scale-inner { flex-basis: 65%; }
+        }
+        @media (min-width: 1024px) { /* lg */
+            .personal-options { gap: 2rem; }
+        }
         
 /* =========================
    Mobile (Extra Small ≤576px)
@@ -311,6 +369,94 @@ margin-top: -0.1rem !important;    }
 
 }
 
+/* Base Styles - Desktop First */
+.personal-row, .personal-scale { max-width: 960px; margin: 0 auto; }
+.personal-question { flex: 0 0 100%; text-align: center; margin-bottom: 0.25rem; }
+.personal-options { flex: 0 0 100%; justify-content: center; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.personal-scale-spacer { flex: 0 0 0%; }
+.personal-scale-inner { flex: 1 1 100%; }
+
+@media (min-width: 768px) {
+  .personal-question { flex-basis: 35%; text-align: left; margin-bottom: 0; padding-right: 1rem; }
+  .personal-options { flex-basis: 65%; gap: 1.25rem; }
+  .personal-scale-spacer { flex-basis: 35%; }
+  .personal-scale-inner { flex-basis: 65%; }
+}
+
+/* Buttons on small screens */
+@media (max-width: 576px) {
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .btn-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* User strip responsiveness */
+@media (max-width: 576px) {
+  #personal-users-strip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    padding: 5px;
+  }
+  #personal-users-strip .personal-user {
+    flex: 0 0 auto;
+    text-align: center;
+  }
+}
+
+/* Options & Question text scaling */
+@media (max-width: 576px) {
+  .options-container, #options-container {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .disaggree-label p, .agree-label p {
+    font-size: 0.6rem;
+        /* margin: 0 px; */
+        margin-right: 4px !important;
+        margin-right: 0px !important;
+  }
+  
+  .px-4
+  {
+    padding-right: 0px !important;
+    padding-left: 0px !important;
+  }
+  #question-text {
+    font-size: 1rem;
+    line-height: 1.2;
+    padding: 0 10px;
+  }
+}
+
+/* Group evaluation columns stack */
+@media (max-width: 768px) {
+  #group-options {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .col-3, .col-6 {
+    width: 100% !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .usernames-column {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
     </style>
     <div class="p-3 max-w-7xl mx-auto space-y-4">
         <div class="col-md-8">
@@ -318,21 +464,11 @@ margin-top: -0.1rem !important;    }
            <a href="/dashboard" class="btn btn-danger">Leave the Survey</a>
 
                 <div class="btn-group d-none" role="group" aria-label="Toggle View">
-                    <!-- Check if coming from group (group_id present) to determine which tab to open -->
-                    @if($request->has('group_id') || isset($groupUsers) && count($groupUsers) > 0)
-                        <!-- Group context: show group evaluation, disable self-evaluation -->
-                        <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off" checked>
-                        <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
+                    <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off">
+                    <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
 
-                        <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off">
-                        <label class="btn btn-outline-primary rounded-end-pill" for="defaultView">Default View</label>
-                    @else
-                        <input type="radio" class="btn-check" name="viewToggle" id="questionView" autocomplete="off">
-                        <label class="btn btn-outline-primary rounded-start-pill" for="questionView">Question View</label>
-
-                        <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off" checked>
-                        <label class="btn btn-outline-primary rounded-end-pill" for="defaultView">Default View</label>
-                    @endif
+                    <input type="radio" class="btn-check" name="viewToggle" id="defaultView" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary rounded-end-pill" for="defaultView">Default View</label>
                 </div>
             </div>
         </div>
@@ -346,88 +482,73 @@ margin-top: -0.1rem !important;    }
     <input type="hidden" name="group_id" value="{{ $request->group_id  }}">
     <input type="hidden" name="survey_id" value="{{ $request->survey_id  }}">
     <button type="submit" class="btn btn-success mx-2">Personal View</button>
-</form>  <a href="#" class="btn btn-secondary mx-2">Group View</a>
+</form>
+<form action="{{ route('rate.survey') }}" method="POST" class="d-inline">
+    @csrf
+    <input type="hidden" name="group_id" value="{{ $request->group_id  }}">
+    <input type="hidden" name="survey_id" value="{{ $request->survey_id  }}">
+    <button type="submit" class="btn btn-success mx-2">Group View</button>
+</form> 
 </div>
             @endif
-            
+
+           <div>
+            <div class="flex flex-wrap justify-center items-center gap-6 mt-4" id="personal-users-strip">
+    <button type="button" id="prev-user" class="btn btn-outline-secondary btn-sm me-2">Previous</button>
+    @foreach($groupUsers as $user)
+        @if($user->id !== Auth::id())
+        <div class="flex flex-col items-center cursor-pointer personal-user" data-user-id="{{ $user->id }}">
+            <div class="relative" style="position: relative;">
+            <img 
+                src="{{ $user->image ? asset('storage/' . $user->image) : asset('assets/image/default.jpeg') }}" 
+                alt="{{ $user->name }}" 
+                class="w-16 h-16 rounded-full object-cover border border-transparent"
+            >
+            <span class="active-badge" aria-label="Active">Active</span>
+            </div>
+            <span class="mt-2 text-sm font-medium text-center" style="max-width: 88px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ $user->name }}
+            </span>
+        </div>
+        @endif
+    @endforeach
+    <button type="button" id="next-user" class="btn btn-outline-secondary btn-sm ms-2">Next</button>
+</div>
+
+            <!-- Hidden context for scripts -->
+            <input type="hidden" id="survey-id-hidden" value="{{ $survey->id }}">
+            <input type="hidden" id="group-id" value="{{ $request->group_id ?? '' }}">
+            <input type="hidden" id="selected-evaluatee-id" value="">
+
+           </div>
+                           <hr class="border-t-2 border-black my-4">
 
             <h2 class="font-bold text-2xl text-center" id="survey-title">{{ $survey->title }}</h2>
 
             {{-- Success and Error Messages --}}
             <div id="message-container"></div>
 
-            <div id="question-container" class="text-center">
-                @if ($unansweredQuestions->isNotEmpty())
-                <p id="question-text" class="text-lg font-semibold">{{ $unansweredQuestions->first()->question }}
-                </p>
-
-                <p id="question-text" class="text-base mb-2">{{ $unansweredQuestions->first()->description }}</p>
-                <hr class="border-t-2 border-black my-4">
-                
-                <!-- Self Evaluation Form -->
-                <form id="question-form">
-                    <div id="options-container" class="flex justify-center items-center mt-5 gap-4 px-4">
-                        <!-- Disagree label -->
-                        <div class="flex items-center text-sm text-red-500 disaggree-label">
-                            <p>Disagree</p>
-                        </div>
-
-                        <!-- Options container with line -->
-                        <div class=" flex items-center relative max-w-xl">
-                            <!-- Grey connecting line -->
-                            {{-- <div class="absolute h-[2px] w-full bg-gray-300 top-1/2 left-0 -translate-y-1/2 z-0">
-                            </div> --}}
-
-                            <!-- Radio buttons container -->
-                            <div id="options-container" class="flex justify-center items-center  px-4 "
-                                style="gap:35px">
-                                @php
-                                    $selfAnswer = isset($selfAnswers) ? $selfAnswers->get($unansweredQuestions->first()->id) : null;
-                                @endphp
-                                @foreach ($unansweredQuestions->first()->options as $option)
-                                <label for="option-{{ $option->id }}" class="cursor-pointer flex justify-center">
-                                    <input type="radio" name="answer" value="{{ $option->id }}"
-                                        id="option-{{ $option->id }}" class="hidden peer"
-                                        onchange="updateSelectedOption(this)"
-                                        {{ $selfAnswer && $selfAnswer->options_id == $option->id ? 'checked' : '' }}>
-                                    <div style="width: 60px; height: 60px;"
-                                        class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 mx-auto fw-bold fs-5">
-                                        {{ $option->name }}
-                                    </div>
-                                </label>
-                                @endforeach
+            <!-- Personal (single evaluatee) evaluation container -->
+            <div id="personal-container" class="text-center mt-5">
+                <div class="mt-3">
+                    <div class="personal-scale">
+                        <div class="personal-scale-spacer"></div>
+                        <div class="personal-scale-inner flex justify-center items-center gap-4 px-4">
+                            <div class="flex items-center text-sm text-red-500 disaggree-label">
+                                <p>Completely Disagree</p>
+                            </div>
+                            <div class="flex-1 flex items-center relative w-full">
+                                <div class="w-full h-1 bg-gray-700 my-2"></div>
+                            </div>
+                            <div class="flex items-center text-sm text-green-500 agree-label">
+                                <p>Completely Agree</p>
                             </div>
                         </div>
-
-                        <!-- Agree label -->
-                        <div class="flex items-center text-sm text-green-500 agree-label">
-                            <p>Agree</p>
-                        </div>
                     </div>
-
-
-                    <input type="hidden" name="question_id" id="question-id"
-                        value="{{ $unansweredQuestions->first()->id }}">
-                    <input type="hidden" name="survey_id" id="survey-id" value="{{ $survey->id }}">
-                    <input type="hidden" name="evaluatee_id" id="evaluatee-id" value="{{ Auth::id() }}">
-
-                    <div class="flex justify-center space-x-4 mt-4">
-                        <button type="button" id="previous-button"
-                            class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600">Previous</button>
-                        <button type="button" id="next-button"
-                            class="bg-blue-500 text-white py-2 px-4 rounded">Next</button>
-                    </div>
-                </form>
-                {{-- Question Status Tracker --}}
-                <div id="status-container" class="mt-4">
-                    <p class="text-sm text-gray-500">
-                        Question {{ $unansweredQuestions->keys()->first() + 1 }} of
-                        {{ $unansweredQuestions->count() }}
-                    </p>
                 </div>
-                @else
-                <p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>
-                @endif
+
+                <div id="personal-questions" class="mt-4 space-y-3"></div>
+                <div id="personal-message" class="mt-3"></div>
             </div>
 
             <div id="group-container" class="text-center">
@@ -440,23 +561,12 @@ margin-top: -0.1rem !important;    }
                         <p>Disagree</p>
                     </div>
                     <!-- Options container with line -->
-                    <div class=" flex items-center relative max-w-xl">
-                        <div id="guidance-options" class="flex justify-center items-center px-4 options-gap" style="gap:35px">
-                            @foreach ($unansweredQuestions->first()->options as $index => $option)
-                                {{-- @if ($index >= 0 ) <!-- Adjust range as needed for guidance options --> --}}
-                                    <div class="flex flex-col items-center opacity-60 select-none">
-                                        <div style="width: 60px; height: 60px; background: #ffffff; border: 2px dashed #ccc;"
-                                            class="rounded-full flex items-center justify-center fw-bold fs-5">
-                                            {{ $option->name }}
-                                        </div>
-                                        <div class="mt-1 text-sm text-gray-600">
-                                            {{ $index + 1 }} Cevap
-                                            {{ (($index + 1) * 100) / $unansweredQuestions->first()->options->count() }}%
-                                        </div>
-                                    </div>
-                                {{-- @endif --}}
-                            @endforeach
-                        </div>
+                    <div class="flex-1 flex items-center relative max-w-xl w-full">
+                        <div id="guidance-options" class="flex justify-center px-4 mt-4 w-full">
+    <!-- Straight horizontal line -->
+<div class="w-full h-1 bg-gray-700 my-4"></div>
+       </div>
+
                     </div>
                     <!-- Agree label -->
                     <div class="flex items-center text-sm text-green-500 agree-label">
@@ -475,7 +585,6 @@ margin-top: -0.1rem !important;    }
                                     @if($user->id !== Auth::id())
                                         {{-- <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }} (Self)</p>
                                     @else --}}
-                                        <p>{{ \Illuminate\Support\Str::limit($user->name, 15) }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -501,7 +610,8 @@ margin-top: -0.1rem !important;    }
                                             value="{{ $option->id }}"
                                             id="option-{{ $user->id }}-{{ $option->id }}"
                                             class="hidden peer"
-                                            {{ $previousRating && $previousRating->options_id == $option->id ? 'checked' : '' }} />
+                                            {{ $previousRating && $previousRating->options_id == $option->id ? 'checked' : '' }}
+                                            {{ $previousRating ? 'disabled' : '' }} />
                                         <div style="width: 60px; height: 60px;"
                                             class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
                                             {{ $option->name }}
@@ -521,10 +631,11 @@ margin-top: -0.1rem !important;    }
                         </div>
                     </div>
 
-
                     <input type="hidden" name="question_id" value="{{ $unansweredQuestions->first()->id }}">
                     <input type="hidden" name="survey_id" value="{{ $survey->id }}">
                     <input type="hidden" name="group_id" value="{{ $request->group_id ?? '' }}">
+                    <input type="hidden" id="group-current-index" value="{{ $unansweredQuestions->keys()->first() + 1 }}">
+                    <input type="hidden" id="group-total-count" value="{{ $unansweredQuestions->count() }}">
 
                     <div class="flex justify-center space-x-4 mt-4">
                         <button type="button" id="previous-group-button"
@@ -552,7 +663,7 @@ margin-top: -0.1rem !important;    }
         document.addEventListener('DOMContentLoaded', function() {
             const questionView = document.getElementById('questionView');
             const defaultView = document.getElementById('defaultView');
-            const questionContainer = document.getElementById('question-container');
+            const questionContainer = document.getElementById('personal-container') || document.getElementById('question-container');
             const groupContainer = document.getElementById('group-container');
 
             // Set initial state based on which radio is checked
@@ -590,11 +701,10 @@ margin-top: -0.1rem !important;    }
                 circle.style.color = '';
                 circle.classList.add('bg-white', 'border-gray-300');
             });
-
             // Check the selected radio button and apply custom green styles
             radioInput.checked = true;
             const selectedCircle = radioInput.nextElementSibling;
-            selectedCircle.style.backgroundColor = '#8EEB64';
+circle.style.setProperty('background-color', '#5cb031', 'important');
             selectedCircle.style.borderColor = '#5cb031'; // Slightly darker green for border
             selectedCircle.style.color = 'white';
             selectedCircle.classList.remove('bg-white', 'border-gray-300');
@@ -727,25 +837,256 @@ margin-top: -0.1rem !important;    }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Set up event listeners for all radio button labels (self-evaluation only)
-        
-    // Initial bind for first question
-    const totalQuestions = parseInt(document.getElementById("status-container")?.textContent.match(/of\s+(\d+)/)?.[1] || '1', 10);
-    renderSelfQuestion({
-        question: document.getElementById("question-text").textContent,
-        id: document.getElementById("question-id").value,
-        options: Array.from(document.querySelectorAll('input[name="answer"]')).map(radio => ({
-            id: radio.value,
-            name: radio.nextElementSibling.textContent
-        }))
-    }, 1, totalQuestions);
+        // Personal view: render all questions for selected user
+        @php
+            $groupUsersForJs = ($groupUsers ?? collect())->where('id','!=',Auth::id())->values()->map(function($u){
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'image' => $u->image ? asset('storage/'.$u->image) : asset('assets/image/default.jpeg'),
+                ];
+            })->values();
+            $allQuestionsForJs = $survey->questions->map(function($q){
+                return [
+                    'id' => $q->id,
+                    'question' => $q->question,
+                    'description' => $q->description,
+                    'options' => $q->options->map(function($o){
+                        return ['id' => $o->id, 'name' => $o->name];
+                    })->values(),
+                ];
+            })->values();
+            $existingRatingsForJs = ($usersurvey ?? collect())->map(function($r){
+                return [
+                    'evaluatee_id' => $r->evaluatee_id,
+                    'question_id' => $r->question_id,
+                    'options_id' => $r->options_id,
+                ];
+            })->values();
+        @endphp
+        const groupUsers = @json($groupUsersForJs);
+        const allQuestions = @json($allQuestionsForJs);
+        const existingRatingsArr = @json($existingRatingsForJs);
 
-    // Initialize any pre-selected option for self-evaluation
-    const selectedRadio = document.querySelector('input[name="answer"]:checked');
-    if (selectedRadio) {
-        updateSelectedOption(selectedRadio);
-    }
-});
+        const ratingsMap = new Map();
+        (existingRatingsArr || []).forEach(r => {
+            ratingsMap.set(`${r.evaluatee_id}-${r.question_id}`, r.options_id);
+        });
+
+        const selectedEvaluateeInput = document.getElementById('selected-evaluatee-id');
+        const surveyId = document.getElementById('survey-id-hidden')?.value;
+        const groupId = document.getElementById('group-id')?.value || '';
+        const usersStrip = document.getElementById('personal-users-strip');
+        const userCards = Array.from(document.querySelectorAll('.personal-user'));
+        const prevBtn = document.getElementById('prev-user');
+        const nextBtn = document.getElementById('next-user');
+        const questionsWrap = document.getElementById('personal-questions');
+        const messageBox = document.getElementById('personal-message');
+
+        function highlightSelected(userId){
+            userCards.forEach(card => {
+                const img = card.querySelector('img');
+                if (card.getAttribute('data-user-id') === String(userId)) {
+                    img.style.borderColor = '#22c55e';
+                    img.style.borderWidth = '2px';
+                    card.classList.add('active');
+                } else {
+                    img.style.borderColor = 'transparent';
+                    img.style.borderWidth = '1px';
+                    card.classList.remove('active');
+                }
+            });
+        }
+
+        function renderQuestionsFor(userId){
+            questionsWrap.innerHTML = '';
+            // Clear any previous personal message when rendering a new user's questions
+            if (messageBox) { messageBox.innerHTML = ''; }
+            (allQuestions || []).forEach(q => {
+                const ratedOptionId = ratingsMap.get(`${userId}-${q.id}`);
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-start px-3 py-2 w-full';
+                row.style.maxWidth = '960px';
+                row.style.margin = '0 auto';
+                const left = document.createElement('div');
+                left.className = 'text-left';
+                left.innerHTML = `<div class="fw-semibold">${q.question}</div>`;
+                const right = document.createElement('div');
+                right.className = 'flex items-center gap-4';
+                // Align columns to 35% (question) and 65% (options) to match the global scale
+                left.style.flex = '0 0 35%';
+                right.style.flex = '0 0 67%';
+                right.style.justifyContent = 'center';
+                right.style.alignItems = 'center';
+
+                q.options.forEach(opt => {
+                    const label = document.createElement('label');
+                    label.className = 'cursor-pointer flex justify-center';
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = `answer_personal_${q.id}`;
+                    input.value = String(opt.id);
+                    input.className = 'hidden peer';
+                    input.dataset.questionId = String(q.id);
+                    input.dataset.evaluateeId = String(userId);
+
+                    const circle = document.createElement('div');
+                    circle.style.width = '48px';
+                    circle.style.height = '48px';
+                    circle.className = 'rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold';
+                    circle.textContent = opt.name;
+
+                    if (ratedOptionId) {
+                        // Already rated: lock and show selection
+                        if (String(ratedOptionId) === String(opt.id)) {
+                            input.checked = true;
+circle.style.setProperty('background-color', '#5cb031', 'important');
+                            circle.style.borderColor = '#5cb031';
+                            circle.style.color = '#fff';
+                        }
+                        input.disabled = true;
+                    } else {
+                        // Bind change to save
+                        input.addEventListener('change', function(){
+                            const payload = {
+                                survey_id: surveyId,
+                                question_id: Number(this.dataset.questionId),
+                                options_id: Number(this.value),
+                                evaluatee_id: Number(this.dataset.evaluateeId),
+                                group_id: groupId
+                            };
+                            fetch("{{ route('survey.submitAnswer') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    ratingsMap.set(`${payload.evaluatee_id}-${payload.question_id}`, payload.options_id);
+                                    // Lock this question row
+                                    Array.from(document.getElementsByName(`answer_personal_${q.id}`)).forEach(r => { r.disabled = true; });
+                                    // After saving, check if ALL users are fully completed across ALL questions
+                                    try {
+                                        const everyoneDone = (groupUsers || []).every(u =>
+                                            (allQuestions || []).every(q2 => ratingsMap.has(`${u.id}-${q2.id}`))
+                                        );
+                                        if (everyoneDone) {
+                                            // Redirect to rate.survey via form
+                                            const form = document.createElement('form');
+                                            form.method = 'POST';
+                                            form.action = "{{ route('rate.survey') }}";
+
+                                            const csrfInput = document.createElement('input');
+                                            csrfInput.type = 'hidden';
+                                            csrfInput.name = '_token';
+                                            csrfInput.value = "{{ csrf_token() }}";
+                                            form.appendChild(csrfInput);
+
+                                            const surveyInput = document.createElement('input');
+                                            surveyInput.type = 'hidden';
+                                            surveyInput.name = 'survey_id';
+                                            surveyInput.value = String(surveyId);
+                                            form.appendChild(surveyInput);
+
+                                            const groupInput = document.createElement('input');
+                                            groupInput.type = 'hidden';
+                                            groupInput.name = 'group_id';
+                                            groupInput.value = String(groupId);
+                                            form.appendChild(groupInput);
+
+                                            document.body.appendChild(form);
+                                            form.submit();
+                                            return; // stop further UI updates
+                                        }
+
+                                        // If not everyone done, but current evaluatee is fully answered, auto-advance
+                                        const currentEvaluateeId = payload.evaluatee_id;
+                                        const answeredAll = (allQuestions || []).every(q2 =>
+                                            ratingsMap.has(`${currentEvaluateeId}-${q2.id}`)
+                                        );
+                                        if (answeredAll && groupUsers) {
+                                            if (selectedIndex < groupUsers.length - 1) {
+                                                setTimeout(() => selectUserByIndex(selectedIndex + 1), 250);
+                                            }
+                                        }
+                                    } catch (e) {
+                                        console.warn('Completion check failed:', e);
+                                    }
+                                } else {
+                                    messageBox.innerHTML = `<div class="bg-red-500 text-white p-2 rounded">${data.message || 'Error saving.'}</div>`;
+                                }
+                            })
+                            .catch(() => {
+                                messageBox.innerHTML = `<div class=\"bg-red-500 text-white p-2 rounded\">Network error.</div>`;
+                            });
+                        });
+                    }
+
+                    label.appendChild(input);
+                    label.appendChild(circle);
+                    right.appendChild(label);
+                });
+
+                row.appendChild(left);
+                row.appendChild(right);
+                // separator
+                const wrap = document.createElement('div');
+                wrap.appendChild(row);
+                const sep = document.createElement('div');
+                sep.style.display = 'flex';
+                sep.style.justifyContent = 'center';
+                sep.innerHTML = '<hr style="border: 1px solid rgb(184, 184, 184); width: 95%;">';
+                wrap.appendChild(sep);
+                questionsWrap.appendChild(wrap);
+            });
+        }
+
+        function updateUserNavButtons() {
+            const total = groupUsers ? groupUsers.length : 0;
+            if (!prevBtn || !nextBtn || total === 0) return;
+            prevBtn.disabled = selectedIndex <= 0;
+            nextBtn.disabled = selectedIndex >= (total - 1);
+        }
+
+        function selectUserByIndex(index){
+            if (!groupUsers || groupUsers.length === 0) return;
+            const clamped = Math.max(0, Math.min(index, groupUsers.length - 1));
+            const user = groupUsers[clamped];
+            selectedEvaluateeInput.value = String(user.id);
+            // Clear any personal message on user switch
+            if (messageBox) { messageBox.innerHTML = ''; }
+            highlightSelected(user.id);
+            renderQuestionsFor(user.id);
+            selectedIndex = clamped;
+            updateUserNavButtons();
+        }
+
+        // Init default selection: first person
+        let selectedIndex = 0;
+        if (groupUsers && groupUsers.length > 0) {
+            selectUserByIndex(0);
+        }
+
+        // Click on avatar to select
+        userCards.forEach((card, idx) => {
+            card.addEventListener('click', function(){
+                const uid = Number(this.getAttribute('data-user-id'));
+                const foundIdx = groupUsers.findIndex(u => Number(u.id) === uid);
+                if (foundIdx >= 0) {
+                    selectUserByIndex(foundIdx);
+                }
+            });
+        });
+
+        // Prev/Next buttons
+        prevBtn?.addEventListener('click', function(){ if (selectedIndex > 0) selectUserByIndex(selectedIndex - 1); });
+        nextBtn?.addEventListener('click', function(){ if (groupUsers && selectedIndex < groupUsers.length - 1) selectUserByIndex(selectedIndex + 1); });
+    });
 
         // Self Evaluation
         document.addEventListener("DOMContentLoaded", function() {
@@ -754,6 +1095,10 @@ margin-top: -0.1rem !important;    }
             const previousButton = document.getElementById("previous-button");
             const questionContainer = document.getElementById("question-container");
             const messageContainer = document.getElementById("message-container");
+
+            if (!form || !nextButton || !previousButton || !questionContainer) {
+                return; // Skip legacy self-evaluation handlers when personal container is used
+            }
 
             previousButton.addEventListener("click", function() {
     const questionId = document.getElementById("question-id").value;
@@ -990,10 +1335,49 @@ data.question.options.forEach(option => {
             // Check the selected radio button and apply custom green styles
             radioInput.checked = true;
             const selectedCircle = radioInput.nextElementSibling;
-            selectedCircle.style.backgroundColor = '#8EEB64';
+circle.style.setProperty('background-color', '#5cb031', 'important');
             selectedCircle.style.borderColor = '#5cb031';
             selectedCircle.style.color = 'white';
             selectedCircle.classList.remove('bg-white', 'border-gray-300');
+        }
+
+        function updateGroupNavButtons(currentIndex, totalCount) {
+            const prevBtn = document.getElementById('previous-group-button');
+            const nextBtn = document.getElementById('next-group-button');
+            const idx = Number(currentIndex);
+            const total = Number(totalCount);
+            // Heuristic: support both 0-based and 1-based indices
+            const isZeroBased = idx === 0 || (idx < 1 && total > 0);
+            const isFirst = isZeroBased ? idx <= 0 : idx <= 1;
+            const isLast = isZeroBased ? idx >= (total - 1) : idx >= total;
+            if (prevBtn) {
+                prevBtn.disabled = isFirst;
+                prevBtn.setAttribute('aria-disabled', String(isFirst));
+            }
+            if (nextBtn) {
+                nextBtn.disabled = total > 0 && isLast;
+                nextBtn.setAttribute('aria-disabled', String(total > 0 && isLast));
+            }
+        }
+
+        function getGroupIndexAndTotal() {
+            const idxInput = document.getElementById('group-current-index');
+            const totalInput = document.getElementById('group-total-count');
+            const idx = Number(idxInput?.value || 1);
+            const total = Number(totalInput?.value || 1);
+            return { idx, total };
+        }
+
+        function setGroupIndexAndTotal(newIdx, total) {
+            const idxInput = document.getElementById('group-current-index');
+            const totalInput = document.getElementById('group-total-count');
+            if (idxInput) idxInput.value = String(newIdx);
+            if (totalInput) totalInput.value = String(total);
+            const status = document.getElementById('group-status-container');
+            if (status && total > 0) {
+                status.innerHTML = `<p class="text-sm text-gray-500">Question ${newIdx} of ${total}</p>`;
+            }
+            updateGroupNavButtons(newIdx, total);
         }
 
         // Global function to render group evaluation options
@@ -1059,9 +1443,9 @@ data.question.options.forEach(option => {
                                 value="${option.id}"
                                 id="option-${user.id}-${option.id}"
                                 class="hidden peer"
-                                ${checked} ${dataAttributes} />
+                                ${checked} ${dataAttributes} ${isPreRated ? 'disabled' : ''} />
                             <div style="width: 60px; height: 60px;"
-                                class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500 peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
+                                class="rounded-full border-2 border-gray-300 bg-white flex items-center justify-center peer-checked:bg-green-500!important peer-checked:border-green-600 peer-checked:text-white transition-all duration-200 fw-bold fs-5">
                                 ${option.name}
                             </div>
                         `;
@@ -1117,6 +1501,11 @@ data.question.options.forEach(option => {
             // Update question status tracker
             if (typeof currentIndex !== 'undefined' && typeof totalCount !== 'undefined') {
                 document.getElementById("group-status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${currentIndex} of ${totalCount}</p>`;
+                const idxInput = document.getElementById('group-current-index');
+                const totalInput = document.getElementById('group-total-count');
+                if (idxInput) idxInput.value = currentIndex;
+                if (totalInput) totalInput.value = totalCount;
+                updateGroupNavButtons(currentIndex, totalCount);
             }
             
             // Update guidance options
@@ -1180,6 +1569,13 @@ data.question.options.forEach(option => {
             const nextButton = document.getElementById("next-group-button");
             const previousButton = document.getElementById("previous-group-button");
             const messageContainer = document.getElementById("message-container");
+
+            // Initialize nav buttons state from hidden inputs
+            const idxInput = document.getElementById('group-current-index');
+            const totalInput = document.getElementById('group-total-count');
+            if (idxInput && totalInput) {
+                updateGroupNavButtons(Number(idxInput.value || 1), Number(totalInput.value || 1));
+            }
 
 
 
@@ -1280,6 +1676,7 @@ data.question.options.forEach(option => {
                 const questionId = document.querySelector("#group-container input[name='question_id']").value;
                 const surveyId = document.querySelector("#group-container input[name='survey_id']").value;
                 const groupId = document.querySelector("#group-container input[name='group_id']").value;
+                const { idx, total } = getGroupIndexAndTotal();
                 
                 console.log('Previous group button clicked:', { questionId, surveyId, groupId });
                 
@@ -1304,6 +1701,14 @@ data.question.options.forEach(option => {
                         
                         // Use the renderGroupQuestion function to properly update the UI
                         renderGroupQuestion(data.question, data.current_index, data.total_count);
+                        // Sync and update buttons if backend provides indices
+                        if (typeof data.current_index !== 'undefined' && typeof data.total_count !== 'undefined') {
+                            setGroupIndexAndTotal(data.current_index, data.total_count);
+                        } else {
+                            // Fallback: decrement current index
+                            const newIdx = Math.max(1, idx - 1);
+                            setGroupIndexAndTotal(newIdx, total);
+                        }
                         
                         // Verify the question ID was updated
                         const updatedQuestionId = document.querySelector("#group-container input[name='question_id']").value;
@@ -1312,6 +1717,7 @@ data.question.options.forEach(option => {
                         // messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">Previous question loaded.</div>`;
                     } else {
                         messageContainer.innerHTML = `<div class="bg-blue-500 text-white p-3 rounded">No previous question available.</div>`;
+                        setGroupIndexAndTotal(1, total);
                     }
                 })
                 .catch(error => {
@@ -1326,6 +1732,7 @@ data.question.options.forEach(option => {
                 const surveyId = document.querySelector("#group-container input[name='survey_id']").value;
                 const groupId = document.querySelector("#group-container input[name='group_id']").value;
                 const answers = document.querySelectorAll("input[name^='answer[']:checked");
+                const { idx, total } = getGroupIndexAndTotal();
 
                 console.log('Next group button clicked:', { questionId, surveyId, groupId, answersCount: answers.length });
 
@@ -1366,6 +1773,14 @@ data.question.options.forEach(option => {
                             if (data.question) {
                                 // Render the next rated question
                                 renderGroupQuestion(data.question, data.current_index, data.total_count);
+                                // Sync and update buttons if backend provides indices
+                                if (typeof data.current_index !== 'undefined' && typeof data.total_count !== 'undefined') {
+                                    setGroupIndexAndTotal(data.current_index, data.total_count);
+                                } else {
+                                    // Fallback: increment current index
+                                    const newIdx = Math.min(total, idx + 1);
+                                    setGroupIndexAndTotal(newIdx, total);
+                                }
                                 // messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">Next rated question loaded.</div>`;
                             } else {
                                 // No more rated questions found, fetch unrated questions
@@ -1416,6 +1831,9 @@ data.question.options.forEach(option => {
                         if (data.questions && data.questions.length > 0) {
                             // Render the first unrated question
                             renderGroupQuestion(data.questions[0], data.current_index, data.total_count);
+                            if (typeof data.current_index !== 'undefined' && typeof data.total_count !== 'undefined') {
+                                setGroupIndexAndTotal(data.current_index, data.total_count);
+                            }
                          // ✅ REDIRECT VIA FORM
                             const form = document.createElement('form');
                             form.method = 'POST';
@@ -1469,6 +1887,7 @@ data.question.options.forEach(option => {
                             document.body.appendChild(form);
                             form.submit();
                             document.getElementById("group-container").innerHTML = '<p class="text-lg font-semibold text-center">All questions are completed. Thank you!</p>';
+                            setGroupIndexAndTotal(total, total);
                         }
                     })
                     .catch(error => {

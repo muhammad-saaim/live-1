@@ -48,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('matching', MatchingController::class);
     Route::resource('solutions', SolutionsController::class);
 
+    Route::post('/personal_rate_survey', [SurveyRateController::class, 'personal_index'])->name('survey.personal_index');
     Route::post('/rate-survey', [SurveyRateController::class, 'rate'])->name('rate.survey');
     Route::post('/survey/next-question', [SurveyRateController::class, 'getNextQuestion'])->name('survey.nextQuestion');
     Route::post('/survey/get-next-question', [SurveyRateController::class, 'getNextQuestion'])->name('survey.getNextQuestion');

@@ -1,5 +1,5 @@
 <button {{ $attributes->merge([
-    'type' => 'button',
+    'type' => 'submit',
     'class' => 'inline-flex items-center h-8 px-4 font-semibold text-sm text-white tracking-wide
                 bg-gray-700 border border-transparent rounded-md
                 hover:bg-ml-color-orange focus:bg-ml-color-orange

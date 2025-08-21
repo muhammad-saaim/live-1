@@ -108,7 +108,6 @@ class SurveyRateController extends Controller
                 return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
             }
         }
-
         return view('survey.rate', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers', 'selfAnswers', 'request'));
     }
 
@@ -549,7 +548,7 @@ class SurveyRateController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Answer submitted  ',
+            // 'message' => 'Answer submitted  ',
             'next_question' => [
                 'id' => $nextQuestion->id,
                 'question' => $nextQuestion->question,
@@ -616,7 +615,7 @@ class SurveyRateController extends Controller
             if (empty($groupUsers)) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Answer submitted ',
+                    // 'message' => 'Answer submitted ',
                 ]);
             }
 
@@ -943,10 +942,6 @@ return response()->json([
             $ratedUsers = $ratings->count();
             $allRated = $ratedUsers >= $totalUsers;
 
-            \Log::info("Group {$groupId} question {$questionId}: {$ratedUsers}/{$totalUsers} users rated");
-            \Log::info("Group users: " . $groupUsers->pluck('id')->implode(','));
-            \Log::info("Rated users: " . $ratings->pluck('evaluatee_id')->implode(','));
-
             return response()->json([
                 'all_rated' => $allRated,
                 'rated_count' => $ratedUsers,
@@ -955,7 +950,6 @@ return response()->json([
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error in checkAllUsersRated: ' . $e->getMessage());
             return response()->json(['message' => 'Server error occurred'], 500);
         }
     }
@@ -1024,9 +1018,6 @@ return response()->json([
                     $groupUsers = $group->users->where('id', '!=', $userId)->values();
                 }
             }
-
-            \Log::info("User {$userId} fetching unrated question Q{$firstUnratedQuestion->id}");
-
             $response = [
                 'questions' => [
                     [
@@ -1048,9 +1039,105 @@ return response()->json([
 
             return response()->json($response);
         } catch (\Exception $e) {
-            \Log::error('Error in getUnratedQuestions: ' . $e->getMessage());
             return response()->json(['message' => 'Server error occurred'], 500);
         }
+    }
+
+    function personal_index( Request $request)
+    {
+          $request->validate([
+            'survey_id' => 'required|exists:surveys,id',
+            'group_id' => 'nullable',
+        ]);
+
+        $survey = Survey::find($request->survey_id);
+        $questions = $survey->questions;
+
+        $groupUsers = [];
+
+        if ($request->group_id) {
+            $group = Group::find($request->group_id);
+            $groupUsers = $group ? $group->users->sortByDesc(function ($user) {
+                return $user->id === Auth::id(); // Auth user will get true (1), others false (0)
+            })->values() : collect();
+        }
+        // dd($groupUsers);
+
+        if ($questions->isEmpty()) {
+            return redirect()->route('dashboard.index')->with('error', 'No questions found for this survey.');
+        }
+
+        $user = auth()->user();
+
+        // Get all question IDs for this survey
+        $questionIds = $questions->pluck('id')->toArray();
+
+        // Get all group user IDs except the current user
+        $groupUserIds = collect($groupUsers)->pluck('id')->filter(fn($id) => $id != $user->id)->toArray();
+
+        // Get all rates by the current user for this survey
+        $allRates = UsersSurveysRate::where('survey_id', $survey->id)
+            ->where('users_id', $user->id)
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
+            ->get();
+
+        // Check for unanswered questions based on context
+        if ($request->group_id) {
+            // Group context: only check group evaluation (self-evaluation disabled)
+        $groupUnanswered = [];
+        foreach ($questionIds as $qid) {
+            foreach ($groupUserIds as $gid) {
+                if (!$allRates->where('evaluatee_id', $gid)->where('question_id', $qid)->count()) {
+                    $groupUnanswered[] = $qid;
+                    break; // Only need to know at least one group member is missing
+                }
+            }
+            }
+            $unansweredQuestionIds = array_unique($groupUnanswered);
+        } else {
+            // Individual context: check self-evaluation
+            $selfUnanswered = array_diff(
+                $questionIds,
+                $allRates->where('evaluatee_id', $user->id)->pluck('question_id')->toArray()
+            );
+            $unansweredQuestionIds = array_unique($selfUnanswered);
+        }
+        
+        $unansweredQuestions = $questions->whereIn('id', $unansweredQuestionIds);
+
+        // Get the answered survey rates to show the user's responses
+        $usersurvey = UsersSurveysRate::with('user', 'survey', 'question', 'option')
+            ->where('survey_id', $request->survey_id)
+            ->where('users_id', $user->id)
+            ->when($request->group_id, function($query) use ($request) {
+                $query->where('group_id', $request->group_id);
+            }, function($query) {
+                $query->whereNull('group_id');
+            })
+            ->whereIn('question_id', $questions->pluck('id'))
+            ->get();
+
+        // Get self-answers based on context
+        if ($request->group_id) {
+            // Group context: no self answers needed
+            $selfAnswers = collect();
+        } else {
+            // Individual context: get self answers
+        $selfAnswers = $allRates->where('evaluatee_id', $user->id)->keyBy('question_id');
+        }
+
+        if ($unansweredQuestions->isEmpty()) {
+            if ($request->group_id) {
+                return redirect()->route('group.show', ['group' => $request->group_id])->with('error', 'All questions are completed.');
+            } else {
+                return redirect()->route('dashboard.index')->with('error', 'All questions are completed.');
+            }
+        }
+        return view('survey.personal-view', compact('survey', 'unansweredQuestions', 'usersurvey', 'groupUsers', 'selfAnswers', 'request'));
     }
 
 }

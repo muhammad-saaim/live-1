@@ -388,8 +388,10 @@
                             @foreach($group->defaultSurveys() as $survey)
                                 <div class="flex items-center justify-between space-x-2">
                                     <label for="survey-{{ $survey->id }}" class="w-2/5 text-gray-600 truncate whitespace-nowrap overflow-hidden" title="{{ $survey->title }}">{{ $survey->title }}</label>
-                                    <form action="{{ route('rate.survey') }}" method="POST" class="w-1/4">
-                                        @csrf
+                                    <form 
+    action="{{ ($survey->title === 'Self-Awareness & Motivation') ? route('survey.personal_index') : route('rate.survey') }}" 
+    method="POST" class="w-1/4">                                     
+       @csrf
                                         <input type="hidden" name="survey_id" value="{{ $survey->id }}">
                                         <input type="hidden" name="group_id" value="{{ $group->id }}">
                                         <button type="submit" class="w-full bg-white text-ml-color-lime border border-ml-color-lime rounded-xl px-2 py-1 hover:bg-ml-color-sky transition text-center text-secondary">
