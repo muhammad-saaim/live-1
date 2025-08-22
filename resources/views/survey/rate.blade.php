@@ -346,7 +346,13 @@ margin-top: -0.1rem !important;    }
     <input type="hidden" name="group_id" value="{{ $request->group_id  }}">
     <input type="hidden" name="survey_id" value="{{ $request->survey_id  }}">
     <button type="submit" class="btn btn-success mx-2">Personal View</button>
-</form>  <a href="#" class="btn btn-secondary mx-2">Group View</a>
+</form>  
+<form action="{{ route('rate.survey') }}" method="POST" class="d-inline">
+    @csrf
+    <input type="hidden" name="group_id" value="{{ $request->group_id  }}">
+    <input type="hidden" name="survey_id" value="{{ $request->survey_id  }}">
+    <button type="submit" class="btn btn-secondary mx-2">Group View</button>
+</form>
 </div>
             @endif
             
@@ -626,7 +632,7 @@ margin-top: -0.1rem !important;    }
         document.getElementById("question-id").value = questionObj.id;
         // Update question status tracker
         if (typeof currentIndex !== 'undefined' && typeof totalCount !== 'undefined') {
-            document.getElementById("status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${currentIndex} of ${totalCount}</p>`;
+            // document.getElementById("status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${currentIndex} of ${totalCount}</p>`;
         }
         // Render options row with Disagree/Agree labels
         const optionsRow = document.createElement('div');
@@ -704,7 +710,7 @@ margin-top: -0.1rem !important;    }
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === "success") {
-                        messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${data.message}</div>`;
+                        // messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">${data.message}</div>`;
                         if (data.next_question) {
                             // If backend provides current/total, use them; else increment
                             let nextIndex = currentIndex + 1;
@@ -1146,7 +1152,7 @@ data.question.options.forEach(option => {
             
             // Update question status tracker
             if (typeof currentIndex !== 'undefined' && typeof totalCount !== 'undefined') {
-                document.getElementById("group-status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${currentIndex} of ${totalCount}</p>`;
+                // document.getElementById("group-status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${currentIndex} of ${totalCount}</p>`;
             }
             
             // Update guidance options
