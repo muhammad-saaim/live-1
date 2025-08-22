@@ -46,8 +46,7 @@
              alt="Profile" 
              class="w-8 h-8 rounded-full object-cover mr-2">
     @else
-        <img src="{{ asset('default-profile.png') }}" 
-             alt="Default" 
+<img src="{{ asset('assets/image/default.jpeg') }}" alt="Default Image"
              class="w-8 h-8 rounded-full object-cover mr-2">
     @endif                            <div>{{ Auth::user()->name }}</div>
 
