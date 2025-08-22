@@ -534,14 +534,14 @@ margin-top: -0.1rem !important;    }
                     <div class="personal-scale">
                         <div class="personal-scale-spacer"></div>
                         <div class="personal-scale-inner flex justify-center items-center gap-4 px-4">
-                            <div class="flex items-center text-sm text-red-500 disaggree-label">
-                                <p>Completely Disagree</p>
-                            </div>
+                        <div class="flex items-center text-sm text-red-500 disaggree-label">
+                            <p>Completely Disagree</p>
+                        </div>
                             <div class="flex-1 flex items-center relative w-full">
-                                <div class="w-full h-1 bg-gray-700 my-2"></div>
-                            </div>
-                            <div class="flex items-center text-sm text-green-500 agree-label">
-                                <p>Completely Agree</p>
+                            <div class="w-full h-1 bg-gray-700 my-2"></div>
+                        </div>
+                        <div class="flex items-center text-sm text-green-500 agree-label">
+                            <p>Completely Agree</p>
                             </div>
                         </div>
                     </div>
@@ -602,8 +602,11 @@ margin-top: -0.1rem !important;    }
                                             ->where('question_id', $unansweredQuestions->first()->id)
                                             ->where('users_id', Auth::id())
                                             ->first();
+                                        // Check if this is a Rosenberg survey to limit options to 4
+                                        $isRosenberg = strcasecmp(trim(optional($survey->model)->title), 'rosenberg') === 0;
+                                        $optionsToShow = $isRosenberg ? $unansweredQuestions->first()->options->take(4) : $unansweredQuestions->first()->options;
                                     @endphp
-                                    @foreach ($unansweredQuestions->first()->options as $option)
+                                    @foreach ($optionsToShow as $option)
                                     <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
                                         <input type="radio"
                                             name="answer[{{ $user->id }}]"
@@ -636,6 +639,7 @@ margin-top: -0.1rem !important;    }
                     <input type="hidden" name="group_id" value="{{ $request->group_id ?? '' }}">
                     <input type="hidden" id="group-current-index" value="{{ $unansweredQuestions->keys()->first() + 1 }}">
                     <input type="hidden" id="group-total-count" value="{{ $unansweredQuestions->count() }}">
+                    <input type="hidden" name="survey_model_title" id="survey-model-title" value="{{ optional($survey->model)->title ?? '' }}">
 
                     <div class="flex justify-center space-x-4 mt-4">
                         <button type="button" id="previous-group-button"
@@ -733,7 +737,13 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
         const radiosInner = document.createElement('div');
         radiosInner.className = 'flex justify-center items-center px-4 options-gap';
         radiosInner.style.gap = '35px';
-        (questionObj.options || []).forEach(option => {
+        
+        // Check if this is a Rosenberg survey to limit options to 4
+        const surveyModelTitle = document.getElementById("survey-model-title")?.value || '';
+        const isRosenberg = surveyModelTitle.toLowerCase().trim() === 'rosenberg';
+        const optionsToShow = isRosenberg ? (questionObj.options || []).slice(0, 4) : (questionObj.options || []);
+        
+        optionsToShow.forEach(option => {
             // Check if this option was previously rated
             const isPreRated = questionObj.pre_rated_options && questionObj.pre_rated_options.includes(option.id);
             const checked = isPreRated ? 'checked' : '';
@@ -867,6 +877,8 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
         const groupUsers = @json($groupUsersForJs);
         const allQuestions = @json($allQuestionsForJs);
         const existingRatingsArr = @json($existingRatingsForJs);
+        const groupQuestionOrder = @json($survey->questions->pluck('id')->values());
+        const totalQuestionsCount = @json($survey->questions->count());
 
         const ratingsMap = new Map();
         (existingRatingsArr || []).forEach(r => {
@@ -968,54 +980,26 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
                             .then(data => {
                                 if (data.status === 'success') {
                                     ratingsMap.set(`${payload.evaluatee_id}-${payload.question_id}`, payload.options_id);
+                                    // messageBox.innerHTML = `<div class="bg-green-500 text-white p-2 rounded">${data.message || 'Saved.'}</div>`;
                                     // Lock this question row
                                     Array.from(document.getElementsByName(`answer_personal_${q.id}`)).forEach(r => { r.disabled = true; });
-                                    // After saving, check if ALL users are fully completed across ALL questions
+                                    // If this evaluatee has all questions answered, auto-advance to next user
                                     try {
-                                        const everyoneDone = (groupUsers || []).every(u =>
-                                            (allQuestions || []).every(q2 => ratingsMap.has(`${u.id}-${q2.id}`))
-                                        );
-                                        if (everyoneDone) {
-                                            // Redirect to rate.survey via form
-                                            const form = document.createElement('form');
-                                            form.method = 'POST';
-                                            form.action = "{{ route('rate.survey') }}";
-
-                                            const csrfInput = document.createElement('input');
-                                            csrfInput.type = 'hidden';
-                                            csrfInput.name = '_token';
-                                            csrfInput.value = "{{ csrf_token() }}";
-                                            form.appendChild(csrfInput);
-
-                                            const surveyInput = document.createElement('input');
-                                            surveyInput.type = 'hidden';
-                                            surveyInput.name = 'survey_id';
-                                            surveyInput.value = String(surveyId);
-                                            form.appendChild(surveyInput);
-
-                                            const groupInput = document.createElement('input');
-                                            groupInput.type = 'hidden';
-                                            groupInput.name = 'group_id';
-                                            groupInput.value = String(groupId);
-                                            form.appendChild(groupInput);
-
-                                            document.body.appendChild(form);
-                                            form.submit();
-                                            return; // stop further UI updates
-                                        }
-
-                                        // If not everyone done, but current evaluatee is fully answered, auto-advance
                                         const currentEvaluateeId = payload.evaluatee_id;
+                                        const totalQuestions = (allQuestions || []).length;
                                         const answeredAll = (allQuestions || []).every(q2 =>
                                             ratingsMap.has(`${currentEvaluateeId}-${q2.id}`)
                                         );
-                                        if (answeredAll && groupUsers) {
-                                            if (selectedIndex < groupUsers.length - 1) {
+                                        if (answeredAll) {
+                                            if (groupUsers && selectedIndex < groupUsers.length - 1) {
+                                                // small delay for UX feedback
                                                 setTimeout(() => selectUserByIndex(selectedIndex + 1), 250);
+                                            } else {
+                                                messageBox.innerHTML = `<div class="bg-blue-500 text-white p-2 rounded">All users completed. Thank you!</div>`;
                                             }
                                         }
                                     } catch (e) {
-                                        console.warn('Completion check failed:', e);
+                                        console.warn('Auto-advance check failed:', e);
                                     }
                                 } else {
                                     messageBox.innerHTML = `<div class="bg-red-500 text-white p-2 rounded">${data.message || 'Error saving.'}</div>`;
@@ -1426,7 +1410,12 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
                     const optionsInnerDiv = document.createElement('div');
                     optionsInnerDiv.className = 'flex justify-center items-center px-4 gap-5';
                     
-                    options.forEach((option, optionIndex) => {
+                    // Check if this is a Rosenberg survey to limit options to 4
+                    const surveyModelTitle = document.getElementById("survey-model-title")?.value || '';
+                    const isRosenberg = surveyModelTitle.toLowerCase().trim() === 'rosenberg';
+                    const optionsToShow = isRosenberg ? options.slice(0, 4) : options;
+                    
+                    optionsToShow.forEach((option, optionIndex) => {
                         const isPreRated = preRatedOptions && preRatedOptions.some(preRated => 
                             preRated.user_id === user.id && preRated.option_id === option.id
                         );
@@ -1499,19 +1488,41 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
             }
             
             // Update question status tracker
-            if (typeof currentIndex !== 'undefined' && typeof totalCount !== 'undefined') {
-                document.getElementById("group-status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${currentIndex} of ${totalCount}</p>`;
+            let idxToShow = currentIndex;
+            let totalToShow = totalCount;
+            if (typeof idxToShow === 'undefined' || typeof totalToShow === 'undefined') {
+                try {
+                    const orderArr = Array.isArray(groupQuestionOrder) ? groupQuestionOrder : [];
+                    const pos = orderArr.indexOf(questionObj.id);
+                    if (pos >= 0) {
+                        idxToShow = pos + 1;
+                        totalToShow = orderArr.length;
+                    }
+                } catch (e) {
+                    console.warn('Could not compute index from groupQuestionOrder:', e);
+                }
+            }
+            if (typeof idxToShow !== 'undefined' && typeof totalToShow !== 'undefined') {
+                // Clamp to valid range
+                const clampedIdx = Math.max(1, Math.min(Number(idxToShow), Number(totalToShow)));
+                document.getElementById("group-status-container").innerHTML = `<p class="text-sm text-gray-500">Question ${clampedIdx} of ${totalToShow}</p>`;
                 const idxInput = document.getElementById('group-current-index');
                 const totalInput = document.getElementById('group-total-count');
-                if (idxInput) idxInput.value = currentIndex;
-                if (totalInput) totalInput.value = totalCount;
-                updateGroupNavButtons(currentIndex, totalCount);
+                if (idxInput) idxInput.value = clampedIdx;
+                if (totalInput) totalInput.value = totalToShow;
+                updateGroupNavButtons(clampedIdx, totalToShow);
             }
             
             // Update guidance options
             const guidanceOptions = document.getElementById("guidance-options");
             guidanceOptions.innerHTML = '';
-            (questionObj.options || []).forEach((option, index) => {
+            
+            // Check if this is a Rosenberg survey to limit options to 4
+            const surveyModelTitle = document.getElementById("survey-model-title")?.value || '';
+            const isRosenberg = surveyModelTitle.toLowerCase().trim() === 'rosenberg';
+            const guidanceOptionsToShow = isRosenberg ? (questionObj.options || []).slice(0, 4) : (questionObj.options || []);
+            
+            guidanceOptionsToShow.forEach((option, index) => {
                 guidanceOptions.innerHTML += `
                     <div class="flex flex-col items-center opacity-60 select-none">
                         <div style="width: 60px; height: 60px; background: #ffffff; border: 2px dashed #ccc;"
@@ -1520,7 +1531,7 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
                         </div>
                         <div class="mt-1 text-sm text-gray-600">
                             ${index + 1} Cevap
-                            ${((index + 1) * 100) / questionObj.options.length}%
+                            ${((index + 1) * 100) / guidanceOptionsToShow.length}%
                         </div>
                     </div>
                 `;
@@ -1701,14 +1712,7 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
                         
                         // Use the renderGroupQuestion function to properly update the UI
                         renderGroupQuestion(data.question, data.current_index, data.total_count);
-                        // Sync and update buttons if backend provides indices
-                        if (typeof data.current_index !== 'undefined' && typeof data.total_count !== 'undefined') {
-                            setGroupIndexAndTotal(data.current_index, data.total_count);
-                        } else {
-                            // Fallback: decrement current index
-                            const newIdx = Math.max(1, idx - 1);
-                            setGroupIndexAndTotal(newIdx, total);
-                        }
+                        // Indexing handled inside renderGroupQuestion
                         
                         // Verify the question ID was updated
                         const updatedQuestionId = document.querySelector("#group-container input[name='question_id']").value;
@@ -1773,14 +1777,6 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
                             if (data.question) {
                                 // Render the next rated question
                                 renderGroupQuestion(data.question, data.current_index, data.total_count);
-                                // Sync and update buttons if backend provides indices
-                                if (typeof data.current_index !== 'undefined' && typeof data.total_count !== 'undefined') {
-                                    setGroupIndexAndTotal(data.current_index, data.total_count);
-                                } else {
-                                    // Fallback: increment current index
-                                    const newIdx = Math.min(total, idx + 1);
-                                    setGroupIndexAndTotal(newIdx, total);
-                                }
                                 // messageContainer.innerHTML = `<div class="bg-green-500 text-white p-3 rounded">Next rated question loaded.</div>`;
                             } else {
                                 // No more rated questions found, fetch unrated questions
@@ -1831,9 +1827,7 @@ circle.style.setProperty('background-color', '#5cb031', 'important');
                         if (data.questions && data.questions.length > 0) {
                             // Render the first unrated question
                             renderGroupQuestion(data.questions[0], data.current_index, data.total_count);
-                            if (typeof data.current_index !== 'undefined' && typeof data.total_count !== 'undefined') {
-                                setGroupIndexAndTotal(data.current_index, data.total_count);
-                            }
+                            // Index handled in renderGroupQuestion
                          // ✅ REDIRECT VIA FORM
                             const form = document.createElement('form');
                             form.method = 'POST';

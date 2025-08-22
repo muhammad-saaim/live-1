@@ -44,44 +44,77 @@ class ReportsController extends Controller
         $distinctSurveys = $userSurveyRates->pluck('survey')->filter()->unique('id')->values();
      $allGroupSurveyResults = getAllGroupsCombinedTypeReportsCombinedByGroupType();
      $allreport=allreport();
-    //   dd($allGroupSurveyResults);
-        // Get all self-awareness questions flat by group type
+
      $surveytypequestion=getAllSelfAwarenessQuestionsFlatByGroupType();
-//   dd($surveytypequestion);
-            //    dd($allGroupSurveyResults, $allreport);
-        //   dd($allreport);
+
              // Step 1: Extract labels from individual questions (assume all groups have same questions)
-    $labels = collect($surveytypequestion['individual']['questions'])
-                ->pluck('question_text')
-                ->toArray();
-       
+    $labels = collect($surveytypequestion['individual']['questions'] ?? [])
+    ->pluck('question_text')
+    ->toArray();
+
+// If no individual questions exist, try family or friend
+if (empty($labels)) {
+    $labels = collect($surveytypequestion['family']['questions'] ?? [])
+        ->pluck('question_text')
+        ->toArray();
+}
+
+if (empty($labels)) {
+    $labels = collect($surveytypequestion['friend']['questions'] ?? [])
+        ->pluck('question_text')
+        ->toArray();
+}
+
     // Step 2: Build datasets
     $datasets = [];
-
 // Overall Rating (Self + Others from all groups)
+// Step 1: Get all groups
+$groups = ['individual', 'family', 'friend'];
+
+// Step 2: Find the group with the most questions
+$maxGroup = null;
+$maxCount = 0;
+
+foreach ($groups as $group) {
+    $count = count($surveytypequestion[$group]['questions'] ?? []);
+    if ($count > $maxCount) {
+        $maxCount = $count;
+        $maxGroup = $group;
+    }
+}
+
+// If no group has questions, set default empty label
+$labels = [];
+if ($maxGroup) {
+    $labels = collect($surveytypequestion[$maxGroup]['questions'])
+        ->pluck('question_text')
+        ->toArray();
+}
+
+if (empty($labels)) {
+    $labels = ['No Questions Available'];
+}
+
+// Step 3: Build Overall Dataset using $maxGroup indexes
 $datasets[] = [
     'label' => 'Overall',
-    'data' => collect($surveytypequestion['individual']['questions'])->map(function ($q, $index) use ($surveytypequestion) {
-
+    'data' => collect($surveytypequestion[$maxGroup]['questions'] ?? [])->map(function ($q, $index) use ($surveytypequestion, $groups) {
         $getValue = function ($type, $index, $field) use ($surveytypequestion) {
             return isset($surveytypequestion[$type]['questions'][$index][$field])
                 ? $surveytypequestion[$type]['questions'][$index][$field]
                 : 0;
         };
 
-        $totalRatings =
-            $getValue('individual', $index, 'self_total_ratings') +
-            $getValue('family', $index, 'self_total_ratings') +
-            $getValue('family', $index, 'others_total_ratings') +
-            $getValue('friend', $index, 'self_total_ratings') +
-            $getValue('friend', $index, 'others_total_ratings');
+        $totalRatings = 0;
+        $totalPoints = 0;
 
-        $totalPoints =
-            $getValue('individual', $index, 'self_total_points') +
-            $getValue('family', $index, 'self_total_points') +
-            $getValue('family', $index, 'others_total_points') +
-            $getValue('friend', $index, 'self_total_points') +
-            $getValue('friend', $index, 'others_total_points');
+        // Sum ratings & points for all groups at the same index
+        foreach ($groups as $group) {
+            $totalRatings += $getValue($group, $index, 'self_total_ratings');
+            $totalRatings += $getValue($group, $index, 'others_total_ratings');
+            $totalPoints += $getValue($group, $index, 'self_total_points');
+            $totalPoints += $getValue($group, $index, 'others_total_points');
+        }
 
         return $totalRatings > 0
             ? round(($totalPoints / ($totalRatings * 5)) * 100, 0)
@@ -91,13 +124,14 @@ $datasets[] = [
 ];
 
 
+     
 
     // Individual (Self-Evaluation)
     $datasets[] = [
         'label' => 'Self-Evaluation',
         'data' => collect($surveytypequestion['individual']['questions'])->map(function ($q) {
             return $q['self_total_ratings'] > 0
-                ? round(($q['self_total_points'] / ($q['self_total_ratings'] * 5)) * 100, 2)
+                ? round(($q['self_total_points'] / ($q['self_total_ratings'] * 5)) * 100, 0)
                 : 0;
         })->toArray(),
         'backgroundColor' => '#1abc9c'
@@ -130,6 +164,7 @@ $datasets[] = [
     })->toArray(),
     'backgroundColor' => '#e74c3c'
 ];
+
 
         return view('reports.reports-index', [
             'UserSurveys' => $distinctSurveys,

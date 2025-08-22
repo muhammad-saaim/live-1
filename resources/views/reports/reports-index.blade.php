@@ -435,16 +435,17 @@
       @endforeach
     </tbody>
   </table>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <canvas id="perceptionChart" height="400"></canvas>
 <script>
     const chartData = {
         labels: @json($labels),
         datasets: @json($datasets)
     };
-
-    const ctx = document.getElementById('perceptionChart');
+    
+const ctx = document.getElementById('perceptionChart').getContext('2d');
 
     new Chart(ctx, {
         type: 'bar',
@@ -473,25 +474,16 @@
 </script>
 </div>
 
-{{-- Add this debugging section after line 324 --}}
-@php
-    // Debug: Let's see the family data structure
-    echo "<!-- DEBUG: Family Questions Structure -->";
-    foreach ($family['questions'] as $index => $question) {
-        echo "<!-- Question $index: " . $question['question_text'] . " -->";
-        echo "<!-- Self Points: " . $question['self_total_points'] . ", Self Ratings: " . $question['self_total_ratings'] . " -->";
-        echo "<!-- Others Points: " . $question['others_total_points'] . ", Others Ratings: " . $question['others_total_ratings'] . " -->";
-    }
-@endphp
+
 
 
     </div> 
-
+       
    <div class="action float-end m-2 d-flex gap-2">
     <!-- Excel download (only for bar view) -->
     <form action="{{ route('survey.export') }}" method="GET" id="excelForm" style="display: none;">
     <input type="hidden" name="type" value="bar">
-    <input type="hidden" name="survey_id" value="{{ $survey->id }}">
+<input type="hidden" name="survey_id" value="{{ $survey->id ?? '' }}">
     
     @if(Auth::user()->hasRole('admin'))
         <div class="dropdown">

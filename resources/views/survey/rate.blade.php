@@ -383,8 +383,11 @@ margin-top: -0.1rem !important;    }
                                 style="gap:35px">
                                 @php
                                     $selfAnswer = isset($selfAnswers) ? $selfAnswers->get($unansweredQuestions->first()->id) : null;
+                                    // Check if this is a Rosenberg survey to limit options to 4
+                                    $isRosenberg = strcasecmp(trim(optional($survey->model)->title), 'rosenberg') === 0;
+                                    $optionsToShow = $isRosenberg ? $unansweredQuestions->first()->options->take(4) : $unansweredQuestions->first()->options;
                                 @endphp
-                                @foreach ($unansweredQuestions->first()->options as $option)
+                                @foreach ($optionsToShow as $option)
                                 <label for="option-{{ $option->id }}" class="cursor-pointer flex justify-center">
                                     <input type="radio" name="answer" value="{{ $option->id }}"
                                         id="option-{{ $option->id }}" class="hidden peer"
@@ -410,6 +413,7 @@ margin-top: -0.1rem !important;    }
                         value="{{ $unansweredQuestions->first()->id }}">
                     <input type="hidden" name="survey_id" id="survey-id" value="{{ $survey->id }}">
                     <input type="hidden" name="evaluatee_id" id="evaluatee-id" value="{{ Auth::id() }}">
+                    <input type="hidden" name="survey_model_title" id="survey-model-title" value="{{ optional($survey->model)->title ?? '' }}">
 
                     <div class="flex justify-center space-x-4 mt-4">
                         <button type="button" id="previous-button"
@@ -442,7 +446,12 @@ margin-top: -0.1rem !important;    }
                     <!-- Options container with line -->
                     <div class=" flex items-center relative max-w-xl">
                         <div id="guidance-options" class="flex justify-center items-center px-4 options-gap" style="gap:35px">
-                            @foreach ($unansweredQuestions->first()->options as $index => $option)
+                            @php
+                                // Check if this is a Rosenberg survey to limit options to 4
+                                $isRosenberg = strcasecmp(trim(optional($survey->model)->title), 'rosenberg') === 0;
+                                $guidanceOptionsToShow = $isRosenberg ? $unansweredQuestions->first()->options->take(4) : $unansweredQuestions->first()->options;
+                            @endphp
+                            @foreach ($guidanceOptionsToShow as $index => $option)
                                 {{-- @if ($index >= 0 ) <!-- Adjust range as needed for guidance options --> --}}
                                     <div class="flex flex-col items-center opacity-60 select-none">
                                         <div style="width: 60px; height: 60px; background: #ffffff; border: 2px dashed #ccc;"
@@ -451,7 +460,7 @@ margin-top: -0.1rem !important;    }
                                         </div>
                                         <div class="mt-1 text-sm text-gray-600">
                                             {{ $index + 1 }} Cevap
-                                            {{ (($index + 1) * 100) / $unansweredQuestions->first()->options->count() }}%
+                                            {{ (($index + 1) * 100) / $guidanceOptionsToShow->count() }}%
                                         </div>
                                     </div>
                                 {{-- @endif --}}
@@ -493,8 +502,11 @@ margin-top: -0.1rem !important;    }
                                             ->where('question_id', $unansweredQuestions->first()->id)
                                             ->where('users_id', Auth::id())
                                             ->first();
+                                        // Check if this is a Rosenberg survey to limit options to 4
+                                        $isRosenberg = strcasecmp(trim(optional($survey->model)->title), 'rosenberg') === 0;
+                                        $groupOptionsToShow = $isRosenberg ? $unansweredQuestions->first()->options->take(4) : $unansweredQuestions->first()->options;
                                     @endphp
-                                    @foreach ($unansweredQuestions->first()->options as $option)
+                                    @foreach ($groupOptionsToShow as $option)
                                     <label for="option-{{ $user->id }}-{{ $option->id }}" class="flex flex-col items-center cursor-pointer">
                                         <input type="radio"
                                             name="answer[{{ $user->id }}]"
@@ -534,10 +546,17 @@ margin-top: -0.1rem !important;    }
                     </div>
                     
                     {{-- Question Status Tracker for Group --}}
+                    @php
+                        $allQuestionIds = $survey->questions->pluck('id')->values();
+                        $currentQuestionId = $unansweredQuestions->first()->id ?? null;
+                        $currentPosition = $currentQuestionId ? $allQuestionIds->search($currentQuestionId) : 0;
+                        $currentIndexDisplay = ($currentPosition === false ? 1 : ($currentPosition + 1));
+                        $totalQuestionsDisplay = $survey->questions->count();
+                    @endphp
                     <div id="group-status-container" class="mt-4">
                         <p class="text-sm text-gray-500">
-                            Question {{ $unansweredQuestions->keys()->first() + 1 }} of
-                            {{ $unansweredQuestions->count() }}
+                            Question {{ $currentIndexDisplay }} of
+                            {{ $totalQuestionsDisplay }}
                         </p>
                     </div>
                 </form>
@@ -623,7 +642,13 @@ margin-top: -0.1rem !important;    }
         const radiosInner = document.createElement('div');
         radiosInner.className = 'flex justify-center items-center px-4 options-gap';
         radiosInner.style.gap = '35px';
-        (questionObj.options || []).forEach(option => {
+        
+        // Check if this is a Rosenberg survey to limit options to 4
+        const surveyModelTitle = document.getElementById("survey-model-title")?.value || '';
+        const isRosenberg = surveyModelTitle.toLowerCase().trim() === 'rosenberg';
+        const optionsToShow = isRosenberg ? (questionObj.options || []).slice(0, 4) : (questionObj.options || []);
+        
+        optionsToShow.forEach(option => {
             // Check if this option was previously rated
             const isPreRated = questionObj.pre_rated_options && questionObj.pre_rated_options.includes(option.id);
             const checked = isPreRated ? 'checked' : '';
@@ -1042,7 +1067,12 @@ data.question.options.forEach(option => {
                     const optionsInnerDiv = document.createElement('div');
                     optionsInnerDiv.className = 'flex justify-center items-center px-4 gap-5';
                     
-                    options.forEach((option, optionIndex) => {
+                    // Check if this is a Rosenberg survey to limit options to 4
+                    const surveyModelTitle = document.getElementById("survey-model-title")?.value || '';
+                    const isRosenberg = surveyModelTitle.toLowerCase().trim() === 'rosenberg';
+                    const optionsToShow = isRosenberg ? options.slice(0, 4) : options;
+                    
+                    optionsToShow.forEach((option, optionIndex) => {
                         const isPreRated = preRatedOptions && preRatedOptions.some(preRated => 
                             preRated.user_id === user.id && preRated.option_id === option.id
                         );
@@ -1122,7 +1152,13 @@ data.question.options.forEach(option => {
             // Update guidance options
             const guidanceOptions = document.getElementById("guidance-options");
             guidanceOptions.innerHTML = '';
-            (questionObj.options || []).forEach((option, index) => {
+            
+            // Check if this is a Rosenberg survey to limit options to 4
+            const surveyModelTitle = document.getElementById("survey-model-title")?.value || '';
+            const isRosenberg = surveyModelTitle.toLowerCase().trim() === 'rosenberg';
+            const guidanceOptionsToShow = isRosenberg ? (questionObj.options || []).slice(0, 4) : (questionObj.options || []);
+            
+            guidanceOptionsToShow.forEach((option, index) => {
                 guidanceOptions.innerHTML += `
                     <div class="flex flex-col items-center opacity-60 select-none">
                         <div style="width: 60px; height: 60px; background: #ffffff; border: 2px dashed #ccc;"
@@ -1131,7 +1167,7 @@ data.question.options.forEach(option => {
                         </div>
                         <div class="mt-1 text-sm text-gray-600">
                             ${index + 1} Cevap
-                            ${((index + 1) * 100) / questionObj.options.length}%
+                            ${((index + 1) * 100) / guidanceOptionsToShow.length}%
                         </div>
                     </div>
                 `;
