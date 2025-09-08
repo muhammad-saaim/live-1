@@ -164,7 +164,7 @@ $datasets[] = [
     })->toArray(),
     'backgroundColor' => '#e74c3c'
 ];
-
+        // dd($distinctSurveys,$surveyAverages,$allGroupSurveyResults,$allreport,$surveytypequestion,$labels,$datasets);
 
         return view('reports.reports-index', [
             'UserSurveys' => $distinctSurveys,

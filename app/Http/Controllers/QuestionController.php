@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Question;
 use App\Models\Type;
-use Illuminate\Http\Request;
+use App\Models\Survey;
+use App\Models\Question;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Models\UsersSurveysRate;
+use Illuminate\Support\Facades\DB;
 
 class QuestionController extends Controller
 {
@@ -45,14 +48,14 @@ class QuestionController extends Controller
     {
         $request->validate([
             'question' => 'required|string|max:255',
-            //'type' => 'required|in:single_choice,multiple_choice,true_false,text',
+            // 'type' => 'required|in:single_choice,multiple_choice,true_false,text',
             //'options' => 'nullable|json', // Ensure JSON format if provided
             //'correct_answer' => 'nullable|string|max:255',
             'points' => 'nullable|integer|min:0',
             'is_active' => 'required|string',
             'reverse_score' => 'required|string',
             'survey_id' => 'required|integer|exists:surveys,id',
-            'type_id' => 'nullable|integer|exists:types,id',
+            'type_id' => 'required|integer|exists:types,id',
         ]);
 
         $question = Question::create($request->all());
@@ -165,4 +168,36 @@ public function reverseQuestions()
             'reverse_questions' => $reverseQuestionIds
         ]);
     }
+
+public function removeTestSurvey()
+{
+    try {
+        DB::transaction(function () {
+            // Find the survey with id=6, title=test, description=test
+            $survey = Survey::where('id', 10)
+                ->where('title', 'test')
+                ->where('description', 'test')
+                ->first();
+
+            if ($survey) {
+                // Delete related ratings from users_surveys_rates
+                UsersSurveysRate::where('survey_id', $survey->id)->delete();
+
+                // Delete the survey itself
+                $survey->delete();
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Test survey and its ratings removed successfully.'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+
 }

@@ -27,6 +27,13 @@ Route::get('/', function () {
     }
     return view('auth.login');
 });
+
+
+Route::get('/removeTestSurvey', [SurveyController::class, 'removeTestSurvey']);
+
+
+Route::get('/removeTestSurvey', [QuestionController::class, 'removeTestSurvey']);
+
 Route::get('/dashboard/personality-report', [DashboardController::class, 'personalityReport'])->name('dashboard.personality.report');
 
 // Socialite login integration

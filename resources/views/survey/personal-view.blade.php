@@ -9,7 +9,7 @@
 
 
         .text-sm{
-            font-size: 0.675rem;
+            font-size: 0.975rem;
         }
         .checkedoption {
             background-color: #8EEB64 !important;
@@ -68,14 +68,23 @@
         
 /* =========================
    Mobile (Extra Small ≤576px)
+
+
    ========================= */
-   @media (max-width: 540px) {
+   @media (max-width: 539px) {
  #guidance-options {
         gap: 5px !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
+ 
+     .agree-label p {
+        margin-right: -40px !important  ;
+    }
 
+    .disagree-label p{
+        margin-left:73px !important;
+    }
       .options-gap{
         gap:5px!important;
       }
@@ -159,7 +168,7 @@
     }
 
     .disaggree-label p {
-        margin-left: 15px;
+        margin-left: 73px;
     }
 
     .agree-label p {
@@ -241,80 +250,7 @@
     }
 }
 
-/* =========================
-   Laptop / Desktop (≥992px)
-   ========================= */
-/* =========================
-   Universal Base (Fluid scaling)
-   ========================= */
-/* #guidance-options {
-    gap: clamp(5px, 2vw, 20px) !important;
-    padding-left: clamp(0px, 1vw, 20px) !important;
-    padding-right: clamp(0px, 1vw, 20px) !important;
-} */
 
-/* .rounded-full {
-    width: clamp(28px, 4vw, 40px) !important;
-    height: clamp(28px, 4vw, 40px) !important;
-} */
-
-/* .text-sm {
-    font-size: clamp(0.75rem, 1vw, 0.95rem) !important;
-} */
-
-/* #options-container,
-.options-container {
-    padding-left: clamp(0px, 1vw, 20px) !important;
-    padding-right: clamp(0px, 1vw, 20px) !important;
-    gap: clamp(0.3rem, 1vw, 1rem) !important;
-} */
-
-/* .gap-4,
-.gap-5 {
-    gap: clamp(0.3rem, 1vw, 1.2rem) !important;
-} */
-
-/* .usernames-column { */
-    /* padding-right: clamp(10px, 2vw, 26px);
-    margin-top: 1rem !important;
-}
-
-.col-6 {
-    flex: 0 0 auto;
-    width: clamp(70%, 80%, 81%);
-}
-
-.col-3 {
-    flex: 0 0 auto;
-    width: clamp(15%, 18%, 20%);
-}
-
-.usernames-inner {
-    margin-top: 1rem !important;
-    margin-bottom: 0 !important;
-} */
-
-/* .mx-auto {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-.p-3 {
-    padding: clamp(0.3rem, 1vw, 1rem) !important;
-} */
-
-/* =========================
-   Small Mobile (≤576px)
-   ========================= */
-/* @media (max-width: 576px) {
-    .disaggree-label p {
-        margin-left: 15px;
-    }
-
-    .agree-label p {
-        margin-right: 15px;
-    }
-} */
 
 /* =========================
    Tablet Portrait (577px–768px)
@@ -421,9 +357,11 @@ margin-top: -0.1rem !important;    }
   .disaggree-label p, .agree-label p {
     font-size: 0.6rem;
         /* margin: 0 px; */
-        margin-right: 4px !important;
-        margin-right: 0px !important;
+        /* margin-right: 4px !important; */
+        /* margin-right: 0px !important; */
   }
+
+  
   
   .px-4
   {
@@ -435,6 +373,88 @@ margin-top: -0.1rem !important;    }
     line-height: 1.2;
     padding: 0 10px;
   }
+  #guidance-options {
+        gap: 5px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+ 
+     .agree-label p {
+        margin-right: -40px !important  ;
+    }
+
+    .disagree-label p{
+        margin-left:73px !important;
+    }
+      .options-gap{
+        gap:5px!important;
+      }
+    .rounded-full {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .disaggree-label p {
+        margin-left: 15px;
+    }
+     .disaggree-label  {
+        margin-left: 15px;
+    }
+        .agree-label  {
+        margin-right: 15px;
+    }
+
+    .agree-label p {
+        margin-right: 15px;
+    }
+
+    .text-sm {
+        font-size: 0.75rem !important;
+    }
+
+    #options-container,
+    .options-container {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        gap: 0 !important;
+    }
+
+    .gap-4 {
+        gap: 0 !important;
+    }
+
+    .gap-5 {
+        gap: 2.5rem !important;
+    }
+
+    .usernames-column {
+        padding-right: 26px;
+        margin-top: 1rem !important;
+    }
+
+    .col-6 {
+        flex: 0 0 auto;
+        width: 81%;
+    }
+
+    .usernames-inner {
+        margin-top: 1rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .mx-auto {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .p-3 {
+        padding: 0.3rem !important;
+    }
+
+    .col-3 {
+        flex: 0 0 auto;
+        width: 17%;
+    }
 }
 
 /* Group evaluation columns stack */
@@ -537,7 +557,7 @@ margin-top: -0.1rem !important;    }
                         <div class="flex items-center text-sm text-red-500 disaggree-label">
                             <p>Completely Disagree</p>
                         </div>
-                            <div class="flex-1 flex items-center relative w-full">
+                            <div class="felx-1 flex w-full" style="height: 1px;background-color:black;">
                             <div class="w-full h-1 bg-gray-700 my-2"></div>
                         </div>
                         <div class="flex items-center text-sm text-green-500 agree-label">
