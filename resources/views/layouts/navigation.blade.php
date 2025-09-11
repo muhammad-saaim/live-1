@@ -67,6 +67,11 @@
                             {{ __('Admin console') }}
                         </x-dropdown-link>
                         @endhasanyrole
+                        @role('mentor')
+                        <x-dropdown-link :href="route('mentor.index')">
+                            {{ __('Mentor') }}
+                        </x-dropdown-link>
+                        @endrole
                         <x-dropdown-link :href="route('account.edit')">
                             {{ __('Account') }}
                         </x-dropdown-link>
@@ -131,6 +136,11 @@
                     {{ __('Admin console') }}
                 </x-responsive-nav-link>
                 @endhasanyrole
+                @role('mentor')
+                <x-responsive-nav-link :href="route('mentor.index')">
+                    {{ __('Mentor') }}
+                </x-responsive-nav-link>
+                @endrole
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

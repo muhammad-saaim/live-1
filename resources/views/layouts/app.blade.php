@@ -38,6 +38,16 @@
 
     <!-- Page Content -->
     <main class="flex-grow">
+        @if (session('success'))
+            <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
+                <div class="alert alert-success" role="alert">{{ session('success') }}</div>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
+                <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+            </div>
+        @endif
         {{ $slot }}
     </main>
 </div>

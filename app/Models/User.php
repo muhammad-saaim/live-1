@@ -92,5 +92,15 @@ class User extends Authenticatable implements MustVerifyEmail
                     ->withTimestamps();
     }
 
+    public function mentors(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'mentor_user_shares', 'user_id', 'mentor_id')->withTimestamps();
+    }
+
+    public function mentees(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'mentor_user_shares', 'mentor_id', 'user_id')->withTimestamps();
+    }
+
 
 }

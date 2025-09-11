@@ -89,6 +89,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::delete('/groups/{group}/leave', [GroupController::class, 'leaveGroup'])->name('groups.leave');
 
     Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');
+    // Mentor
+    Route::get('/mentor', [\App\Http\Controllers\MentorController::class, 'index'])->middleware('role:mentor')->name('mentor.index');
+    Route::get('/mentor/list', [\App\Http\Controllers\MentorController::class, 'clients'])->name('mentor.list');
+    Route::post('/mentor/share', [\App\Http\Controllers\MentorController::class, 'share'])->name('mentor.share');
+    Route::get('/mentor/client/{client}', [\App\Http\Controllers\MentorController::class, 'clientReports'])->middleware('role:mentor')->name('mentor.client');
 
     Route::group(['middleware' => ['role:admin']], function () {
 

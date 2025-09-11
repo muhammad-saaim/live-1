@@ -116,7 +116,12 @@
         <input type="radio" class="btn-check" name="viewToggle" id="textshaped-radio" autocomplete="off" checked>
         <label class="btn btn-outline-secondary rounded-end-pill" for="textshaped-radio">Text shaped</label>
     </div>
-    <a href="" class="float-end purchase_btn btn hover:purchase_btn">Purchase the Full Report</a>
+    @if(empty($isMentorView))
+    <div class="float-end d-flex gap-2">
+        <a href="" class="purchase_btn btn hover:purchase_btn">Purchase the Full Report</a>
+        <button class="btn" style="background-color: #8CB368; color: white;" data-bs-toggle="modal" data-bs-target="#mentorShareModal">Share with Mentor</button>
+    </div>
+    @endif
     </div>
 
 
@@ -148,7 +153,33 @@
         @endif 
       @endforeach
     </div>
-    
+    @if(empty($isMentorView))
+    <!-- Mentor Share Modal -->
+    <div class="modal fade" id="mentorShareModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Share with a Mentor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Mentor</label>
+                        <select class="form-select" id="mentorSelect"></select>
+                    </div>
+                    <div id="mentorShareAlert" class="alert d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary d-inline-flex align-items-center" id="confirmMentorShare">
+                        <span id="mentorShareSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                        <span id="mentorShareBtnText">Share</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
 
 
@@ -510,9 +541,7 @@ const ctx = document.getElementById('perceptionChart').getContext('2d');
         @endif
     </form>
 
-    <button class="btn" style="background-color: #8CB368; color: white;">
-        Mentor to Share
-    </button>
+    
     
 </div>
 
@@ -541,6 +570,87 @@ const ctx = document.getElementById('perceptionChart').getContext('2d');
           toggleView();
           barRadio.addEventListener('change', toggleView);
           textRadio.addEventListener('change', toggleView);
+          // Load mentors into modal when opened
+          const mentorModal = document.getElementById('mentorShareModal');
+          mentorModal?.addEventListener('show.bs.modal', async () => {
+              const select = document.getElementById('mentorSelect');
+              select.innerHTML = '<option>Loading...</option>';
+              try {
+                  const res = await fetch('{{ route('mentor.list') }}');
+                  const data = await res.json();
+                  select.innerHTML = '';
+                  // Default placeholder option
+                  const placeholder = document.createElement('option');
+                  placeholder.value = '';
+                  placeholder.disabled = true;
+                  placeholder.selected = true;
+                  placeholder.textContent = 'Select a mentor...';
+                  select.appendChild(placeholder);
+                  (data.mentors || []).forEach((m) => {
+                      const opt = document.createElement('option');
+                      opt.value = m.id;
+                      opt.textContent = m.name + (m.email ? (' - ' + m.email) : '');
+                      select.appendChild(opt);
+                  });
+                  if (!select.children.length) {
+                      const opt = document.createElement('option');
+                      opt.textContent = 'No mentors available';
+                      select.appendChild(opt);
+                  }
+              } catch (e) {
+                  select.innerHTML = '<option>Error loading mentors</option>';
+              }
+          });
+
+          document.getElementById('confirmMentorShare')?.addEventListener('click', async () => {
+              const select = document.getElementById('mentorSelect');
+              const mentorId = select?.value;
+              const alertBox = document.getElementById('mentorShareAlert');
+              const btn = document.getElementById('confirmMentorShare');
+              const spinner = document.getElementById('mentorShareSpinner');
+              const btnText = document.getElementById('mentorShareBtnText');
+              // Require mentor selection
+              if (!mentorId) {
+                  alertBox.className = 'alert alert-warning';
+                  alertBox.textContent = 'Please select a mentor before sharing.';
+                  alertBox.classList.remove('d-none');
+                  return;
+              }
+              try {
+                  // Start processing state
+                  btn.setAttribute('disabled', 'disabled');
+                  spinner.classList.remove('d-none');
+                  btnText.textContent = 'Sharing...';
+                  const res = await fetch('{{ route('mentor.share') }}', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                      },
+                      body: JSON.stringify({ mentor_id: mentorId })
+                  });
+                  if (res.ok) {
+                      alertBox.className = 'alert alert-success';
+                      alertBox.textContent = 'Shared successfully.';
+                      alertBox.classList.remove('d-none');
+                      setTimeout(() => window.location.reload(), 1000);
+                  } else {
+                      const text = await res.text();
+                      alertBox.className = 'alert alert-danger';
+                      alertBox.textContent = text || 'Failed to share.';
+                      alertBox.classList.remove('d-none');
+                  }
+              } catch (e) {
+                  alertBox.className = 'alert alert-danger';
+                  alertBox.textContent = 'Failed to share.';
+                  alertBox.classList.remove('d-none');
+              } finally {
+                  // End processing state
+                  btn.removeAttribute('disabled');
+                  spinner.classList.add('d-none');
+                  btnText.textContent = 'Share';
+              }
+          });
       });
   </script>
   
