@@ -16,6 +16,7 @@
                                 <div>
                                     <div class="font-medium">{{ $client->name }}</div>
                                     <div class="text-sm text-gray-500">{{ $client->email }}</div>
+                                    <div class="text-sm text-gray-400">Shared on: {{ $client->shared_date->format('F j, Y') }}</div>
                                 </div>
                                 <a class="text-indigo-600 hover:underline" href="{{ route('mentor.client', $client->id) }}">View reports</a>
                             </li>

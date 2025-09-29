@@ -31,6 +31,31 @@
                     <x-nav-link :href="route('solutions.index')" :active="request()->routeIs('solutions.index')">
                         {{ __('Solutions') }}
                     </x-nav-link>
+                    <div x-data="{ billingOpen: false }"
+                         class="relative flex items-center"
+                         @mouseenter="if (window.matchMedia('(min-width: 1024px)').matches) billingOpen = true"
+                         @mouseleave="if (window.matchMedia('(min-width: 1024px)').matches) billingOpen = false"
+                         @click.outside="billingOpen = false">
+                        <button type="button"
+                                @click.prevent="if (!window.matchMedia('(min-width: 1024px)').matches) billingOpen = !billingOpen"
+                                @keydown.enter.prevent="if (!window.matchMedia('(min-width: 1024px)').matches) billingOpen = !billingOpen"
+                                @keydown.space.prevent="if (!window.matchMedia('(min-width: 1024px)').matches) billingOpen = !billingOpen"
+                                class="inline-flex items-center gap-1 px-1 pt-1 border-b-2 leading-5 font-medium focus:outline-none transition duration-150 ease-in-out
+                                       text-xs md:text-sm lg:text-base
+                                       {{ request()->routeIs('billing.*')
+                                            ? 'border-indigo-400 text-gray-900 dark:text-gray-100'
+                                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300' }}"
+                                aria-haspopup="true" :aria-expanded="billingOpen.toString()">
+                            <span>{{ __('Billing') }}</span>
+                            <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': billingOpen }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                        </button>
+                        <div x-cloak x-show="billingOpen" x-transition.origin.top.left class="absolute left-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="py-1">
+                                <a href="{{ route('billing.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">{{ __('Billing') }}</a>
+                                <a href="{{ route('billing.history') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">{{ __('Invoice History') }}</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -117,6 +142,27 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard.index')" :active="request()->routeIs('dashboard.index')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('testing.index')" :active="request()->routeIs('testing.index')">
+                {{ __('Testing') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('analysis.index')" :active="request()->routeIs('analysis.index')">
+                {{ __('Analysis') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('training.index')" :active="request()->routeIs('training.index')">
+                {{ __('Training') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('matching.index')" :active="request()->routeIs('matching.index')">
+                {{ __('Matching') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('solutions.index')" :active="request()->routeIs('solutions.index')">
+                {{ __('Solutions') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('billing.index')" :active="request()->routeIs('billing.index')">
+                {{ __('Billing') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('billing.history')" :active="request()->routeIs('billing.history')">
+                {{ __('Invoice History') }}
             </x-responsive-nav-link>
         </div>
 

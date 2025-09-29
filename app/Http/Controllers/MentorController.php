@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 use App\Mail\MentorShareMail;
+use App\Models\Service;
+use App\Models\Invoice;
 
 class MentorController extends Controller
 {
@@ -18,9 +20,16 @@ class MentorController extends Controller
         $mentor = Auth::user();
 
         // Users who shared with this mentor
-        $clients = User::whereIn('id', function ($q) use ($mentor) {
-            $q->from('mentor_user_shares')->select('user_id')->where('mentor_id', $mentor->id);
-        })->orderBy('name')->get();
+        $clients = User::whereIn('users.id', function ($q) use ($mentor) {
+            $q->from('mentor_user_shares')
+              ->select('mentor_user_shares.user_id')
+              ->where('mentor_user_shares.mentor_id', $mentor->id);
+        })
+        ->join('mentor_user_shares', 'users.id', '=', 'mentor_user_shares.user_id')
+        ->where('mentor_user_shares.mentor_id', $mentor->id)
+        ->select('users.*', 'mentor_user_shares.created_at as shared_date')
+        ->orderBy('name')
+        ->get();
 
         return view('mentor.index', compact('clients'));
     }
@@ -47,15 +56,162 @@ class MentorController extends Controller
             return back()->with('error', 'Selected user is not a mentor.');
         }
 
+        // Check if this share already exists to keep invoice creation idempotent
+        $alreadyShared = DB::table('mentor_user_shares')
+            ->where('user_id', $user->id)
+            ->where('mentor_id', $mentorId)
+            ->exists();
+
+        // Upsert share record
         DB::table('mentor_user_shares')->updateOrInsert(
             ['user_id' => $user->id, 'mentor_id' => $mentorId],
             ['created_at' => now(), 'updated_at' => now()]
         );
 
+        $message = 'Shared with mentor successfully.';
+        $invoice = null;
+
+        // If first-time share, create an invoice for mentoring service
+        if (! $alreadyShared) {
+            // Pick the configured mentoring service (prefer a single session)
+            $service = Service::active()->where('name', 'Mentoring Session')->first()
+                ?: Service::active()->byCategory('mentoring')->orderBy('price')->first();
+
+            if ($service) {
+                // Before creating a new invoice, check if ANY pending invoice exists for this user (most strict)
+                $hasAnyPendingInvoice = Invoice::where('user_id', $user->id)
+                    ->where('status', 'pending')
+                    ->exists();
+
+                if ($hasAnyPendingInvoice) {
+                    // Requirement: if a pending mentoring invoice already exists, do NOT redirect
+                    // Just inform the user with a message and keep $invoice null to avoid checkout redirect
+                    $invoice = null;
+                    $message = 'Invoice is not generated due to already have pending payment of mentoring.';
+                } else {
+                    DB::beginTransaction();
+                    try {
+                    $invoice = new Invoice();
+                    $invoice->user_id = $user->id;
+                    $invoice->invoice_number = $invoice->generateInvoiceNumber();
+                    $invoice->issued_at = now();
+                    $invoice->status = 'pending';
+                    $invoice->billing_details = [
+                        'context' => 'mentor_share',
+                        'mentor_id' => $mentor->id,
+                        'mentor_name' => $mentor->name,
+                        'user_name' => $user->name,
+                        'note' => 'Invoice generated on report share to mentor',
+                    ];
+                    $invoice->total_amount = $service->price; // quantity 1
+                    $invoice->save();
+
+                    $invoice->items()->create([
+                        'service_id' => $service->id,
+                        'service_name' => $service->name,
+                        'unit_price' => $service->price,
+                        'quantity' => 1,
+                        'total_price' => $service->price,
+                        'item_details' => [
+                            'context' => 'mentor_share',
+                            'mentor_id' => $mentor->id,
+                            'mentor_name' => $mentor->name,
+                        ],
+                    ]);
+
+                    DB::commit();
+
+                    // Guide user to view/pay the invoice
+                    $message = 'Shared with mentor successfully. An invoice has been generated for mentoring.';
+                    } catch (\Throwable $e) {
+                    DB::rollBack();
+                    \Log::error('Failed creating mentor-share invoice: '.$e->getMessage(), [
+                        'user_id' => $user->id,
+                        'mentor_id' => $mentor->id,
+                    ]);
+                    // Keep share success even if billing failed
+                    $message = 'Shared with mentor successfully, but invoice generation failed. Please visit Billing to create one.';
+                    }
+                }
+            } else {
+                // No mentoring services configured
+                $message = 'Shared with mentor successfully. No active mentoring service configured to invoice.';
+            }
+        } else {
+            // If already shared, block if ANY pending invoice exists for this user (most strict)
+            $hasAnyPendingInvoice = Invoice::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->exists();
+            // If a pending invoice exists, do NOT redirect to checkout; just inform user and skip creating a new invoice
+            if ($hasAnyPendingInvoice) {
+                $invoice = null; // ensure no redirect happens
+                $message = 'Invoice is not generated due to already have pending payment of mentoring.';
+            } else {
+                // Create a fresh invoice only when NO pending mentoring invoice exists
+                $service = Service::active()->where('name', 'Mentoring Session')->first()
+                    ?: Service::active()->byCategory('mentoring')->orderBy('price')->first();
+                if ($service) {
+                    DB::beginTransaction();
+                    try {
+                        $invoice = new Invoice();
+                        $invoice->user_id = $user->id;
+                        $invoice->invoice_number = $invoice->generateInvoiceNumber();
+                        $invoice->issued_at = now();
+                        $invoice->status = 'pending';
+                        $invoice->billing_details = [
+                            'context' => 'mentor_share',
+                            'mentor_id' => $mentor->id,
+                            'mentor_name' => $mentor->name,
+                            'user_name' => $user->name,
+                            'note' => 'Invoice generated on report share to mentor',
+                        ];
+                        $invoice->total_amount = $service->price;
+                        $invoice->save();
+
+                        $invoice->items()->create([
+                            'service_id' => $service->id,
+                            'service_name' => $service->name,
+                            'unit_price' => $service->price,
+                            'quantity' => 1,
+                            'total_price' => $service->price,
+                            'item_details' => [
+                                'context' => 'mentor_share',
+                                'mentor_id' => $mentor->id,
+                                'mentor_name' => $mentor->name,
+                            ],
+                        ]);
+
+                        DB::commit();
+                        // New invoice created
+                        $message = 'Shared with mentor successfully. An invoice has been generated for mentoring.';
+                    } catch (\Throwable $e) {
+                        DB::rollBack();
+                        \Log::error('Failed creating mentor-share invoice on alreadyShared: '.$e->getMessage());
+                    }
+                }
+            }
+        }
+
         // Send email to mentor (immediate send to avoid stale queued payloads)
         Mail::to($mentor->email)->send(new MentorShareMail($user));
 
-        return back()->with('success', 'Shared with mentor successfully.');
+        // If we have an invoice, send the user straight to checkout
+        if ($invoice) {
+            $redirectUrl = route('billing.checkout', $invoice);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'ok',
+                    'message' => $message,
+                    'redirect' => $redirectUrl,
+                ]);
+            }
+            return redirect()->to($redirectUrl)->with('success', $message);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'ok', 'message' => $message]);
+        }
+        return back()->with('success', $message);
     }
 
     public function clientReports(User $client)

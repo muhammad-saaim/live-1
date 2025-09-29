@@ -18,8 +18,12 @@ use App\Http\Controllers\SurveyRateController;
 use App\Http\Controllers\TestingController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\BillingController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\MentorAssignedMail;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -46,7 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/account', [AccountController::class, 'destroy'])->name('account.destroy');
 
     Route::get('/profile/information', [PersonalInfoController::class, 'index'])->name('profile.information');
-    Route::post('/profile/information', [PersonalInfoController::class, 'store'])->name('profile.information');
+    Route::post('/profile/information/store', [PersonalInfoController::class, 'store'])->name('profile.information.store');
 
     Route::resource('dashboard', DashboardController::class);
     Route::resource('testing', TestingController::class);
@@ -95,12 +99,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/mentor/share', [\App\Http\Controllers\MentorController::class, 'share'])->name('mentor.share');
     Route::get('/mentor/client/{client}', [\App\Http\Controllers\MentorController::class, 'clientReports'])->middleware('role:mentor')->name('mentor.client');
 
+    // Billing Routes
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/billing/create-invoice', [BillingController::class, 'createInvoice'])->name('billing.create-invoice');
+    Route::get('/billing/invoice/{invoice}', [BillingController::class, 'showInvoice'])->name('billing.invoice');
+    Route::get('/billing/checkout/{invoice}', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::post('/billing/process-payment/{invoice}', [BillingController::class, 'processPayment'])->name('billing.process-payment');
+    Route::get('/billing/history', [BillingController::class, 'invoiceHistory'])->name('billing.history');
+
     Route::group(['middleware' => ['role:admin']], function () {
 
         Route::resource('admin', AdminConsoleController::class);
         Route::resource('surveyModel',SurveyModelController::class);
         Route::resource('survey',SurveyController::class);
         Route::resource('users',UserController::class);
+        Route::resource('services', ServiceController::class);
     
         Route::get('/download-report', [ReportsController::class, 'downloadPdf'])->name('report.download');
         Route::get('/export-survey', [ReportsController::class, 'exportSurveyExcel'])->name('survey.export');
@@ -114,6 +127,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{question}', [QuestionController::class, 'update'])->name('update'); // Update question
             Route::delete('/{question}', [QuestionController::class, 'destroy'])->name('destroy'); // Delete question
         });
+
+        // Test mail route (admin only)
+        // Usage examples:
+        // /admin/test-mail/mentor-assigned?email=you@example.com
+        // /admin/test-mail/mentor-assigned?email=you@example.com&driver=log
+        Route::get('/admin/test-mail/mentor-assigned', function () {
+            $to = request()->query('email', Auth::user()->email);
+            $driver = request()->query('driver');
+            if ($driver) {
+                config(['mail.default' => $driver]);
+            }
+            try {
+                Mail::to($to)->send(new MentorAssignedMail(Auth::user()));
+                return response()->json([
+                    'status' => 'ok',
+                    'to' => $to,
+                    'driver' => config('mail.default'),
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Test mail failed: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                    'driver' => config('mail.default'),
+                ], 500);
+            }
+        })->name('admin.test-mail.mentor-assigned');
+
+        // Preview email in browser (no send)
+        Route::get('/admin/test-mail/mentor-assigned/preview', function () {
+            return (new MentorAssignedMail(Auth::user()))->render();
+        })->name('admin.test-mail.mentor-assigned.preview');
 
     });
     Route::get('options/auto-complete', [QuestionController::class, 'autoComplete'])->name('options.autoComplete');

@@ -13,6 +13,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // \App\Models\User::factory(10)->create();
+
+        // \App\Models\User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
+        
         if (config('APP_ENV') == 'local'){
             User::factory()->count(50)->create();
             $this->call([
@@ -24,6 +31,7 @@ class DatabaseSeeder extends Seeder
                 GroupTypesTableSeeder::class,
                 SurveyModelSeeder::class,
                 RelationSeeder::class,
+                ServicesSeeder::class,
             ]);
         }else{
             $this->call([
@@ -34,6 +42,7 @@ class DatabaseSeeder extends Seeder
                 GroupTypesTableSeeder::class,
                 SurveyModelSeeder::class,
                 RelationSeeder::class,
+                ServicesSeeder::class,
             ]);
         }
     }

@@ -12,7 +12,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-
+  
     </head>
     <body class="font-sans antialiased" style="font-family: 'Fredoka', sans-serif;">
         <div class="flex flex-col min-h-screen bg-gray-100">

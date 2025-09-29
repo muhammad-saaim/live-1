@@ -6,7 +6,9 @@ use App\Models\Country;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
+use App\Mail\MentorAssignedMail;
 
 class UserController extends Controller
 {
@@ -46,6 +48,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+       
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'nullable|string|max:255|unique:users,username',
@@ -81,8 +84,12 @@ class UserController extends Controller
         // Assign roles to user if any roles are selected
         if ($request->has('roles')) {
             $user->roles()->sync($request->roles);
-        }
 
+            // If mentor role assigned on creation, notify the user
+            if ($user->hasRole('mentor')) {
+                Mail::to($user->email)->send(new MentorAssignedMail($user));
+            }
+        }
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
@@ -153,11 +160,17 @@ class UserController extends Controller
         // Save the user
         $user->save();
 
-        // Sync roles if provided
+        // Sync roles if provided and notify if mentor role was newly granted
         if ($request->has('roles')) {
+            $hadMentorBefore = $user->hasRole('mentor');
             $user->roles()->sync($request->roles);
-        }
+            $hasMentorAfter = $user->hasRole('mentor');
 
+         
+        }
+        if ($user->hasRole('mentor')) {
+            Mail::to($user->email)->send(new MentorAssignedMail($user));
+        }
         // Redirect back to the user list with success message
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }

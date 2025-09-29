@@ -42,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'shared_date' => 'datetime',
     ];
     public static function generateUniqueUsername($username)
     {
@@ -100,6 +101,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function mentees(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'mentor_user_shares', 'mentor_id', 'user_id')->withTimestamps();
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
 
 

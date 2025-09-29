@@ -625,19 +625,33 @@ const ctx = document.getElementById('perceptionChart').getContext('2d');
                       method: 'POST',
                       headers: {
                           'Content-Type': 'application/json',
+                          'Accept': 'application/json',
                           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                       },
                       body: JSON.stringify({ mentor_id: mentorId })
                   });
                   if (res.ok) {
+                      let data = null;
+                      try { data = await res.json(); } catch(_) {}
+                      if (data && data.redirect) {
+                          window.location.href = data.redirect;
+                          return;
+                      }
                       alertBox.className = 'alert alert-success';
-                      alertBox.textContent = 'Shared successfully.';
+                      alertBox.textContent = (data && data.message) ? data.message : 'Shared successfully.';
                       alertBox.classList.remove('d-none');
                       setTimeout(() => window.location.reload(), 1000);
                   } else {
-                      const text = await res.text();
+                      let msg = 'Failed to share.';
+                      try {
+                          const data = await res.json();
+                          msg = data.message || msg;
+                      } catch(_) {
+                          const text = await res.text();
+                          msg = text || msg;
+                      }
                       alertBox.className = 'alert alert-danger';
-                      alertBox.textContent = text || 'Failed to share.';
+                      alertBox.textContent = msg;
                       alertBox.classList.remove('d-none');
                   }
               } catch (e) {
