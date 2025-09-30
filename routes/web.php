@@ -114,10 +114,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('survey',SurveyController::class);
         Route::resource('users',UserController::class);
         Route::resource('services', ServiceController::class);
-    
+
         Route::get('/download-report', [ReportsController::class, 'downloadPdf'])->name('report.download');
         Route::get('/export-survey', [ReportsController::class, 'exportSurveyExcel'])->name('survey.export');
- 
+
         Route::prefix('question')->name('question.')->group(function () {
             Route::get('/', [QuestionController::class, 'index'])->name('index'); // List all questions
             Route::get('/create', [QuestionController::class, 'create'])->name('create'); // Show form to create a new question
