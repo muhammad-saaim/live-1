@@ -261,7 +261,7 @@
         [style*="visibility: hidden"] {
             visibility: visible !important;
         }
-        
+
         /* Hero image sizing: make image visibly larger on this page only */
         .section---hero .image-wrapper.border-radius-24px {
             width: 100%;
@@ -315,7 +315,7 @@
             object-fit: cover;
             display: block;
         }
-        
+
         /* ========== Testing section (image2) sizing ========== */
         /* Favor the image column width */
         @media (min-width: 1024px) {
@@ -358,7 +358,7 @@
 </head>
 
 <body>
-   
+
     <div class="page-wrapper container-fluid">
         <div testing="71dcfd35-b766-230b-e445-5910837f3122" data-animation="default" data-collapse="medium"
             data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="header-wrapper-edited nav">
@@ -1315,7 +1315,7 @@
                                                             you within 24-48 hours.</div>
                                                     </div>
                                                 </div>
-                                              
+
                                             </div>
                                         </div>
                                     </div>
@@ -1360,9 +1360,9 @@
         </span>
     </div>
     </div>
-   
+
     </div>
-   
+
 </footer>
 
     </div>

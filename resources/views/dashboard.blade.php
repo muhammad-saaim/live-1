@@ -6,7 +6,7 @@
     {{--            {{ __('Dashboard') }}--}}
     {{--        </h2>--}}
     {{--    </x-slot>--}}
-  
+
     <div x-data="{ showReportModal: false }" class="p-3 max-w-7xl mx-auto space-y-4">
         <!-- Report Modal (Alpine.js version) - moved inside Alpine scope -->
         {{-- <div
@@ -73,9 +73,9 @@
 @props(['allreport', 'allGroupSurveyResults'])
 
 <!-- Include the perception table component -->
-<x-perception-table 
-    :allreport="$allreport" 
-    :allGroupSurveyResults="$allGroupSurveyResults" 
+<x-perception-table
+    :allreport="$allreport"
+    :allGroupSurveyResults="$allGroupSurveyResults"
     :surveytypequestion="$surveytypequestion"
 />
 
@@ -109,7 +109,7 @@
                         New Group
                     </x-secondary-button>
                 </a>
-                
+
             </div>
         </div>
 
@@ -137,15 +137,15 @@
                 </button> --}}
                 <p class="text-xs my-0">Date: {{ now() }} </p>
                 @php
-                    // $userSurveys = auth()->user()->surveys; 
+                    // $userSurveys = auth()->user()->surveys;
 
                      $individualSurveys = \App\Models\Survey::where('is_active', true)
                          ->whereJsonContains('applies_to', 'Individual')
                          ->get();
-                         
+
                     // $allSurveys = $userSurveys->merge($individualSurveys)->unique('id');
                 @endphp
-   
+
                  @if($individualSurveys->isNotEmpty())
                     @foreach($individualSurveys as $survey)
                         <x-dashboard-progressbar
@@ -163,7 +163,7 @@
                     @endforeach
                 @else
                     <p>{{ __("No surveys assigned.") }}</p>
-                @endif 
+                @endif
             </div>
         </div>
 
@@ -191,7 +191,7 @@
 
 
 
-        @php 
+        @php
             $groupSurveyTypePoints = calculateSurveyTypePoints($group);
 
             $selfTotals = $groupSurveyTypePoints['all_surveys_totals']['self'] ?? null;
@@ -207,7 +207,7 @@
             $othersMaxPoints = $othersRatings * 5;
             $othersPercentage = $othersMaxPoints > 0 ? round(($othersPoints / $othersMaxPoints) * 100, 1) : 0;
 
-            
+
         @endphp
     @php
     if ($group->groupTypes->contains('id', 1) || $group->groupTypes->contains('name', 'Friend')) {
@@ -235,9 +235,9 @@
 </h1>
 
     <!-- Modal -->
-   
-   
-   
+
+
+
     <div
         x-show="showCombinedModal_{{ $group->id }}"
         x-cloak
@@ -250,7 +250,7 @@
         >
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold">Combined Totals by Type</h2>
-                
+
             </div>
 @php
                 if (!function_exists('getStatusModal')) {
@@ -282,7 +282,7 @@
                 $selfRatings = $data['self']['total_ratings'] ?? 0;
                 $selfMax = $selfRatings * 5;
                 $self_Percent = $selfMax > 0 ? number_format(($selfPoints / $selfMax) * 100, 1) : 0;
-                 
+
                 $othersPoints = $data['others']['total_points'] ?? 0;
                 $othersRatings = $data['others']['total_ratings'] ?? 0;
                 $othersMax = $othersRatings * 5;
@@ -388,9 +388,9 @@
                             @foreach($group->defaultSurveys() as $survey)
                                 <div class="flex items-center justify-between space-x-2">
                                     <label for="survey-{{ $survey->id }}" class="w-2/5 text-gray-600 truncate whitespace-nowrap overflow-hidden" title="{{ $survey->title }}">{{ $survey->title }}</label>
-                                    <form 
-    action="{{ ($survey->title === 'Self-Awareness & Motivation') ? route('survey.personal_index') : route('rate.survey') }}" 
-    method="POST" class="w-1/4">                                     
+                                    <form
+    action="{{ ($survey->title === 'Self-Awareness & Motivation') ? route('survey.personal_index') : route('rate.survey') }}"
+    method="POST" class="w-1/4">
        @csrf
                                         <input type="hidden" name="survey_id" value="{{ $survey->id }}">
                                         <input type="hidden" name="group_id" value="{{ $group->id }}">
@@ -408,7 +408,7 @@
                             @endforeach
                         </div>
                           {{-- @endif --}}
-                       
+
                             <div class="pt-3">
                                 <a href="{{ route('group.show',$group->id) }}">
                                     <x-secondary-button class=" flex justify-center w-full">
@@ -417,7 +417,7 @@
                                 </a>
                             </div>
                             </form>
-                        
+
                     </div>
                     @endforeach
                 </div>
