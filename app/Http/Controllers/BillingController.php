@@ -18,39 +18,22 @@ class BillingController extends Controller
     {
         $reportServices = Service::active()->byCategory('report')->get();
         $mentoringServices = Service::active()->byCategory('mentoring')->get();
-        
-        // Debug: Get all relatives first
+
         $allRelatives = Auth::user()->relatives()->get();
-        
-        // Get user's children who have participated in surveys
         $children = Auth::user()->relatives()
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
-                      ->from('users_surveys')
-                      ->whereColumn('users_surveys.user_id', 'users.id')
-                      ->where('users_surveys.is_completed', true);
+                    ->from('users_surveys')
+                    ->whereColumn('users_surveys.user_id', 'users.id')
+                    ->where('users_surveys.is_completed', true);
             })
             ->get();
-        
-        // Debug information
-        $debug = [
-            'user_id' => Auth::id(),
-            'user_name' => Auth::user()->name,
-            'total_relatives' => $allRelatives->count(),
-            'relatives_with_surveys' => $children->count(),
-            'all_relatives' => $allRelatives->pluck('name', 'id')->toArray(),
-            'children_with_surveys' => $children->pluck('name', 'id')->toArray(),
-            'request_data' => request()->all()
-        ];
-        
-        return view('billing.index', compact('reportServices', 'mentoringServices', 'children', 'debug'));
+
+        return view('billing.index', compact('reportServices', 'mentoringServices', 'children'));
     }
 
     public function createInvoice(Request $request)
     {
-        // Debug: Log the entire request
-        \Log::info('Invoice creation request:', $request->all());
-        
         $request->validate([
             'services' => 'required|array',
             'services.*.service_id' => 'required|exists:services,id',
@@ -69,13 +52,13 @@ class BillingController extends Controller
                 'user_email' => Auth::user()->email,
                 'billing_address' => $request->billing_address ?? null
             ];
-            
+
             $totalAmount = 0;
             $invoiceItems = [];
 
             foreach ($request->services as $serviceData) {
                 if (!isset($serviceData['service_id'])) continue;
-                
+
                 $service = Service::findOrFail($serviceData['service_id']);
                 $quantity = $serviceData['quantity'] ?? 1;
                 $itemTotal = $service->price * $quantity;
@@ -99,7 +82,6 @@ class BillingController extends Controller
             }
 
             DB::commit();
-
             return redirect()->route('billing.invoice', $invoice->id);
 
         } catch (\Exception $e) {
@@ -110,8 +92,7 @@ class BillingController extends Controller
 
     public function showInvoice(Invoice $invoice)
     {
-        // Ensure user can only view their own invoices
-        if ($invoice->user_id !== Auth::id()) {
+        if ($invoice->user_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
             abort(403);
         }
 
@@ -121,35 +102,21 @@ class BillingController extends Controller
 
     public function checkout(Invoice $invoice)
     {
-        // Ensure user can only checkout their own invoices
         if ($invoice->user_id !== Auth::id()) {
             abort(403);
         }
 
         if ($invoice->status !== 'pending') {
-            // If already paid, guide user back with a friendly message
-            if ($invoice->status === 'paid') {
-                session()->forget('error');
-                return redirect()->route('billing.invoice', $invoice->id)
-                    ->with('success', 'Invoice paid successfully.');
-            }
-
             return redirect()->route('billing.invoice', $invoice->id)
                 ->with('error', 'This invoice has already been processed.');
         }
 
-        // Initialize Stripe
         Stripe::setApiKey(config('services.stripe.secret'));
-
-        // Create PaymentIntent
         try {
             $paymentIntent = PaymentIntent::create([
-                'amount' => $invoice->total_amount * 100, // Convert to cents
+                'amount' => $invoice->total_amount * 100,
                 'currency' => 'usd',
-                'metadata' => [
-                    'invoice_id' => $invoice->id,
-                    'user_id' => $invoice->user_id,
-                ],
+                'metadata' => ['invoice_id' => $invoice->id, 'user_id' => $invoice->user_id],
             ]);
 
             return view('billing.checkout', compact('invoice', 'paymentIntent'));
@@ -161,32 +128,19 @@ class BillingController extends Controller
 
     public function processPayment(Request $request, Invoice $invoice)
     {
-        $request->validate([
-            'payment_intent_id' => 'required|string',
-        ]);
+        $request->validate(['payment_intent_id' => 'required|string']);
 
-        // Ensure user can only pay their own invoices
         if ($invoice->user_id !== Auth::id()) {
             abort(403);
         }
 
         if ($invoice->status !== 'pending') {
-            // If already paid, treat as idempotent success
-            if ($invoice->status === 'paid') {
-                session()->forget('error');
-                return redirect()->route('billing.invoice', $invoice->id)
-                    ->with('success', 'Invoice paid successfully.');
-            }
-
             return redirect()->route('billing.invoice', $invoice->id)
                 ->with('error', 'This invoice has already been processed.');
         }
 
-        // Initialize Stripe
         Stripe::setApiKey(config('services.stripe.secret'));
-        
         try {
-            // Retrieve the PaymentIntent to confirm payment
             $paymentIntent = PaymentIntent::retrieve($request->payment_intent_id);
 
             if ($paymentIntent->status === 'succeeded') {
@@ -199,8 +153,7 @@ class BillingController extends Controller
                     'paid_at' => now(),
                 ];
                 $invoice->save();
-                
-                session()->forget('error');
+
                 return redirect()->route('billing.invoice', $invoice->id)
                     ->with('success', 'Invoice paid successfully.');
             } else {
@@ -216,5 +169,72 @@ class BillingController extends Controller
     {
         $invoices = Auth::user()->invoices()->with('items')->orderBy('created_at', 'desc')->get();
         return view('billing.history', compact('invoices'));
+    }
+
+    // ======= Admin CRUD =======
+
+    public function edit(Invoice $invoice)
+    {
+        $services = Service::all();
+        $children = $invoice->user->relatives ?? [];
+        $invoice->load('items');
+        return view('billing.edit', compact('invoice', 'services', 'children'));
+    }
+
+    public function update(Request $request, Invoice $invoice)
+        {
+            $request->validate([
+                'services' => 'required|array',
+                'services.*.service_id' => 'required|exists:services,id',
+                'services.*.quantity' => 'required|integer|min:1',
+                'services.*.unit_price' => 'required|numeric|min:0', // add this
+            ]);
+
+            DB::beginTransaction();
+            try {
+                $invoice->items()->delete();
+
+                $totalAmount = 0;
+                foreach ($request->services as $serviceData) {
+                    $quantity = $serviceData['quantity'] ?? 1;
+                    $unitPrice = $serviceData['unit_price']; // get updated unit price
+                    $itemTotal = $unitPrice * $quantity;
+                    $totalAmount += $itemTotal;
+
+                    $invoice->items()->create([
+                        'service_id' => $serviceData['service_id'],
+                        'service_name' => $serviceData['service_name'],
+                        'unit_price' => $unitPrice, // save updated price
+                        'quantity' => $quantity,
+                        'total_price' => $itemTotal,
+                        'item_details' => $serviceData['item_details'] ?? null
+                    ]);
+                }
+
+                $invoice->total_amount = $totalAmount;
+                $invoice->save();
+
+                DB::commit();
+                return redirect()->route('billing.history')->with('success', 'Invoice updated successfully.');
+            } catch (\Exception $e) {
+                DB::rollback();
+                return back()->with('error', 'Failed to update invoice.');
+            }
+        }
+
+
+    public function destroy(Invoice $invoice)
+    {
+        DB::beginTransaction();
+        try {
+            $invoice->items()->delete();
+            $invoice->delete();
+            DB::commit();
+
+            return redirect()->route('billing.history')->with('success', 'Invoice deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Failed to delete invoice.');
+        }
     }
 }

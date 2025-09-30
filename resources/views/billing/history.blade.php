@@ -3,7 +3,7 @@
     <div class="max-w-6xl mx-auto">
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Invoice History</h1>
-            <a href="{{ route('billing.index') }}" 
+            <a href="{{ route('billing.index') }}"
                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
                 Create New Invoice
             </a>
@@ -42,19 +42,30 @@
                                     <div class="text-sm font-medium text-gray-900">${{ number_format($invoice->total_amount, 2) }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        {{ $invoice->status === 'paid' ? 'bg-green-100 text-green-800' : 
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {{ $invoice->status === 'paid' ? 'bg-green-100 text-green-800' :
                                            ($invoice->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                         {{ ucfirst($invoice->status) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="{{ route('billing.invoice', $invoice) }}" 
-                                       class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
+                                    <a href="{{ route('billing.invoice', $invoice) }}"
+                                       class="text-indigo-600 hover:text-indigo-900">View</a>
+
                                     @if($invoice->status === 'pending')
-                                        <a href="{{ route('billing.checkout', $invoice) }}" 
+                                        <a href="{{ route('billing.checkout', $invoice) }}"
                                            class="text-green-600 hover:text-green-900">Pay Now</a>
                                     @endif
+
+                                 
+                                    <a href="{{ route('billing.edit', $invoice) }}"
+                                       class="text-yellow-600 hover:text-yellow-900">Edit</a>
+
+                                    <form action="{{ route('billing.destroy', $invoice) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this invoice?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach
@@ -70,7 +81,7 @@
                 </div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No invoices found</h3>
                 <p class="text-gray-600 mb-4">You haven't created any invoices yet.</p>
-                <a href="{{ route('billing.index') }}" 
+                <a href="{{ route('billing.index') }}"
                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
                     Create Your First Invoice
                 </a>

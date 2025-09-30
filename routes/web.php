@@ -32,12 +32,8 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-
 Route::get('/removeTestSurvey', [SurveyController::class, 'removeTestSurvey']);
-
-
 Route::get('/removeTestSurvey', [QuestionController::class, 'removeTestSurvey']);
-
 Route::get('/dashboard/personality-report', [DashboardController::class, 'personalityReport'])->name('dashboard.personality.report');
 
 // Socialite login integration
@@ -73,7 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/survey/check-all-users-rated', [SurveyRateController::class, 'checkAllUsersRated'])->name('survey.checkAllUsersRated');
     Route::post('survey/ShowSurvey', [SurveyRateController::class, 'ShowSurvey'])->name('survey.ShowSurvey');
 
-     Route::get('/survey/previous-question/{id}', function ($id) {
+    Route::get('/survey/previous-question/{id}', function ($id) {
         $question = \App\Models\Question::with('options')->find($id);
         if ($question) {
             return response()->json(['status' => 'success', 'question' => $question]);
@@ -81,18 +77,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return response()->json(['status' => 'error', 'message' => 'Question not found'], 404);
     });
 
-    Route::resource('group',GroupController::class);
-
-    // Route::post('/add/member', [InviteController::class, 'addtoinvite'])->name('add-members.store');
-
+    Route::resource('group', GroupController::class);
 
     Route::post('/group/invite', [InviteController::class, 'sendInvite'])->name('group.invite');
     Route::get('/groups/accept-invite', [InviteController::class, 'acceptInvite'])->name('groups.accept-invite');
     Route::delete('/groups/{group}/members', [GroupController::class, 'removeMember'])->name('groups.removeMembers');
     Route::delete('/groups/{group}/invitations/{email}', [GroupController::class, 'cancelInvitation'])->name('groups.cancelInvitation');
-    // Route::delete('/groups/{group}/leave', [GroupController::class, 'leaveGroup'])->name('groups.leave');
 
     Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');
+
     // Mentor
     Route::get('/mentor', [\App\Http\Controllers\MentorController::class, 'index'])->middleware('role:mentor')->name('mentor.index');
     Route::get('/mentor/list', [\App\Http\Controllers\MentorController::class, 'clients'])->name('mentor.list');
@@ -106,32 +99,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/billing/checkout/{invoice}', [BillingController::class, 'checkout'])->name('billing.checkout');
     Route::post('/billing/process-payment/{invoice}', [BillingController::class, 'processPayment'])->name('billing.process-payment');
     Route::get('/billing/history', [BillingController::class, 'invoiceHistory'])->name('billing.history');
+    Route::put('/billing/{invoice}', [BillingController::class, 'update'])->name('billing.update');
+
+
+    // ✅ Full CRUD for invoices (admin only)
+    Route::group(['middleware' => ['role:admin']], function () {
+        Route::get('/billing/{invoice}/edit', [BillingController::class, 'edit'])->name('billing.edit');
+        Route::put('/billing/{invoice}', [BillingController::class, 'update'])->name('billing.update');
+        Route::delete('/billing/{invoice}', [BillingController::class, 'destroy'])->name('billing.destroy');
+    });
 
     Route::group(['middleware' => ['role:admin']], function () {
-
         Route::resource('admin', AdminConsoleController::class);
-        Route::resource('surveyModel',SurveyModelController::class);
-        Route::resource('survey',SurveyController::class);
-        Route::resource('users',UserController::class);
+        Route::resource('surveyModel', SurveyModelController::class);
+        Route::resource('survey', SurveyController::class);
+        Route::resource('users', UserController::class);
         Route::resource('services', ServiceController::class);
 
         Route::get('/download-report', [ReportsController::class, 'downloadPdf'])->name('report.download');
         Route::get('/export-survey', [ReportsController::class, 'exportSurveyExcel'])->name('survey.export');
 
         Route::prefix('question')->name('question.')->group(function () {
-            Route::get('/', [QuestionController::class, 'index'])->name('index'); // List all questions
-            Route::get('/create', [QuestionController::class, 'create'])->name('create'); // Show form to create a new question
-            Route::post('/', [QuestionController::class, 'store'])->name('store'); // Store new question
-            Route::get('/{question}', [QuestionController::class, 'show'])->name('show'); // Show a single question
-            Route::get('/{question}/edit', [QuestionController::class, 'edit'])->name('edit'); // Show form to edit a question
-            Route::put('/{question}', [QuestionController::class, 'update'])->name('update'); // Update question
-            Route::delete('/{question}', [QuestionController::class, 'destroy'])->name('destroy'); // Delete question
+            Route::get('/', [QuestionController::class, 'index'])->name('index');
+            Route::get('/create', [QuestionController::class, 'create'])->name('create');
+            Route::post('/', [QuestionController::class, 'store'])->name('store');
+            Route::get('/{question}', [QuestionController::class, 'show'])->name('show');
+            Route::get('/{question}/edit', [QuestionController::class, 'edit'])->name('edit');
+            Route::put('/{question}', [QuestionController::class, 'update'])->name('update');
+            Route::delete('/{question}', [QuestionController::class, 'destroy'])->name('destroy');
         });
 
-        // Test mail route (admin only)
-        // Usage examples:
-        // /admin/test-mail/mentor-assigned?email=you@example.com
-        // /admin/test-mail/mentor-assigned?email=you@example.com&driver=log
+        // Test mail route
         Route::get('/admin/test-mail/mentor-assigned', function () {
             $to = request()->query('email', Auth::user()->email);
             $driver = request()->query('driver');
@@ -155,14 +153,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             }
         })->name('admin.test-mail.mentor-assigned');
 
-        // Preview email in browser (no send)
         Route::get('/admin/test-mail/mentor-assigned/preview', function () {
             return (new MentorAssignedMail(Auth::user()))->render();
         })->name('admin.test-mail.mentor-assigned.preview');
-
     });
+
     Route::get('options/auto-complete', [QuestionController::class, 'autoComplete'])->name('options.autoComplete');
 });
+
 Route::get('reverse', [QuestionController::class, 'reverseQuestions']);
 require __DIR__.'/auth.php';
 
@@ -170,4 +168,3 @@ Route::fallback(function () {
     return redirect()->route('login')->with('error', 'Page not found. Please log in.');
 });
 Route::post('/survey/next-question', [SurveyRateController::class, 'getNextQuestion'])->name('survey.nextQuestion');
-
