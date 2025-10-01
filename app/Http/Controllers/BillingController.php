@@ -180,7 +180,7 @@ class BillingController extends Controller
         return view('billing.history', compact('invoices'));
     }
 
-    // ===== Admin CRUD =====
+
 
     public function edit(Invoice $invoice)
     {

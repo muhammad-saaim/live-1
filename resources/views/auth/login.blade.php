@@ -360,69 +360,78 @@
 <body>
 
     <div class="page-wrapper container-fluid">
-        <div testing="71dcfd35-b766-230b-e445-5910837f3122" data-animation="default" data-collapse="medium"
-            data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="header-wrapper-edited nav">
-            <div class="container-default-edited container-fluid">
-                <div class="header-content-wrapper-edited">
-                    <div class="header-left-side-edited"><a href="/" aria-current="page"
-                            class="header-logo-link-edited right-mg nav-brand current">    <img src="{{ asset('assets/media/logos/logo1.png') }}" class="h-12 max-w-full" style="max-width: 250px;" alt="Matchology Logo" />
+       <div testing="71dcfd35-b766-230b-e445-5910837f3122" data-animation="default" data-collapse="medium"
+     data-duration="400" data-easing="ease" data-easing2="ease" role="banner" class="header-wrapper-edited nav">
+    <div class="container-default-edited container-fluid">
+        <div class="header-content-wrapper-edited">
+            <div class="header-left-side-edited">
+                <!-- Logo always points to login -->
+                <a href="{{ route('login') }}" aria-current="page"
+                   class="header-logo-link-edited right-mg nav-brand current">
+                    <img src="{{ asset('assets/media/logos/logo1.png') }}" class="h-12 max-w-full"
+                         style="max-width: 250px;" alt="Matchology Logo" />
+                </a>
 
-                        </a>
-                        <nav role="navigation"
-                            id="primaryNavMenu"
-                            class="header-nav-menu-wrapper-edited transparent-bg home-margin nav-menu">
-                            <ul role="list" class="header-nav-menu-list-edited height-edited homepage-height">
-                                <li class="header-nav-list-item-edited left"><a href="#Testing"
-                                        class="header-nav-link-edited nav-link">Testing</a></li>
-                                <li class="header-nav-list-item-edited left"><a href="#Analysis"
-                                        class="header-nav-link-edited nav-link">Analysis</a></li>
-                                <li class="header-nav-list-item-edited left"><a href="#Training"
-                                        class="header-nav-link-edited nav-link">Training</a></li>
-                                <li class="header-nav-list-item-edited left"><a href="#Matching"
-                                        class="header-nav-link-edited nav-link">Matching</a></li>
-                                <li class="header-nav-list-item-edited left"><a href="#Who-for"
-                                        class="header-nav-link-edited nav-link">Solutions</a></li>
-                            </ul>
-                            <div class="div-block---mobile-menu"><a href="/maintenance" target="_blank"
-                                    class="header-nav-link-edited login align-center inline-block">
-                                    <div
-                                        class="line-rounded-icon-edited header-nav-link-login-icon-edited spcing-fixed">
-                                        </div>
-                                    <div class="text-block-edited mobile">Login</div>
-                                </a>
-                                @auth
-                                <a href="{{ route('dashboard') }}"
-                                    class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">Go to Dashboard</a>
-                                @else
-                                <a href="{{ route('register') }}"
-                                    class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">Get
-                                    started</a>
-                                @endauth
-                            </div>
-                        </nav>
-                    </div>
-                    <div class="header-right-side-edited"><a href="/maintenance" target="_blank"
-                            class="header-nav-link-edited login inline-block">
-                            <div class="line-rounded-icon-edited header-nav-link-login-icon-edited"></div>
-                            <div class="text-block-edited">Login</div>
-                        </a>
-                        @auth
-                            <a href="{{ route('dashboard') }}"
-                               class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Go to Dashboard</a>
+                <nav role="navigation"
+                     id="primaryNavMenu"
+                     class="header-nav-menu-wrapper-edited transparent-bg home-margin nav-menu">
+                    <ul role="list" class="header-nav-menu-list-edited height-edited homepage-height">
+                        <li class="header-nav-list-item-edited left"><a href="#Testing"
+                                class="header-nav-link-edited nav-link">Testing</a></li>
+                        <li class="header-nav-list-item-edited left"><a href="#Analysis"
+                                class="header-nav-link-edited nav-link">Analysis</a></li>
+                        <li class="header-nav-list-item-edited left"><a href="#Training"
+                                class="header-nav-link-edited nav-link">Training</a></li>
+                        <li class="header-nav-list-item-edited left"><a href="#Matching"
+                                class="header-nav-link-edited nav-link">Matching</a></li>
+                        <li class="header-nav-list-item-edited left"><a href="#Who-for"
+                                class="header-nav-link-edited nav-link">Solutions</a></li>
+                    </ul>
+
+                    <!-- Mobile menu buttons -->
+                    <div class="div-block---mobile-menu">
+                        @guest
+                            <a href="{{ route('login') }}" class="header-nav-link-edited login align-center inline-block">
+                                <div class="line-rounded-icon-edited header-nav-link-login-icon-edited spcing-fixed">
+                                    
+                                </div>
+                                <div class="text-block-edited mobile">Login</div>
+                            </a>
+                            <a href="{{ route('register') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">
+                                Get started
+                            </a>
                         @else
-                            <a href="{{ route('register') }}"
-                               class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Get Started</a>
-                        @endauth
-                        <div class="hamburger-menu-wrapper-edited nav-button" role="button" tabindex="0" aria-controls="primaryNavMenu" aria-expanded="false">
-                            <div class="hamburger-menu-icon-edited">
-                                <div class="hamburger-menu-bar-edited top"></div>
-                                <div class="hamburger-menu-bar-edited bottom"></div>
-                            </div>
-                        </div>
+                            <a href="{{ route('dashboard.index') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">
+                                Go to Dashboard
+                            </a>
+                        @endguest
+                    </div>
+                </nav>
+            </div>
+
+            <!-- Desktop right-side buttons -->
+            <div class="header-right-side-edited">
+                @guest
+                    <a href="{{ route('login') }}" class="header-nav-link-edited login inline-block">
+                        <div class="line-rounded-icon-edited header-nav-link-login-icon-edited"></div>
+                        <div class="text-block-edited">Login</div>
+                    </a>
+                    <a href="{{ route('register') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Get Started</a>
+                @else
+                    <a href="{{ route('dashboard.index') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Go to Dashboard</a>
+                @endguest
+
+                <div class="hamburger-menu-wrapper-edited nav-button" role="button" tabindex="0" aria-controls="primaryNavMenu" aria-expanded="false">
+                    <div class="hamburger-menu-icon-edited">
+                        <div class="hamburger-menu-bar-edited top"></div>
+                        <div class="hamburger-menu-bar-edited bottom"></div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
         <section id="Hero" class="section---hero">
             <div class="container---benefits-features-1 container-fluid">
                 <div class="inner-container-edited _600px---tablet center">
@@ -515,8 +524,8 @@
                                         </div>
                                     </div>
                                     @auth
-                                        <a href="{{ route('dashboard') }}"
-                                           class="btn-primary-edited register-btn button">Go to Dashboard</a>
+                                        <a href="{{ route('dashboard.index') }}"
+                                           class="btn-primary-edited register-btn button">Go to dashboard</a>
                                     @else
                                         <a href="{{ route('register') }}"
                                            class="btn-primary-edited register-btn button">Join
