@@ -432,127 +432,52 @@
     </div>
 </div>
 
-        <section id="Hero" class="section---hero">
-            <div class="container---benefits-features-1 container-fluid">
-                <div class="inner-container-edited _600px---tablet center">
-                    <div class="inner-container-edited _500px---mbl center">
-                        <div class="layout-grid grid---ben-fea-application text-left-default v2 bottom-105px">
-                            <div testing="82ff1b0b-0e36-dc3c-5a11-d6200489a758"
-                                style="-webkit-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);opacity:0"
-                                class="inner-container-edited _598px _100---tablet">
-                                <div class="text-center-tablet">
-                                    <div class="inner-container-edited _500px---tablet center">
-                                        <div class="inner-container-edited _400px---mbl center">
-                                            <h2 class="heading-2---section">Register for a Journey Towards Lasting
-                                                Happiness</h2>
-                                        </div>
-                                    </div>
-                                    <p class="paragraph---section tablet-center hide">Academic Window provides many
-                                        detailed reports for students, teachers, counselors, and school admins. Move
-                                        from interpreting data to taking action and improving student outcomes.</p>
-                                </div>
-                                <div testing="05d23fd6-6806-61c4-5413-9547e915eb42"
-                                    style="opacity:0;-webkit-transform:translate3d(0, 0, 0) scale3d(0.92, 0.92, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 0, 0) scale3d(0.92, 0.92, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 0, 0) scale3d(0.92, 0.92, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 0, 0) scale3d(0.92, 0.92, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)"
-                                    class="div---regsiter-form">
-                                    <div testing="05d23fd6-6806-61c4-5413-9547e915eb43"
-                                        style="-webkit-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);opacity:0"
-                                        class="request-demo-form-block-edited edited form">
-                                        <form id="login-form" name="login-form" action="{{ route('login') }}"
-                                            method="POST" class="contact-form-grid">
-                                            @csrf
+       <section id="Hero" class="section---hero">
+    <div class="container---benefits-features-1 container-fluid">
+        <div class="inner-container-edited _600px---tablet center">
+            <!-- Use flex row to align text/button and image side by side -->
+            <div class="layout-grid grid---ben-fea-application text-left-default v2 bottom-105px flex flex-col lg:flex-row items-center justify-center gap-10">
 
-                                            <div class="register---login-form">
-                                                <!-- Email / Phone Field -->
-                                                <div class="div-block---demo-form-field position-relative">
-                                                    <label for="email" class="field-label-edited">Email or Phone</label>
-                                                    <div class="with-icon-left">
-                                                        <img src="{{ asset('images/message.svg') }}" alt="Email"
-                                                            class="input-icon-left" width="20" height="20" />
-                                                        <input class="input-edited icon-left email input lg:w-[400px]"
-                                                            maxlength="256" name="email" data-name="Email/Phone number"
-                                                            placeholder="Your email/phone number" type="text" id="email"
-                                                            value="{{ old('email') }}" required />
-                                                    </div>
-                                                    @error('email')
-                                                        <div class="error text-danger">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
+                <!-- Left Column: Text / Form / Button -->
+                <div class="flex-1 flex flex-col items-center justify-center text-center">
 
-                                                <!-- Password Field -->
-                                                <div class="div-block---demo-form-field position-relative">
-                                                    <label for="password" class="field-label-edited">Password</label>
-                                                    <div class="with-icon-left">
-                                                        <img src="{{ asset('images/password.svg') }}" alt="Password"
-                                                            class="input-icon-left" width="20" height="20" />
-                                                        <input class="input-edited icon-left password input lg:w-[400px]"
-                                                            maxlength="256" name="password" data-name="Password"
-                                                            placeholder="Your password" type="password" id="password"
-                                                            required />
-                                                    </div>
-                                                    @error('password')
-                                                        <div class="error text-danger">{{ $message }}</div>
-                                                    @enderror
+                    @guest
+                        <h2 class="heading-2---section mb-4">Register for a Journey Towards Lasting Happiness</h2>
+                        <p class="paragraph---section tablet-center hide mb-6">
+                            Academic Window provides many detailed reports for students, teachers, counselors, and school admins. Move
+                            from interpreting data to taking action and improving student outcomes.
+                        </p>
 
-                                                    <!-- Forgot password link -->
-                                                    <a href="{{ route('password.request') }}"
-                                                        class="fogot-password-link">Forgot password?</a>
-                                                </div>
-                                            </div>
+                        <div class="div---regsiter-form w-full max-w-[400px]">
+                            <form id="login-form" action="{{ route('login') }}" method="POST" class="flex flex-col gap-4">
+                                @csrf
+                                <input type="text" name="email" placeholder="Your email/phone number" class="input-edited w-full" required>
+                                <input type="password" name="password" placeholder="Your password" class="input-edited w-full" required>
+                                <input type="submit" value="Sign In" class="btn-primary-edited w-full mt-2">
+                            </form>
 
-                                            <!-- Submit Button -->
-                                            <input type="submit" data-wait="Please wait..."
-                                                class="btn-primary-edited sign-in-btn button" value="Sign In" />
-
-                                            <!-- Divider -->
-                                            <div class="register-divider">
-                                                <div class="divider dark"></div>
-                                                <div class="general-text register">OR</div>
-                                                <div class="divider dark"></div>
-                                            </div>
-                                        </form>
-
-                                        <div class="success-message form-done">
-                                            <div class="hide">
-                                                <div class="line-rounded-icon success-message-check large color-edited">
-                                                    </div>
-                                                <div class="bold-text---dark">Your message has been submitted. <br />We
-                                                    will get back to you within 24-48 hours.</div>
-                                            </div>
-                                        </div>
-                                        <div class="error-message form-fail">
-                                            <div class="bold-text---red">Oops! Something went wrong.</div>
-                                        </div>
-                                    </div>
-                                    @auth
-                                        <a href="{{ route('dashboard.index') }}"
-                                           class="btn-primary-edited register-btn button">Go to dashboard</a>
-                                    @else
-                                        <a href="{{ route('register') }}"
-                                           class="btn-primary-edited register-btn button">Join
-                                           Matchology Now</a>
-                                    @endauth
-                                </div>
-                            </div>
-                            <div id="node82ff1b0b-0e36-dc3c-5a11-d6200489a779-dcc7cf43"
-                                testing="82ff1b0b-0e36-dc3c-5a11-d6200489a779"
-                                style="-webkit-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);opacity:0"
-                                class="inner-container-edited _583px _100---tablet">
-                                <div testing="82ff1b0b-0e36-dc3c-5a11-d6200489a77a" class="position-relative bigger">
-                                    <div>
-                                        <div class="inner-container mg-left-auto">
-                                            <div class="image-wrapper border-radius-24px hero-img-wrapper"><img src="images/image1.png"
-                                                    alt="image1" class="image cover" loading="eager"
-                                                    sizes="(max-width: 991px) 100vw, (max-width: 1279px) 70vw, 874.5px" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <a href="{{ route('register') }}" class="btn-primary-edited register-btn button mt-4 w-full">Join Matchology Now</a>
                         </div>
+                    @else
+                        <!-- Logged-in: Go to Dashboard button centered vertically -->
+                        <div class="flex justify-center items-center h-full">
+                            <a href="{{ route('dashboard.index') }}" class="btn-primary-edited register-btn button">Go to Dashboard</a>
+                        </div>
+                    @endguest
+                </div>
+
+                <!-- Right Column: Hero Image -->
+                <div class="flex-1 flex justify-center items-center">
+                    <div class="image-wrapper border-radius-24px hero-img-wrapper">
+                        <img src="images/image1.png" alt="image1" class="image cover" loading="eager">
                     </div>
                 </div>
+
             </div>
-        </section>
+        </div>
+    </div>
+</section>
+
         <section id="Testing" class="section---product pd-200px">
             <div class="container-default pd-top container-fluid">
                 <div class="div-block---product">
