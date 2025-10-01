@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use Carbon\Carbon;
 
 class BillingController extends Controller
 {
@@ -19,13 +20,12 @@ class BillingController extends Controller
         $reportServices = Service::active()->byCategory('report')->get();
         $mentoringServices = Service::active()->byCategory('mentoring')->get();
 
-        $allRelatives = Auth::user()->relatives()->get();
         $children = Auth::user()->relatives()
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
-                    ->from('users_surveys')
-                    ->whereColumn('users_surveys.user_id', 'users.id')
-                    ->where('users_surveys.is_completed', true);
+                      ->from('users_surveys')
+                      ->whereColumn('users_surveys.user_id', 'users.id')
+                      ->where('users_surveys.is_completed', true);
             })
             ->get();
 
@@ -82,6 +82,7 @@ class BillingController extends Controller
             }
 
             DB::commit();
+
             return redirect()->route('billing.invoice', $invoice->id);
 
         } catch (\Exception $e) {
@@ -92,9 +93,7 @@ class BillingController extends Controller
 
     public function showInvoice(Invoice $invoice)
     {
-        if ($invoice->user_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
-            abort(403);
-        }
+        if ($invoice->user_id !== Auth::id()) abort(403);
 
         $invoice->load('items.service', 'user');
         return view('billing.invoice', compact('invoice'));
@@ -102,21 +101,29 @@ class BillingController extends Controller
 
     public function checkout(Invoice $invoice)
     {
-        if ($invoice->user_id !== Auth::id()) {
-            abort(403);
-        }
+        if ($invoice->user_id !== Auth::id()) abort(403);
 
         if ($invoice->status !== 'pending') {
+            if ($invoice->status === 'paid') {
+                session()->forget('error');
+                return redirect()->route('billing.invoice', $invoice->id)
+                    ->with('success', 'Invoice paid successfully.');
+            }
+
             return redirect()->route('billing.invoice', $invoice->id)
                 ->with('error', 'This invoice has already been processed.');
         }
 
         Stripe::setApiKey(config('services.stripe.secret'));
+
         try {
             $paymentIntent = PaymentIntent::create([
                 'amount' => $invoice->total_amount * 100,
                 'currency' => 'usd',
-                'metadata' => ['invoice_id' => $invoice->id, 'user_id' => $invoice->user_id],
+                'metadata' => [
+                    'invoice_id' => $invoice->id,
+                    'user_id' => $invoice->user_id,
+                ],
             ]);
 
             return view('billing.checkout', compact('invoice', 'paymentIntent'));
@@ -130,9 +137,7 @@ class BillingController extends Controller
     {
         $request->validate(['payment_intent_id' => 'required|string']);
 
-        if ($invoice->user_id !== Auth::id()) {
-            abort(403);
-        }
+        if ($invoice->user_id !== Auth::id()) abort(403);
 
         if ($invoice->status !== 'pending') {
             return redirect()->route('billing.invoice', $invoice->id)
@@ -140,25 +145,29 @@ class BillingController extends Controller
         }
 
         Stripe::setApiKey(config('services.stripe.secret'));
+
         try {
             $paymentIntent = PaymentIntent::retrieve($request->payment_intent_id);
 
             if ($paymentIntent->status === 'succeeded') {
                 $invoice->markAsPaid();
+                $invoice->paid_at = Carbon::createFromTimestamp($paymentIntent->created);
+
                 $invoice->payment_details = [
                     'stripe_payment_intent_id' => $paymentIntent->id,
                     'amount_paid' => $paymentIntent->amount / 100,
                     'currency' => $paymentIntent->currency,
                     'payment_method' => $paymentIntent->payment_method,
-                    'paid_at' => now(),
                 ];
+
                 $invoice->save();
 
                 return redirect()->route('billing.invoice', $invoice->id)
                     ->with('success', 'Invoice paid successfully.');
-            } else {
-                return back()->with('error', 'Payment was not successful. Please try again.');
             }
+
+            return back()->with('error', 'Payment was not successful. Please try again.');
+
         } catch (\Exception $e) {
             \Log::error('Stripe payment error: ' . $e->getMessage());
             return back()->with('error', 'Payment processing error. Please try again.');
@@ -171,7 +180,7 @@ class BillingController extends Controller
         return view('billing.history', compact('invoices'));
     }
 
-    // ======= Admin CRUD =======
+    // ===== Admin CRUD =====
 
     public function edit(Invoice $invoice)
     {
@@ -182,46 +191,46 @@ class BillingController extends Controller
     }
 
     public function update(Request $request, Invoice $invoice)
-        {
-            $request->validate([
-                'services' => 'required|array',
-                'services.*.service_id' => 'required|exists:services,id',
-                'services.*.quantity' => 'required|integer|min:1',
-                'services.*.unit_price' => 'required|numeric|min:0', // add this
-            ]);
+    {
+        $request->validate([
+            'services' => 'required|array',
+            'services.*.service_id' => 'required|exists:services,id',
+            'services.*.quantity' => 'required|integer|min:1',
+            'services.*.unit_price' => 'required|numeric|min:0',
+        ]);
 
-            DB::beginTransaction();
-            try {
-                $invoice->items()->delete();
+        DB::beginTransaction();
+        try {
+            $invoice->items()->delete();
 
-                $totalAmount = 0;
-                foreach ($request->services as $serviceData) {
-                    $quantity = $serviceData['quantity'] ?? 1;
-                    $unitPrice = $serviceData['unit_price']; // get updated unit price
-                    $itemTotal = $unitPrice * $quantity;
-                    $totalAmount += $itemTotal;
+            $totalAmount = 0;
+            foreach ($request->services as $serviceData) {
+                $quantity = $serviceData['quantity'] ?? 1;
+                $unitPrice = $serviceData['unit_price'];
+                $itemTotal = $unitPrice * $quantity;
+                $totalAmount += $itemTotal;
 
-                    $invoice->items()->create([
-                        'service_id' => $serviceData['service_id'],
-                        'service_name' => $serviceData['service_name'],
-                        'unit_price' => $unitPrice, // save updated price
-                        'quantity' => $quantity,
-                        'total_price' => $itemTotal,
-                        'item_details' => $serviceData['item_details'] ?? null
-                    ]);
-                }
-
-                $invoice->total_amount = $totalAmount;
-                $invoice->save();
-
-                DB::commit();
-                return redirect()->route('billing.history')->with('success', 'Invoice updated successfully.');
-            } catch (\Exception $e) {
-                DB::rollback();
-                return back()->with('error', 'Failed to update invoice.');
+                $invoice->items()->create([
+                    'service_id' => $serviceData['service_id'],
+                    'service_name' => $serviceData['service_name'],
+                    'unit_price' => $unitPrice,
+                    'quantity' => $quantity,
+                    'total_price' => $itemTotal,
+                    'item_details' => $serviceData['item_details'] ?? null,
+                ]);
             }
-        }
 
+            $invoice->total_amount = $totalAmount;
+            $invoice->save();
+
+            DB::commit();
+            return redirect()->route('billing.history')->with('success', 'Invoice updated successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Failed to update invoice.');
+        }
+    }
 
     public function destroy(Invoice $invoice)
     {
@@ -232,6 +241,7 @@ class BillingController extends Controller
             DB::commit();
 
             return redirect()->route('billing.history')->with('success', 'Invoice deleted successfully.');
+
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Failed to delete invoice.');

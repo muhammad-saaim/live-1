@@ -14,7 +14,7 @@
             @endif
         </div>
 
-      
+
         @if($invoices->count() > 0)
             <div class="bg-white shadow-md rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
@@ -63,13 +63,7 @@
                                                 👁️ View
                                             </a>
 
-                                            <!-- Pay (only users + pending) -->
-                                            @if(Auth::user()->hasRole('user') && $invoice->status === 'pending')
-                                                <a href="{{ route('billing.checkout', $invoice) }}"
-                                                   class="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200">
-                                                    💳 Pay Now
-                                                </a>
-                                            @endif
+
 
                                             <!-- Admin actions -->
                                             @if(Auth::user()->hasRole('admin'))

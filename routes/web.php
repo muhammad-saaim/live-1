@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\MentorAssignedMail;
 
+
+
 Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('dashboard.index');
