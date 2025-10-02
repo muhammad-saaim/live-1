@@ -459,11 +459,14 @@
                             <a href="{{ route('register') }}" class="btn-primary-edited register-btn button mt-4 w-full">Join Matchology Now</a>
                         </div>
                     @else
-                        <!-- Logged-in: Go to Dashboard button centered vertically -->
+                        <!-- Logged-in: Hero Heading centered nicely -->
                         <div class="flex justify-center items-center h-full">
-                            <a href="{{ route('dashboard.index') }}" class="btn-primary-edited register-btn button">Go to Dashboard</a>
+                            <h1 class="text-4xl font-extrabold text-gray-900 leading-tight text-center max-w-2xl">
+                                Welcome for a Journey Towards Lasting Happiness
+                            </h1>
                         </div>
                     @endguest
+
                 </div>
 
                 <!-- Right Column: Hero Image -->
