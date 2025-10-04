@@ -202,46 +202,63 @@ class BillingController extends Controller
 
 
     public function update(Request $request, Invoice $invoice)
-    {
-        $request->validate([
-            'services' => 'required|array',
-            'services.*.service_id' => 'required|exists:services,id',
-            'services.*.quantity' => 'required|integer|min:1',
-            'services.*.unit_price' => 'required|numeric|min:0',
-        ]);
+{
+    $request->validate([
+        'services' => 'required|array',
+        'services.*.service_id' => 'required|exists:services,id',
+        'services.*.unit_price' => 'nullable|numeric|min:0',
+    ]);
 
-        DB::beginTransaction();
-        try {
-            $invoice->items()->delete();
+    DB::beginTransaction();
+    try {
+        $invoice->items()->delete();
+        $totalAmount = 0;
 
-            $totalAmount = 0;
-            foreach ($request->services as $serviceData) {
-                $quantity = $serviceData['quantity'] ?? 1;
-                $unitPrice = $serviceData['unit_price'];
-                $itemTotal = $unitPrice * $quantity;
-                $totalAmount += $itemTotal;
+        foreach ($request->services as $serviceData) {
+            $unitPrice = $serviceData['unit_price'] ?? 0;
+            $quantity = 0;
 
-                $invoice->items()->create([
-                    'service_id' => $serviceData['service_id'],
-                    'service_name' => $serviceData['service_name'],
-                    'unit_price' => $unitPrice,
-                    'quantity' => $quantity,
-                    'total_price' => $itemTotal,
-                    'item_details' => $serviceData['item_details'] ?? null,
-                ]);
+            // Determine quantity based on children or active flag
+            if (!empty($serviceData['item_details']['children'])) {
+                $quantity = count($serviceData['item_details']['children']);
+            } elseif (!empty($serviceData['active']) && $serviceData['active'] == 1) {
+                $quantity = 1;
+            } elseif (!empty($serviceData['quantity'])) {
+                $quantity = $serviceData['quantity'];
             }
 
-            $invoice->total_amount = $totalAmount;
-            $invoice->save();
+            if ($quantity <= 0) continue; // Skip services with zero quantity
 
-            DB::commit();
-            return redirect()->route('billing.history')->with('success', 'Invoice updated successfully.');
+            $itemTotal = $unitPrice * $quantity;
+            $totalAmount += $itemTotal;
 
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->with('error', 'Failed to update invoice.');
+            $serviceName = \App\Models\Service::find($serviceData['service_id'])->name ?? 'Service';
+
+            $invoice->items()->create([
+                'service_id'    => $serviceData['service_id'],
+                'service_name'  => $serviceName,
+                'unit_price'    => $unitPrice,
+                'quantity'      => $quantity,
+                'total_price'   => $itemTotal,
+                'item_details'  => $serviceData['item_details'] ?? null,
+            ]);
         }
+
+        $invoice->total_amount = $totalAmount;
+        $invoice->save();
+
+        DB::commit();
+        return redirect()->route('billing.history')->with('success', 'Invoice updated successfully.');
+    } catch (\Exception $e) {
+        DB::rollback();
+        \Log::error('Invoice update failed: '.$e->getMessage());
+        return back()->with('error', 'Failed to update invoice.');
     }
+}
+
+
+
+
 
     public function destroy(Invoice $invoice)
     {
