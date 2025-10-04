@@ -183,12 +183,23 @@ class BillingController extends Controller
 
 
     public function edit(Invoice $invoice)
-    {
-        $services = Service::all();
-        $children = $invoice->user->relatives ?? [];
-        $invoice->load('items');
-        return view('billing.edit', compact('invoice', 'services', 'children'));
-    }
+{
+    // Load all services
+    $services = Service::all();
+
+    // Split services into report and mentoring based on category
+    $reportServices = $services->where('category', 'report');
+    $mentoringServices = $services->where('category', 'mentoring');
+
+    // Get children related to the invoice's user
+    $children = $invoice->user->relatives ?? [];
+
+    // Load invoice items
+    $invoice->load('items');
+
+    return view('billing.edit', compact('invoice', 'reportServices', 'mentoringServices', 'children'));
+}
+
 
     public function update(Request $request, Invoice $invoice)
     {

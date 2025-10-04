@@ -390,92 +390,199 @@
 
                     <!-- Mobile menu buttons -->
                     <div class="div-block---mobile-menu">
-                        @guest
-                            <a href="{{ route('login') }}" class="header-nav-link-edited login align-center inline-block">
-                                <div class="line-rounded-icon-edited header-nav-link-login-icon-edited spcing-fixed">
-                                    
-                                </div>
-                                <div class="text-block-edited mobile">Login</div>
-                            </a>
-                            <a href="{{ route('register') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">
-                                Get started
-                            </a>
-                        @else
-                            <a href="{{ route('dashboard.index') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">
-                                Go to Dashboard
-                            </a>
-                        @endguest
-                    </div>
+                            @guest
+                                <a href="{{ route('login') }}" class="header-nav-link-edited login align-center inline-block">
+                                    <div class="line-rounded-icon-edited header-nav-link-login-icon-edited spcing-fixed">
+                                        
+                                    </div>
+                                    <div class="text-block-edited mobile">Login</div>
+                                </a>
+                                <a href="{{ route('register') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">
+                                    Get Started
+                                </a>
+                            @else
+                                <a href="{{ route('dashboard.index') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">
+                                    Dashboard
+                                </a>
+
+                                <!-- Logout Button -->
+                                <form method="POST" action="{{ route('logout') }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn-primary-edited small header-btn-hidde-on-mb-edited mobile button">
+                                        Logout
+                                    </button>
+                                </form>
+                            @endguest
+                        </div>
+
                 </nav>
             </div>
 
             <!-- Desktop right-side buttons -->
             <div class="header-right-side-edited">
-                @guest
-                    <a href="{{ route('login') }}" class="header-nav-link-edited login inline-block">
-                        <div class="line-rounded-icon-edited header-nav-link-login-icon-edited"></div>
-                        <div class="text-block-edited">Login</div>
-                    </a>
-                    <a href="{{ route('register') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Get Started</a>
-                @else
-                    <a href="{{ route('dashboard.index') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Go to Dashboard</a>
-                @endguest
-
-                <div class="hamburger-menu-wrapper-edited nav-button" role="button" tabindex="0" aria-controls="primaryNavMenu" aria-expanded="false">
-                    <div class="hamburger-menu-icon-edited">
-                        <div class="hamburger-menu-bar-edited top"></div>
-                        <div class="hamburger-menu-bar-edited bottom"></div>
+                    @guest
+                        <a href="{{ route('login') }}" class="header-nav-link-edited login inline-block">
+                            <div class="line-rounded-icon-edited header-nav-link-login-icon-edited"></div>
+                            <div class="text-block-edited">Login</div>
+                        </a>
+                        <a href="{{ route('register') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Get Started</a>
+                    @else
+                        <a href="{{ route('dashboard.index') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Dashboard</a>
+                        <!-- Logout Button -->
+                        <form method="POST" action="{{ route('logout') }}" style="display:inline; margin-left:8px;">
+                            @csrf
+                            <button type="submit"
+                                    class="btn-primary-edited small header-btn-hidde-on-mb-edited button"
+                                    style="background:none; border:none; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">
+                                <!-- Logout Icon Only -->
+                                <img src="{{ asset('assets/icons/images.png') }}" alt="Logout" style="width:28px; height:28px; display:block;">
+                            </button>
+                        </form>
+                    @endguest
+                    <div class="hamburger-menu-wrapper-edited nav-button" role="button" tabindex="0" aria-controls="primaryNavMenu" aria-expanded="false">
+                        <div class="hamburger-menu-icon-edited">
+                            <div class="hamburger-menu-bar-edited top"></div>
+                            <div class="hamburger-menu-bar-edited bottom"></div>
+                        </div>
                     </div>
-                </div>
             </div>
+
         </div>
     </div>
 </div>
-
-       <section id="Hero" class="section---hero">
+                           <section id="Hero" class="section---hero">
     <div class="container---benefits-features-1 container-fluid">
         <div class="inner-container-edited _600px---tablet center">
-            <!-- Use flex row to align text/button and image side by side -->
-            <div class="layout-grid grid---ben-fea-application text-left-default v2 bottom-105px flex flex-col lg:flex-row items-center justify-center gap-10">
+            <div class="inner-container-edited _500px---mbl center">
+                <div class="layout-grid grid---ben-fea-application text-left-default v2 bottom-105px">
 
-                <!-- Left Column: Text / Form / Button -->
-                <div class="flex-1 flex flex-col items-center justify-center text-center">
+                    <!-- Left Content -->
+                    <div testing="82ff1b0b-0e36-dc3c-5a11-d6200489a758"
+                         style="-webkit-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1);
+                                -moz-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1);
+                                -ms-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1);
+                                transform:translate3d(0, 10%, 0) scale3d(1, 1, 1);
+                                opacity:0"
+                         class="inner-container-edited _598px _100---tablet">
 
-                    @guest
-                        <h2 class="heading-2---section mb-4">Register for a Journey Towards Lasting Happiness</h2>
-                        <p class="paragraph---section tablet-center hide mb-6">
-                            Academic Window provides many detailed reports for students, teachers, counselors, and school admins. Move
-                            from interpreting data to taking action and improving student outcomes.
-                        </p>
+                        <div class="text-center-tablet d-flex justify-center items-center h-full" style="flex-direction: column;">
+                            <div class="inner-container-edited _500px---tablet center">
+                                <div class="inner-container-edited _400px---mbl center">
+                                    @auth
+                                        <h2 class="heading-2---section text-center"
+                                            style="margin: 0 auto;">
+                                            Welcome for a Journey Towards Lasting Happiness
+                                        </h2>
+                                    @else
+                                        <h2 class="heading-2---section text-center"
+                                            style="margin: 0 auto;">
+                                            Register for a Journey Towards Lasting Happiness
+                                        </h2>
+                                    @endauth
+                                </div>
+                            </div>
+                            <p class="paragraph---section tablet-center hide">
+                                Academic Window provides many detailed reports for students, teachers, counselors,
+                                and school admins. Move from interpreting data to taking action and improving student outcomes.
+                            </p>
 
-                        <div class="div---regsiter-form w-full max-w-[400px]">
-                            <form id="login-form" action="{{ route('login') }}" method="POST" class="flex flex-col gap-4">
-                                @csrf
-                                <input type="text" name="email" placeholder="Your email/phone number" class="input-edited w-full" required>
-                                <input type="password" name="password" placeholder="Your password" class="input-edited w-full" required>
-                                <input type="submit" value="Sign In" class="btn-primary-edited w-full mt-2">
-                            </form>
+                            <!-- Login / Register Form -->
+                            <div testing="05d23fd6-6806-61c4-5413-9547e915eb42"
+                                 style="opacity:0;-webkit-transform:scale3d(0.92, 0.92, 1);
+                                        -moz-transform:scale3d(0.92, 0.92, 1);
+                                        -ms-transform:scale3d(0.92, 0.92, 1);
+                                        transform:scale3d(0.92, 0.92, 1)"
+                                 class="div---regsiter-form">
 
-                            <a href="{{ route('register') }}" class="btn-primary-edited register-btn button mt-4 w-full">Join Matchology Now</a>
+                                <div testing="05d23fd6-6806-61c4-5413-9547e915eb43"
+                                     style="-webkit-transform:translate3d(0, 10%, 0);
+                                            -moz-transform:translate3d(0, 10%, 0);
+                                            -ms-transform:translate3d(0, 10%, 0);
+                                            transform:translate3d(0, 10%, 0);opacity:0"
+                                     class="request-demo-form-block-edited edited form">
+
+                                    @guest
+                                        <!-- Login Form -->
+                                        <form id="login-form" name="login-form"
+                                              action="{{ route('login') }}" method="POST"
+                                              class="contact-form-grid">
+                                            @csrf
+
+                                            <div class="register---login-form">
+                                                <!-- Email / Phone -->
+                                                <div class="div-block---demo-form-field position-relative">
+                                                    <label for="email" class="field-label-edited">Email or Phone</label>
+                                                    <div class="with-icon-left">
+                                                        <img src="{{ asset('images/message.svg') }}" alt="Email"
+                                                             class="input-icon-left" width="20" height="20" />
+                                                        <input class="input-edited icon-left email input lg:w-[400px]"
+                                                               name="email" placeholder="Your email/phone number"
+                                                               type="text" id="email"
+                                                               value="{{ old('email') }}" required />
+                                                    </div>
+                                                    @error('email')
+                                                    <div class="error text-danger">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+
+                                                <!-- Password -->
+                                                <div class="div-block---demo-form-field position-relative">
+                                                    <label for="password" class="field-label-edited">Password</label>
+                                                    <div class="with-icon-left">
+                                                        <img src="{{ asset('images/password.svg') }}" alt="Password"
+                                                             class="input-icon-left" width="20" height="20" />
+                                                        <input class="input-edited icon-left password input lg:w-[400px]"
+                                                               name="password" placeholder="Your password"
+                                                               type="password" id="password" required />
+                                                    </div>
+                                                    @error('password')
+                                                    <div class="error text-danger">{{ $message }}</div>
+                                                    @enderror
+                                                    <a href="{{ route('password.request') }}" class="fogot-password-link">Forgot password?</a>
+                                                </div>
+                                            </div>
+
+                                            <!-- Submit -->
+                                            <input type="submit" class="btn-primary-edited sign-in-btn button" value="Sign In" />
+
+                                            <!-- Divider -->
+                                            <div class="register-divider">
+                                                <div class="divider dark"></div>
+                                                <div class="general-text register">OR</div>
+                                                <div class="divider dark"></div>
+                                            </div>
+                                        </form>
+
+                                        <a href="{{ route('register') }}" class="btn-primary-edited register-btn button">
+                                            Join Matchology Now
+                                        </a>
+                                    @endguest
+                                </div>
+                            </div>
                         </div>
-                    @else
-                        <!-- Logged-in: Hero Heading centered nicely -->
-                        <div class="flex justify-center items-center h-full">
-                            <h1 class="text-4xl font-extrabold text-gray-900 leading-tight text-center max-w-2xl">
-                                Welcome for a Journey Towards Lasting Happiness
-                            </h1>
-                        </div>
-                    @endguest
-
-                </div>
-
-                <!-- Right Column: Hero Image -->
-                <div class="flex-1 flex justify-center items-center">
-                    <div class="image-wrapper border-radius-24px hero-img-wrapper">
-                        <img src="images/image1.png" alt="image1" class="image cover" loading="eager">
                     </div>
-                </div>
 
+                    <!-- Right Image -->
+                    <div id="node82ff1b0b-0e36-dc3c-5a11-d6200489a779-dcc7cf43"
+                         testing="82ff1b0b-0e36-dc3c-5a11-d6200489a779"
+                         style="-webkit-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);
+                                -moz-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);
+                                -ms-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);
+                                transform:translate3d(0, 10%, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);opacity:0"
+                         class="inner-container-edited _583px _100---tablet">
+                        <div testing="82ff1b0b-0e36-dc3c-5a11-d6200489a77a" class="position-relative bigger">
+                            <div>
+                                <div class="inner-container mg-left-auto">
+                                    <div class="image-wrapper border-radius-24px hero-img-wrapper">
+                                        <img src="images/image1.png" alt="image1" class="image cover" loading="eager"
+                                             sizes="(max-width: 991px) 100vw, (max-width: 1279px) 70vw, 874.5px" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>

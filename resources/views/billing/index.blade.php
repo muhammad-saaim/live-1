@@ -126,66 +126,83 @@
 
     <!-- JS -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
-            const totalAmountElement = document.getElementById('total-amount');
-            const createInvoiceBtn = document.getElementById('create-invoice-btn');
+document.addEventListener('DOMContentLoaded', function() {
+    const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+    const totalAmountElement = document.getElementById('total-amount');
+    const createInvoiceBtn = document.getElementById('create-invoice-btn');
 
-            function updateTotal() {
-                let total = 0;
-                let hasSelection = false;
+    function updateTotal() {
+        let total = 0;
+        let hasSelection = false;
 
-                serviceCheckboxes.forEach(function(checkbox) {
-                    if (checkbox.checked) {
+        serviceCheckboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                hasSelection = true;
+                const price = parseFloat(checkbox.dataset.price);
+
+                const childCheckboxes = checkbox.closest('.border').querySelectorAll('.child-checkbox');
+                if (childCheckboxes.length > 0) {
+                    const checkedChildren = Array.from(childCheckboxes).filter(c => c.checked);
+                    const quantity = Math.max(1, checkedChildren.length);
+                    total += price * quantity;
+
+                    const quantityInput = checkbox.closest('.border').querySelector('.quantity-input');
+                    if (quantityInput) quantityInput.value = quantity;
+                } else {
+                    total += price;
+                }
+            } else {
+
+                const childCheckboxes = checkbox.closest('.border').querySelectorAll('.child-checkbox');
+                childCheckboxes.forEach(c => {
+                    if (c.checked) {
                         hasSelection = true;
-                        const price = parseFloat(checkbox.dataset.price);
-
-                        const childCheckboxes = checkbox.closest('.border').querySelectorAll('.child-checkbox');
-                        if (childCheckboxes.length > 0) {
-                            const checkedChildren = Array.from(childCheckboxes).filter(c => c.checked);
-                            const quantity = Math.max(1, checkedChildren.length);
-                            total += price * quantity;
-
-                            const quantityInput = checkbox.closest('.border').querySelector('.quantity-input');
-                            if (quantityInput) quantityInput.value = quantity;
-                        } else {
-                            total += price;
-                        }
+                        const childPrice = parseFloat(c.dataset.price) || 0;
+                        total += childPrice;
                     }
                 });
-
-                totalAmountElement.textContent = '$' + total.toFixed(2);
-                createInvoiceBtn.disabled = !hasSelection;
             }
+        });
 
-            serviceCheckboxes.forEach(function(checkbox) {
-                checkbox.addEventListener('change', function() {
-                    const childSelection = this.closest('.border').querySelector('.child-selection');
-                    const quantityInput = this.closest('.border').querySelector('.quantity-input');
+        totalAmountElement.textContent = '$' + total.toFixed(2);
+        createInvoiceBtn.disabled = !hasSelection;
+    }
 
-                    if (quantityInput) quantityInput.disabled = !this.checked;
+    serviceCheckboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const childSelection = this.closest('.border').querySelector('.child-selection');
+            const quantityInput = this.closest('.border').querySelector('.quantity-input');
 
-                    if (childSelection) {
-                        if (this.checked) {
-                            childSelection.classList.remove('hidden');
-                            childSelection.querySelectorAll('.child-checkbox').forEach(cb => cb.checked = true);
-                        } else {
-                            childSelection.classList.add('hidden');
-                            childSelection.querySelectorAll('.child-checkbox').forEach(cb => cb.checked = false);
-                        }
-                    }
-                    updateTotal();
-                });
-            });
+            if (quantityInput) quantityInput.disabled = !this.checked;
 
-            document.querySelectorAll('.child-checkbox').forEach(cb => cb.addEventListener('change', updateTotal));
+            if (childSelection) {
+                if (this.checked) {
 
-            serviceCheckboxes.forEach(cb => {
-                const quantityInput = cb.closest('.border').querySelector('.quantity-input');
-                if (quantityInput) quantityInput.disabled = !cb.checked;
-            });
+                    childSelection.classList.remove('hidden');
+                    childSelection.querySelectorAll('.child-checkbox').forEach(cb => cb.checked = true);
+                } else {
+
+                    childSelection.classList.remove('hidden');
+                    childSelection.querySelectorAll('.child-checkbox').forEach(cb => cb.checked = false);
+                }
+            }
 
             updateTotal();
         });
-    </script>
+    });
+
+    document.querySelectorAll('.child-checkbox').forEach(cb =>
+        cb.addEventListener('change', updateTotal)
+    );
+
+    serviceCheckboxes.forEach(cb => {
+        const quantityInput = cb.closest('.border').querySelector('.quantity-input');
+        if (quantityInput) quantityInput.disabled = !cb.checked;
+    });
+
+    updateTotal();
+});
+</script>
+
+
 </x-app-layout>
