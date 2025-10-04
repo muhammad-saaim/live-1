@@ -450,7 +450,7 @@
         </div>
     </div>
 </div>
-                           <section id="Hero" class="section---hero">
+   <section id="Hero" class="section---hero">
     <div class="container---benefits-features-1 container-fluid">
         <div class="inner-container-edited _600px---tablet center">
             <div class="inner-container-edited _500px---mbl center">
@@ -462,22 +462,21 @@
                                 -moz-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1);
                                 -ms-transform:translate3d(0, 10%, 0) scale3d(1, 1, 1);
                                 transform:translate3d(0, 10%, 0) scale3d(1, 1, 1);
-                                opacity:0"
-                         class="inner-container-edited _598px _100---tablet">
-
-                        <div class="text-center-tablet d-flex justify-center items-center h-full" style="flex-direction: column;">
+                                opacity:0; display: flex; align-items: center; min-height: 100vh;">
+                        <div class="text-center-tablet d-flex justify-center items-center h-full" style="flex-direction: column; width: 100%;">
                             <div class="inner-container-edited _500px---tablet center">
                                 <div class="inner-container-edited _400px---mbl center">
                                     @auth
-                                        <h2 class="heading-2---section text-center"
-                                            style="margin: 0 auto;">
-                                            Welcome for a Journey Towards Lasting Happiness
-                                        </h2>
+                                        <div class="text-center-tablet d-flex justify-center items-center h-full"
+                                                style="flex-direction: column; width: 100%; margin-top: -230px;">
+                                            <h2 class="heading-2---section">Welcome for a Journey Towards Lasting
+                                                Happiness</h2>
+                                        </div>
                                     @else
-                                        <h2 class="heading-2---section text-center"
-                                            style="margin: 0 auto;">
-                                            Register for a Journey Towards Lasting Happiness
-                                        </h2>
+                                        <div class="inner-container-edited _400px---mbl center" style="margin-top:-230px;">
+                                            <h2 class="heading-2---section">Register for a Journey Towards Lasting
+                                                Happiness</h2>
+                                        </div>
                                     @endauth
                                 </div>
                             </div>
@@ -587,6 +586,7 @@
         </div>
     </div>
 </section>
+
 
         <section id="Testing" class="section---product pd-200px">
             <div class="container-default pd-top container-fluid">
