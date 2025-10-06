@@ -255,11 +255,6 @@ class BillingController extends Controller
         return back()->with('error', 'Failed to update invoice.');
     }
 }
-
-
-
-
-
     public function destroy(Invoice $invoice)
     {
         DB::beginTransaction();

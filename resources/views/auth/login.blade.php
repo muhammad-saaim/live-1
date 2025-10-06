@@ -429,15 +429,16 @@
                     @else
                         <a href="{{ route('dashboard.index') }}" class="btn-primary-edited small header-btn-hidde-on-mb-edited button">Dashboard</a>
                         <!-- Logout Button -->
-                        <form method="POST" action="{{ route('logout') }}" style="display:inline; margin-left:8px;">
-                            @csrf
-                            <button type="submit"
-                                    class="btn-primary-edited small header-btn-hidde-on-mb-edited button"
-                                    style="background:none; border:none; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">
-                                <!-- Logout Icon Only -->
-                                <img src="{{ asset('assets/icons/images.png') }}" alt="Logout" style="width:28px; height:28px; display:block;">
-                            </button>
-                        </form>
+                        <form method="POST" action="{{ route('logout') }}" style="display:inline; margin-left:8px; margin-top:7px;">
+                                    @csrf
+                                    <button type="submit"
+                                            class="btn-primary-edited small header-btn-hidde-on-mb-edited button"
+                                            style="background:none; border:none; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">
+                                        <!-- Logout Icon Only -->
+                                        <img src="{{ asset('assets/icons/logout_true.jpg') }}" alt="Logout" style="width:35px; height:35px; display:block;">
+                                    </button>
+                                </form>
+
                     @endguest
                     <div class="hamburger-menu-wrapper-edited nav-button" role="button" tabindex="0" aria-controls="primaryNavMenu" aria-expanded="false">
                         <div class="hamburger-menu-icon-edited">
