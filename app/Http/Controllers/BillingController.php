@@ -179,25 +179,25 @@ class BillingController extends Controller
         $invoices = Auth::user()->invoices()->with('items')->orderBy('created_at', 'desc')->get();
         return view('billing.history', compact('invoices'));
     }
-
-
-
     public function edit(Invoice $invoice)
 {
-    // Load all services
+
+
     $services = Service::all();
 
-    // Split services into report and mentoring based on category
+
     $reportServices = $services->where('category', 'report');
     $mentoringServices = $services->where('category', 'mentoring');
 
-    // Get children related to the invoice's user
+
     $children = $invoice->user->relatives ?? [];
 
-    // Load invoice items
+
     $invoice->load('items');
 
+
     return view('billing.edit', compact('invoice', 'reportServices', 'mentoringServices', 'children'));
+
 }
 
 
@@ -218,7 +218,7 @@ class BillingController extends Controller
             $unitPrice = $serviceData['unit_price'] ?? 0;
             $quantity = 0;
 
-            // Determine quantity based on children or active flag
+
             if (!empty($serviceData['item_details']['children'])) {
                 $quantity = count($serviceData['item_details']['children']);
             } elseif (!empty($serviceData['active']) && $serviceData['active'] == 1) {

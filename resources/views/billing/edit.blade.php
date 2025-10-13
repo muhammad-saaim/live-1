@@ -226,7 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     childSelection.querySelectorAll('.child-checkbox').forEach(cb => cb.checked = false);
                 }
             }
-
             updateTotal();
         });
     });
