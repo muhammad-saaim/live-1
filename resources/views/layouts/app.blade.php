@@ -38,6 +38,25 @@
 
     <!-- Page Content -->
     <main class="flex-grow">
+
+        {{-- ✅ Alert from Middleware --}}
+        @if (session('alert'))
+            <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
+                <div id="alertBox" class="alert alert-warning alert-dismissible fade show d-flex align-items-center" role="alert">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>
+                    <div>{{ session('alert') }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+            <script>
+                setTimeout(() => {
+                    const alertBox = document.getElementById('alertBox');
+                    if (alertBox) alertBox.style.display = 'none';
+                }, 5000);
+            </script>
+        @endif
+
+        {{-- ✅ Success & Error Messages --}}
         @if (session('success'))
             <div class="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8">
                 <div class="alert alert-success" role="alert">{{ session('success') }}</div>
@@ -48,6 +67,7 @@
                 <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
             </div>
         @endif
+
         {{ $slot }}
     </main>
 </div>

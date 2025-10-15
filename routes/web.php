@@ -25,8 +25,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\MentorAssignedMail;
 
-
-
 Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('dashboard.index');
@@ -86,7 +84,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/groups/{group}/members', [GroupController::class, 'removeMember'])->name('groups.removeMembers');
     Route::delete('/groups/{group}/invitations/{email}', [GroupController::class, 'cancelInvitation'])->name('groups.cancelInvitation');
 
-    Route::get('/reports/index', [ReportsController::class, 'index'])->name('reports.index');
+    // ✅ Reports route with pending invoice check middleware
+    Route::get('/reports/index', [ReportsController::class, 'index'])
+        ->middleware('check.pending.invoices')
+        ->name('reports.index');
 
     // Mentor
     Route::get('/mentor', [\App\Http\Controllers\MentorController::class, 'index'])->middleware('role:mentor')->name('mentor.index');
@@ -102,7 +103,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/billing/process-payment/{invoice}', [BillingController::class, 'processPayment'])->name('billing.process-payment');
     Route::get('/billing/history', [BillingController::class, 'invoiceHistory'])->name('billing.history');
     Route::put('/billing/{invoice}', [BillingController::class, 'update'])->name('billing.update');
-
 
     // ✅ Full CRUD for invoices (admin only)
     Route::group(['middleware' => ['role:admin']], function () {
