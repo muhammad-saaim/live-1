@@ -1,5 +1,5 @@
 <?php
-
+//asdasd
 namespace App\Http\Controllers;
 
 use App\Exports\SurveyExport;
@@ -15,7 +15,7 @@ class ReportsController extends Controller
     public function index()
     {
         $user = Auth::user();
-    
+
         // Check if user is admin using Spatie's hasRole method
         if ($user->hasRole('admin')) {
             // Admin: Get all rating records, eager load related survey and option points
@@ -31,15 +31,15 @@ class ReportsController extends Controller
                 ->select('users_surveys_rates.*', 'question_options.point')
                 ->get();
         }
-    
+
         $surveyAverages = [];
-    
+
         // Group by survey_id to calculate average for each survey
         foreach ($userSurveyRates->groupBy('survey_id') as $surveyId => $rates) {
             $average = $rates->avg('point');
             $surveyAverages[$surveyId] = $average;
         }
-    
+
         // Collect distinct surveys (so you're not looping over raw rating rows)
         $distinctSurveys = $userSurveyRates->pluck('survey')->filter()->unique('id')->values();
      $allGroupSurveyResults = getAllGroupsCombinedTypeReportsCombinedByGroupType();
@@ -124,7 +124,7 @@ $datasets[] = [
 ];
 
 
-     
+
 
     // Individual (Self-Evaluation)
     $datasets[] = [
@@ -176,7 +176,7 @@ $datasets[] = [
         'datasets' => $datasets
         ]);
     }
-    
+
     public function showChart()
 {
 
@@ -223,7 +223,7 @@ $datasets[] = [
     ];
 
     return view('reports.reports-index', [
-       
+
     ]);
 }
 
@@ -271,7 +271,7 @@ $datasets[] = [
     }
 
    public function exportSurveyExcel(Request $request)
-{   
+{
    $request->validate([
         'survey_id' => 'required|integer',
         'start_date' => 'required|date',
@@ -280,7 +280,7 @@ $datasets[] = [
     $survey_id = $request->survey_id;
     $startDate = $request->start_date;
     $endDate = now()->format('Y-m-d'); // today's date
-      
+
     $user = Auth::user();
 
     return Excel::download(
